@@ -2,42 +2,8 @@ import { prisma } from "@/lib/prisma";
 
 type StatPeriod = "WEEK" | "MONTH" | "ALL";
 
-let redis: import("ioredis").Redis | null = null;
-
-async function getRedis() {
-  if (!redis && process.env.REDIS_URL) {
-    try {
-      const { default: Redis } = await import("ioredis");
-      redis = new Redis(process.env.REDIS_URL, {
-        connectTimeout: 2000,
-        commandTimeout: 1000,
-        maxRetriesPerRequest: 0,
-        enableOfflineQueue: false,
-        lazyConnect: false,
-        retryStrategy: () => null,
-      });
-      redis.on("error", () => { redis = null; });
-    } catch {
-      redis = null;
-    }
-  }
-  return redis;
-}
-
-const CACHE_TTL = 30 * 60;
-
 export async function getRanking(period: StatPeriod, limit = 10) {
-  const cacheKey = `ranking:${period}:${limit}`;
-  const r = await getRedis();
-
-  if (r) {
-    try {
-      const cached = await r.get(cacheKey);
-      if (cached) return JSON.parse(cached);
-    } catch {}
-  }
-
-  const stats = await prisma.weeklyStats.findMany({
+  return prisma.weeklyStats.findMany({
     where: { period },
     orderBy: { rank: "asc" },
     take: limit,
@@ -54,14 +20,6 @@ export async function getRanking(period: StatPeriod, limit = 10) {
       },
     },
   });
-
-  if (r) {
-    try {
-      await r.setex(cacheKey, CACHE_TTL, JSON.stringify(stats));
-    } catch {}
-  }
-
-  return stats;
 }
 
 export async function recalculateRanking(period: StatPeriod) {
@@ -92,12 +50,5 @@ export async function recalculateRanking(period: StatPeriod) {
       create: { mangaId, period, views, bookmarks, likes, rank: i + 1, calculatedAt: now },
       update: { views, bookmarks, likes, rank: i + 1, calculatedAt: now },
     });
-  }
-
-  const r = await getRedis();
-  if (r) {
-    try {
-      await r.del(`ranking:${period}:10`);
-    } catch {}
   }
 }
