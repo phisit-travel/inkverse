@@ -134,6 +134,7 @@ export default async function ReaderPage({ params }: Props) {
             })),
           }))}
           currentUserId={userId ?? undefined}
+          currentUsername={session?.user?.name ?? undefined}
         />
       </div>
     </div>
