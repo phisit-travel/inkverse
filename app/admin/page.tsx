@@ -106,7 +106,7 @@ export default async function AdminPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {recentMangas.map((manga) => (
+              {recentMangas.map((manga: (typeof recentMangas)[number]) => (
                 <tr key={manga.id} className="hover:bg-white/5 transition-colors">
                   <td className="px-4 py-3">
                     <Link
