@@ -195,10 +195,10 @@ const mangas = [
 ];
 
 const coinPackages = [
-  { name: "Starter", coins: 100, price: 29, bonus: 0,   isPopular: false },
-  { name: "Value",   coins: 300, price: 79, bonus: 20,  isPopular: false },
-  { name: "Popular", coins: 600, price: 149, bonus: 60, isPopular: true  },
-  { name: "Mega",    coins: 1200, price: 249, bonus: 150, isPopular: false },
+  { name: "Starter", coins: 29,  price: 29,  bonus: 0,  isPopular: false },
+  { name: "Value",   coins: 79,  price: 79,  bonus: 5,  isPopular: false },
+  { name: "Popular", coins: 149, price: 149, bonus: 20, isPopular: true  },
+  { name: "Mega",    coins: 249, price: 249, bonus: 50, isPopular: false },
 ];
 
 async function main() {
