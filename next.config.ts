@@ -6,42 +6,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "pub-*.r2.dev",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "*.r2.cloudflarestorage.com",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "lh3.googleusercontent.com",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "media.anilist.co",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "s4.anilist.co",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "i.imgur.com",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "picsum.photos",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "placehold.co",
+        hostname: "**",
         pathname: "/**",
       },
     ],

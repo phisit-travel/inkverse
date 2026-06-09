@@ -381,7 +381,13 @@ export default function CheckoutClient({
                     <p className="text-sm text-gray-400 text-center">สแกน QR Code ด้วยแอปธนาคารของคุณ</p>
                     <div className="bg-white p-3 rounded-2xl">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={qrUrl} alt="PromptPay QR" width={200} height={200} />
+                      <img
+                        src={qrUrl}
+                        alt="PromptPay QR"
+                        width={200}
+                        height={200}
+                        onError={() => setError("ไม่สามารถโหลด QR Code ได้ กรุณาลองใหม่")}
+                      />
                     </div>
                     <p className="text-2xl font-bold text-white">฿{order.price.toFixed(0)}</p>
                     {polling && (

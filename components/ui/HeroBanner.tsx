@@ -29,6 +29,7 @@ export default function HeroBanner({
           src={coverUrl}
           alt={title}
           fill
+          unoptimized
           className="object-cover opacity-40"
           priority
           sizes="100vw"

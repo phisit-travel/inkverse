@@ -120,6 +120,7 @@ export default async function MangaProfilePage({ params }: Props) {
                   src={manga.coverUrl}
                   alt={manga.title}
                   fill
+                  unoptimized
                   className="object-cover"
                   priority
                   sizes="(max-width: 1024px) 40vw, 25vw"

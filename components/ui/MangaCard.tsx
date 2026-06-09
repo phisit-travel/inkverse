@@ -58,6 +58,7 @@ export default function MangaCard({
             src={coverUrl}
             alt={title}
             fill
+            unoptimized
             className={clsx(
               "object-cover transition-transform duration-500 group-hover:scale-105",
               isLarge && "opacity-60"

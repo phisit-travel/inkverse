@@ -43,9 +43,12 @@ export default function UpdateRow({
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-110"
             sizes="48px"
+            unoptimized
           />
         ) : (
-          <div className="w-full h-full bg-[#1a1e2a]" />
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#1a1e2a] to-[#141720]">
+            <span className="text-lg opacity-20">📖</span>
+          </div>
         )}
       </div>
 

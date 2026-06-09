@@ -42,6 +42,7 @@ export default function FeaturedSpotlight({
               src={featured.coverUrl}
               alt={featured.title}
               fill
+              unoptimized
               className="object-cover transition-transform duration-700 group-hover:scale-105"
               priority
               sizes="(max-width: 1024px) 100vw, 66vw"
@@ -112,6 +113,7 @@ export default function FeaturedSpotlight({
                   src={manga.coverUrl}
                   alt={manga.title}
                   fill
+                  unoptimized
                   className="object-cover transition-transform duration-500 group-hover:scale-105 opacity-70"
                   sizes="(max-width: 1024px) 100vw, 33vw"
                 />

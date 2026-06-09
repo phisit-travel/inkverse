@@ -103,6 +103,7 @@ export default function RankingPanel({
                     src={item.manga.coverUrl}
                     alt={item.manga.title}
                     fill
+                    unoptimized
                     className="object-cover"
                     sizes="40px"
                   />
