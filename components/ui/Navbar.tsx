@@ -1,0 +1,203 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Search, Bell, User, Menu, X, LogIn } from "lucide-react";
+import Logo from "./Logo";
+import CoinBadge from "./CoinBadge";
+import clsx from "clsx";
+
+interface NavbarProps {
+  user?: {
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+    role?: string;
+  } | null;
+  userCoins?: number;
+}
+
+const navLinks = [
+  { href: "/manga", label: "เรื่องทั้งหมด" },
+  { href: "/discover", label: "ค้นหา" },
+  { href: "/manga/action", label: "Action" },
+  { href: "/manga/romance", label: "Romance" },
+  { href: "/apply", label: "สมัครนักแปล" },
+];
+
+export default function Navbar({ user, userCoins = 0 }: NavbarProps) {
+  const [search, setSearch] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const router = useRouter();
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (search.trim()) {
+      router.push(`/discover?q=${encodeURIComponent(search.trim())}`);
+      setSearch("");
+      setSearchOpen(false);
+    }
+  };
+
+  useEffect(() => {
+    if (searchOpen) searchRef.current?.focus();
+  }, [searchOpen]);
+
+  return (
+    <nav className="sticky top-0 z-50 bg-[#080a10]/95 backdrop-blur-md border-b border-white/5">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+        {/* Logo */}
+        <Logo size="md" />
+
+        {/* Desktop nav */}
+        <div className="hidden lg:flex items-center gap-6">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-sm text-gray-400 hover:text-white transition-colors hover:text-[#ff6b2b]"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+
+        {/* Search + actions */}
+        <div className="flex items-center gap-2">
+          {/* Desktop search */}
+          <form onSubmit={handleSearch} className="hidden md:flex items-center">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="ค้นหามังงะ..."
+                className="bg-[#1a1e2a] border border-white/10 rounded-xl pl-9 pr-4 py-2 text-sm text-white placeholder-gray-500 w-48 focus:outline-none focus:border-[#ff2d55]/50 focus:w-64 transition-all"
+              />
+            </div>
+          </form>
+
+          {/* Mobile search toggle */}
+          <button
+            className="md:hidden p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+            onClick={() => setSearchOpen(!searchOpen)}
+          >
+            <Search className="w-5 h-5" />
+          </button>
+
+          {user ? (
+            <>
+              <CoinBadge initialCoins={userCoins} />
+              <button className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors relative">
+                <Bell className="w-5 h-5" />
+              </button>
+              <Link
+                href={`/profile/${user.name}`}
+                className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+              >
+                <User className="w-5 h-5" />
+              </Link>
+              {(user.role === "ADMIN" || user.role === "TRANSLATOR") && (
+                <div className="hidden sm:flex items-center gap-1.5">
+                  <Link
+                    href="/dashboard"
+                    className="flex items-center px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-300 text-xs font-medium hover:bg-white/10 transition-colors"
+                  >
+                    Dashboard
+                  </Link>
+                  <Link
+                    href={user.role === "ADMIN" ? "/admin" : "/upload"}
+                    className="flex items-center px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white text-xs font-medium hover:opacity-90 transition-opacity"
+                  >
+                    {user.role === "ADMIN" ? "แอดมิน" : "อัปโหลด"}
+                  </Link>
+                </div>
+              )}
+            </>
+          ) : (
+            <Link
+              href="/auth/signin"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              <LogIn className="w-4 h-4" />
+              เข้าสู่ระบบ
+            </Link>
+          )}
+
+          {/* Mobile menu */}
+          <button
+            className="lg:hidden p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile search bar */}
+      {searchOpen && (
+        <div className="md:hidden px-4 pb-3">
+          <form onSubmit={handleSearch} className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <input
+                ref={searchRef}
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="ค้นหามังงะ..."
+                className="w-full bg-[#1a1e2a] border border-white/10 rounded-xl pl-9 pr-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#ff2d55]/50"
+              />
+            </div>
+            <button
+              type="submit"
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white text-sm font-medium"
+            >
+              ค้นหา
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Mobile nav menu */}
+      {menuOpen && (
+        <div className="lg:hidden border-t border-white/5 bg-[#080a10]">
+          <div className="px-4 py-3 flex flex-col gap-1">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMenuOpen(false)}
+                className="px-3 py-2.5 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors"
+              >
+                {link.label}
+              </Link>
+            ))}
+            {user && (user.role === "TRANSLATOR" || user.role === "ADMIN") && (
+              <>
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMenuOpen(false)}
+                  className="px-3 py-2.5 rounded-lg text-sm text-[#ff6b2b] hover:bg-white/5 transition-colors font-medium"
+                >
+                  Creator Dashboard
+                </Link>
+                <Link
+                  href={user.role === "ADMIN" ? "/admin" : "/upload"}
+                  onClick={() => setMenuOpen(false)}
+                  className="px-3 py-2.5 rounded-lg text-sm text-[#ff2d55] hover:bg-white/5 transition-colors font-medium"
+                >
+                  {user.role === "ADMIN" ? "แอดมิน" : "อัปโหลด"}
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </nav>
+  );
+}

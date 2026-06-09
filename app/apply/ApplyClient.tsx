@@ -1,0 +1,338 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { PenTool, BookOpen, Heart, ChevronRight, ChevronLeft, Check, AlertCircle } from "lucide-react";
+import clsx from "clsx";
+
+interface Genre { id: string; name: string; slug: string }
+interface PrevApp { status: string; penName: string; adminNote?: string | null }
+
+const STEPS = [
+  { id: 1, label: "ข้อมูลพื้นฐาน",  icon: PenTool },
+  { id: 2, label: "ผลงาน & โซเชียล", icon: BookOpen },
+  { id: 3, label: "แรงจูงใจ",         icon: Heart },
+];
+
+const EXPERIENCE_OPTIONS = [
+  "ไม่มีประสบการณ์ (มือใหม่)",
+  "น้อยกว่า 6 เดือน",
+  "6 เดือน – 1 ปี",
+  "1 – 3 ปี",
+  "มากกว่า 3 ปี",
+];
+
+export default function ApplyClient({ genres, prevApplication }: {
+  genres: Genre[];
+  prevApplication: PrevApp | null;
+}) {
+  const router = useRouter();
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  const [form, setForm] = useState({
+    penName: prevApplication?.penName ?? "",
+    experience: "",
+    sampleWork: "",
+    socialLink: "",
+    preferredGenres: [] as string[],
+    motivation: "",
+  });
+
+  const set = (k: keyof typeof form, v: string | string[]) =>
+    setForm((f) => ({ ...f, [k]: v }));
+
+  function toggleGenre(slug: string) {
+    set(
+      "preferredGenres",
+      form.preferredGenres.includes(slug)
+        ? form.preferredGenres.filter((s) => s !== slug)
+        : [...form.preferredGenres, slug]
+    );
+  }
+
+  function canNext() {
+    if (step === 1) return form.penName.trim().length >= 2 && form.experience;
+    if (step === 2) return form.sampleWork.trim().length >= 20;
+    return true;
+  }
+
+  async function handleSubmit() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "เกิดข้อผิดพลาด");
+      setDone(true);
+      router.refresh();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (done) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="w-20 h-20 rounded-full bg-green-500/20 border-2 border-green-500/40 flex items-center justify-center mx-auto mb-6">
+            <Check className="w-9 h-9 text-green-400" />
+          </div>
+          <h2 className="font-bebas text-3xl text-white tracking-wider mb-2">ส่งใบสมัครแล้ว!</h2>
+          <p className="text-gray-400 text-sm">ทีมงานจะตรวจสอบและแจ้งผลภายใน 3-5 วันทำการ</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
+      {/* Header */}
+      <div className="text-center mb-10">
+        <div className="inline-flex items-center gap-2 bg-[#ff2d55]/10 border border-[#ff2d55]/30 rounded-full px-4 py-1.5 text-sm text-[#ff2d55] font-medium mb-4">
+          <PenTool className="w-4 h-4" />
+          สมัครเป็นนักแปล / นักเขียน
+        </div>
+        <h1 className="font-bebas text-4xl text-white tracking-wider mb-2">
+          ร่วมเป็นส่วนหนึ่งของ INKVERSE
+        </h1>
+        <p className="text-gray-400 text-sm">
+          แบ่งปันผลงานของคุณกับผู้อ่านหลักล้านคน
+        </p>
+      </div>
+
+      {/* Rejected notice */}
+      {prevApplication?.status === "REJECTED" && (
+        <div className="mb-6 flex gap-3 bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm text-red-400 font-medium">ใบสมัครครั้งก่อนไม่ผ่าน</p>
+            <p className="text-xs text-gray-400 mt-1">{prevApplication.adminNote ?? "ไม่ผ่านการพิจารณา"}</p>
+            <p className="text-xs text-gray-500 mt-1">คุณสามารถสมัครใหม่ได้โดยกรอกข้อมูลด้านล่าง</p>
+          </div>
+        </div>
+      )}
+
+      {/* Step indicator */}
+      <div className="flex items-center gap-0 mb-8">
+        {STEPS.map((s, i) => {
+          const done = step > s.id;
+          const active = step === s.id;
+          const Icon = s.icon;
+          return (
+            <div key={s.id} className="flex items-center flex-1">
+              <div className={clsx(
+                "flex flex-col items-center flex-1",
+              )}>
+                <div className={clsx(
+                  "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all",
+                  done  ? "bg-[#ff2d55] border-[#ff2d55] text-white" :
+                  active ? "bg-[#ff2d55]/20 border-[#ff2d55] text-[#ff2d55]" :
+                           "bg-[#141720] border-white/10 text-gray-500"
+                )}>
+                  {done ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
+                </div>
+                <span className={clsx(
+                  "text-xs mt-1.5 font-medium",
+                  active ? "text-white" : done ? "text-[#ff6b2b]" : "text-gray-600"
+                )}>
+                  {s.label}
+                </span>
+              </div>
+              {i < STEPS.length - 1 && (
+                <div className={clsx(
+                  "h-0.5 flex-1 -mt-5 mx-2 transition-all",
+                  step > s.id ? "bg-[#ff2d55]" : "bg-white/10"
+                )} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Form card */}
+      <div className="bg-[#141720] rounded-2xl border border-white/5 p-6 space-y-5">
+        {/* ── Step 1: ข้อมูลพื้นฐาน ── */}
+        {step === 1 && (
+          <>
+            <FormField label="นามปากกา *" hint="ชื่อที่จะแสดงต่อผู้อ่าน">
+              <input
+                value={form.penName}
+                onChange={(e) => set("penName", e.target.value)}
+                placeholder="เช่น ดาวเรือง TL, NightReader"
+                maxLength={40}
+                className={inputCls}
+              />
+            </FormField>
+
+            <FormField label="ระดับประสบการณ์ *">
+              <div className="grid grid-cols-1 gap-2">
+                {EXPERIENCE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => set("experience", opt)}
+                    className={clsx(
+                      "text-left px-4 py-3 rounded-xl border text-sm transition-all",
+                      form.experience === opt
+                        ? "border-[#ff2d55]/60 bg-[#ff2d55]/10 text-white"
+                        : "border-white/10 bg-[#1a1e2a] text-gray-400 hover:border-white/25"
+                    )}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </FormField>
+          </>
+        )}
+
+        {/* ── Step 2: ผลงาน & โซเชียล ── */}
+        {step === 2 && (
+          <>
+            <FormField
+              label="ตัวอย่างผลงาน *"
+              hint="ลิงก์ผลงานที่ผ่านมา หรือแปะตัวอย่างข้อความที่แปล (อย่างน้อย 20 ตัวอักษร)"
+            >
+              <textarea
+                value={form.sampleWork}
+                onChange={(e) => set("sampleWork", e.target.value)}
+                placeholder="ใส่ลิงก์ผลงาน เช่น https://... หรือวางตัวอย่างข้อความแปลของคุณ"
+                rows={5}
+                className={`${inputCls} resize-none`}
+              />
+              <p className="text-xs text-gray-600 mt-1">{form.sampleWork.trim().length} / 20 ตัวอักษรขั้นต่ำ</p>
+            </FormField>
+
+            <FormField
+              label="โซเชียลมีเดีย"
+              hint="Facebook, Twitter/X, Discord หรืออื่นๆ (ไม่บังคับ)"
+            >
+              <input
+                value={form.socialLink}
+                onChange={(e) => set("socialLink", e.target.value)}
+                placeholder="https://facebook.com/yourpage"
+                className={inputCls}
+              />
+            </FormField>
+
+            <FormField label="หมวดหมู่ที่ถนัด" hint="เลือกได้หลายหมวด">
+              <div className="flex flex-wrap gap-2">
+                {genres.map((g) => (
+                  <button
+                    key={g.slug}
+                    type="button"
+                    onClick={() => toggleGenre(g.slug)}
+                    className={clsx(
+                      "px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
+                      form.preferredGenres.includes(g.slug)
+                        ? "bg-[#ff2d55]/20 border-[#ff2d55]/60 text-[#ff6b2b]"
+                        : "bg-[#1a1e2a] border-white/10 text-gray-400 hover:border-white/25"
+                    )}
+                  >
+                    {g.name}
+                  </button>
+                ))}
+              </div>
+            </FormField>
+          </>
+        )}
+
+        {/* ── Step 3: แรงจูงใจ ── */}
+        {step === 3 && (
+          <>
+            <FormField
+              label="แรงจูงใจในการสมัคร *"
+              hint="บอกเล่าว่าทำไมคุณถึงอยากเป็นนักแปล/นักเขียนบน INKVERSE"
+            >
+              <textarea
+                value={form.motivation}
+                onChange={(e) => set("motivation", e.target.value)}
+                placeholder="เช่น ฉันชอบอ่านมังงะมาตั้งแต่เด็ก และอยากให้คนไทยได้อ่านเรื่องที่ชอบเหมือนกัน..."
+                rows={6}
+                className={`${inputCls} resize-none`}
+              />
+            </FormField>
+
+            {/* Summary */}
+            <div className="bg-[#1a1e2a] rounded-xl p-4 space-y-2 text-sm">
+              <p className="text-gray-500 text-xs uppercase tracking-wider mb-3">สรุปใบสมัคร</p>
+              <SummaryRow label="นามปากกา" value={form.penName} />
+              <SummaryRow label="ประสบการณ์" value={form.experience} />
+              <SummaryRow label="หมวดหมู่ที่ถนัด" value={form.preferredGenres.join(", ") || "—"} />
+            </div>
+
+            {error && (
+              <div className="flex gap-2 bg-red-500/10 border border-red-500/30 rounded-xl p-3">
+                <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-red-400">{error}</p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Navigation */}
+      <div className="flex justify-between mt-6">
+        <button
+          onClick={() => setStep((s) => s - 1)}
+          disabled={step === 1}
+          className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[#141720] border border-white/10 text-gray-300 text-sm hover:border-white/30 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          ย้อนกลับ
+        </button>
+
+        {step < 3 ? (
+          <button
+            onClick={() => setStep((s) => s + 1)}
+            disabled={!canNext()}
+            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            ถัดไป
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        ) : (
+          <button
+            onClick={handleSubmit}
+            disabled={loading || !form.motivation.trim()}
+            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {loading ? "กำลังส่ง..." : "ส่งใบสมัคร"}
+            {!loading && <Check className="w-4 h-4" />}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FormField({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-white mb-1">{label}</label>
+      {hint && <p className="text-xs text-gray-500 mb-2">{hint}</p>}
+      {children}
+    </div>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex gap-2">
+      <span className="text-gray-500 w-32 flex-shrink-0">{label}</span>
+      <span className="text-white truncate">{value || "—"}</span>
+    </div>
+  );
+}
+
+const inputCls =
+  "w-full bg-[#1a1e2a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#ff2d55]/50 transition-colors";

@@ -1,0 +1,57 @@
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { uploadToR2 } from "@/lib/r2";
+import sharp from "sharp";
+
+const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+
+export async function POST(req: NextRequest) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const role = (session.user as { role?: string }).role;
+  if (role !== "TRANSLATOR" && role !== "ADMIN") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const formData = await req.formData();
+  const file = formData.get("file") as File | null;
+  const slug = formData.get("slug") as string | null;
+
+  if (!file || !slug) {
+    return NextResponse.json({ error: "file and slug required" }, { status: 400 });
+  }
+
+  if (file.size > MAX_SIZE) {
+    return NextResponse.json({ error: "File too large (max 5MB)" }, { status: 413 });
+  }
+
+  const isR2Ready = !!(
+    process.env.CLOUDFLARE_R2_ACCOUNT_ID &&
+    process.env.CLOUDFLARE_R2_ACCESS_KEY_ID &&
+    process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY &&
+    process.env.CLOUDFLARE_R2_BUCKET_NAME &&
+    process.env.CLOUDFLARE_R2_PUBLIC_URL
+  );
+
+  if (!isR2Ready) {
+    return NextResponse.json({ url: null, warning: "R2 not configured — cover skipped" });
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+
+  // Convert to WebP and generate two sizes
+  const [cover, thumb] = await Promise.all([
+    sharp(buffer).resize(300, 400, { fit: "cover" }).webp({ quality: 85 }).toBuffer(),
+    sharp(buffer).resize(150, 200, { fit: "cover" }).webp({ quality: 75 }).toBuffer(),
+  ]);
+
+  const [coverUrl] = await Promise.all([
+    uploadToR2(`covers/${slug}.webp`, cover, "image/webp"),
+    uploadToR2(`covers/${slug}-thumb.webp`, thumb, "image/webp"),
+  ]);
+
+  return NextResponse.json({ url: coverUrl });
+}

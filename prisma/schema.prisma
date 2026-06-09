@@ -1,0 +1,265 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id               String            @id @default(cuid())
+  username         String            @unique
+  email            String            @unique
+  passwordHash     String?
+  role             String            @default("READER")
+  avatarUrl        String?
+  coins            Int               @default(0)
+  createdAt        DateTime          @default(now())
+  accounts         Account[]
+  sessions         Session[]
+  bookmarks        Bookmark[]
+  readHistory      ReadHistory[]
+  comments         Comment[]
+  ratings          Rating[]
+  translator       Translator?
+  coinTransactions        CoinTransaction[]
+  unlockedChapters        UnlockedChapter[]
+  translatorApplication   TranslatorApplication?
+  coinOrders              CoinOrder[]
+}
+
+model CoinOrder {
+  id         String    @id @default(cuid())
+  userId     String
+  packageId  String
+  coins      Int
+  bonus      Int       @default(0)
+  price      Float
+  status     String    @default("PENDING") // PENDING | PAID | FAILED | CANCELLED
+  method     String?   // CARD | PROMPTPAY
+  paidAt     DateTime?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Manga {
+  id            String      @id @default(cuid())
+  title         String
+  slug          String      @unique
+  description   String
+  coverUrl      String?
+  originCountry String      @default("JP")
+  status        String      @default("ONGOING")
+  type          String      @default("MANGA")
+  totalViews    Int         @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  genres        MangaGenre[]
+  chapters      Chapter[]
+  bookmarks     Bookmark[]
+  ratings       Rating[]
+  weeklyStats   WeeklyStats[]
+  translatorId  String?
+  translator    Translator? @relation(fields: [translatorId], references: [id])
+}
+
+model Genre {
+  id     String       @id @default(cuid())
+  name   String       @unique
+  slug   String       @unique
+  mangas MangaGenre[]
+}
+
+model MangaGenre {
+  mangaId String
+  genreId String
+  manga   Manga  @relation(fields: [mangaId], references: [id], onDelete: Cascade)
+  genre   Genre  @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([mangaId, genreId])
+}
+
+model Translator {
+  id         String  @id @default(cuid())
+  userId     String  @unique
+  penName    String
+  bio        String?
+  totalWorks Int     @default(0)
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mangas     Manga[]
+}
+
+model Chapter {
+  id               String            @id @default(cuid())
+  mangaId          String
+  chapterNum       Float
+  title            String?
+  isPremium        Boolean           @default(false)
+  coinCost         Int               @default(0)
+  publishedAt      DateTime          @default(now())
+  viewCount        Int               @default(0)
+  manga            Manga             @relation(fields: [mangaId], references: [id], onDelete: Cascade)
+  pages            Page[]
+  readHistory      ReadHistory[]
+  comments         Comment[]
+  unlockedBy       UnlockedChapter[]
+
+  @@unique([mangaId, chapterNum])
+}
+
+model Page {
+  id        String  @id @default(cuid())
+  chapterId String
+  pageNum   Int
+  imageUrl  String
+  width     Int?
+  height    Int?
+  chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@unique([chapterId, pageNum])
+}
+
+model Bookmark {
+  userId    String
+  mangaId   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  manga     Manga    @relation(fields: [mangaId], references: [id], onDelete: Cascade)
+
+  @@id([userId, mangaId])
+}
+
+model ReadHistory {
+  userId    String
+  chapterId String
+  lastPage  Int      @default(1)
+  readAt    DateTime @default(now()) @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapter   Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@id([userId, chapterId])
+}
+
+model Comment {
+  id        String    @id @default(cuid())
+  userId    String
+  chapterId String
+  content   String
+  isSpoiler Boolean   @default(false)
+  likes     Int       @default(0)
+  createdAt DateTime  @default(now())
+  parentId  String?
+  parent    Comment?  @relation("Replies", fields: [parentId], references: [id])
+  replies   Comment[] @relation("Replies")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapter   Chapter   @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+}
+
+model Rating {
+  userId    String
+  mangaId   String
+  score     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  manga     Manga    @relation(fields: [mangaId], references: [id], onDelete: Cascade)
+
+  @@id([userId, mangaId])
+}
+
+model WeeklyStats {
+  id           String   @id @default(cuid())
+  mangaId      String
+  period       String
+  views        Int      @default(0)
+  likes        Int      @default(0)
+  bookmarks    Int      @default(0)
+  rank         Int      @default(0)
+  calculatedAt DateTime @default(now())
+  manga        Manga    @relation(fields: [mangaId], references: [id], onDelete: Cascade)
+
+  @@unique([mangaId, period])
+}
+
+model TranslatorApplication {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  status          String   @default("PENDING") // PENDING | APPROVED | REJECTED
+  penName         String
+  experience      String
+  sampleWork      String
+  socialLink      String?
+  preferredGenres String   @default("[]")
+  motivation      String
+  adminNote       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CoinPackage {
+  id          String   @id @default(cuid())
+  name        String
+  coins       Int
+  price       Float
+  bonus       Int      @default(0)
+  isPopular   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model CoinTransaction {
+  id          String   @id @default(cuid())
+  userId      String
+  amount      Int
+  type        String   // "TOPUP" | "SPEND" | "BONUS" | "REFUND"
+  description String
+  refId       String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UnlockedChapter {
+  userId      String
+  chapterId   String
+  unlockedAt  DateTime @default(now())
+  coinSpent   Int      @default(0)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapter     Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@id([userId, chapterId])
+}

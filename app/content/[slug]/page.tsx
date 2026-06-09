@@ -1,0 +1,277 @@
+import { prisma } from "@/lib/prisma";
+import { notFound } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+import { auth } from "@/lib/auth";
+import StarRating from "@/components/ui/StarRating";
+import BookmarkButton from "@/components/ui/BookmarkButton";
+import ChapterRow from "@/components/ui/ChapterRow";
+import { getUserCoins } from "@/lib/coins";
+import {
+  BookOpen,
+  Eye,
+  Calendar,
+  Globe,
+  Tag,
+  User,
+} from "lucide-react";
+import type { Metadata } from "next";
+
+interface Props {
+  params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const manga = await prisma.manga.findUnique({
+    where: { slug },
+    select: { title: true, description: true },
+  });
+  if (!manga) return { title: "Not Found" };
+  return {
+    title: manga.title,
+    description: manga.description.slice(0, 160),
+  };
+}
+
+export default async function MangaProfilePage({ params }: Props) {
+  const { slug } = await params;
+  const session = await auth();
+
+  const userId = session?.user ? (session.user as { id: string }).id : null;
+
+  const manga = await prisma.manga.findUnique({
+    where: { slug },
+    include: {
+      genres: { include: { genre: true } },
+      chapters: { orderBy: { chapterNum: "asc" } },
+      ratings: { select: { score: true } },
+      bookmarks: userId
+        ? { where: { userId }, take: 1 }
+        : false,
+      translator: { include: { user: { select: { username: true } } } },
+    },
+  });
+
+  if (!manga) notFound();
+
+  // Get user's coin balance + which chapters they've unlocked
+  const [userCoins, unlockedSet] = await Promise.all([
+    userId ? getUserCoins(userId) : Promise.resolve(0),
+    userId
+      ? prisma.unlockedChapter
+          .findMany({ where: { userId }, select: { chapterId: true } })
+          .then((rows) => new Set(rows.map((r) => r.chapterId)))
+      : Promise.resolve(new Set<string>()),
+  ]);
+
+  // Increment views
+  await prisma.manga.update({
+    where: { id: manga.id },
+    data: { totalViews: { increment: 1 } },
+  });
+
+  const avgRating =
+    manga.ratings.length > 0
+      ? manga.ratings.reduce((a, b) => a + b.score, 0) / manga.ratings.length
+      : 0;
+
+  const isBookmarked = userId && Array.isArray(manga.bookmarks)
+    ? manga.bookmarks.length > 0
+    : false;
+
+  const latestChapter = manga.chapters[manga.chapters.length - 1];
+  const firstChapter = manga.chapters[0];
+
+  const statusLabel: Record<string, string> = {
+    ONGOING: "กำลังดำเนินเรื่อง",
+    COMPLETED: "จบแล้ว",
+    HIATUS: "หยุดพัก",
+  };
+
+  const countryLabel: Record<string, string> = {
+    JP: "🇯🇵 ญี่ปุ่น",
+    KR: "🇰🇷 เกาหลี",
+    CN: "🇨🇳 จีน",
+    TH: "🇹🇭 ไทย",
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        {/* Left — Cover + Info */}
+        <div className="lg:col-span-1">
+          <div className="sticky top-20 space-y-4">
+            {/* Cover */}
+            <div className="relative aspect-[3/4] w-full max-w-xs mx-auto lg:max-w-none rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+              {manga.coverUrl ? (
+                <Image
+                  src={manga.coverUrl}
+                  alt={manga.title}
+                  fill
+                  className="object-cover"
+                  priority
+                  sizes="(max-width: 1024px) 40vw, 25vw"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-[#1a1e2a] text-6xl opacity-20">
+                  📖
+                </div>
+              )}
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex flex-col gap-2">
+              {firstChapter && (
+                <Link
+                  href={`/content/${slug}/${firstChapter.chapterNum}`}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white text-sm font-semibold text-center hover:opacity-90 transition-opacity"
+                >
+                  อ่านตั้งแต่ต้น
+                </Link>
+              )}
+              {latestChapter && latestChapter.id !== firstChapter?.id && (
+                <Link
+                  href={`/content/${slug}/${latestChapter.chapterNum}`}
+                  className="w-full py-3 rounded-xl bg-[#1a1e2a] border border-white/10 text-white text-sm font-semibold text-center hover:border-white/30 transition-all"
+                >
+                  อ่านตอนล่าสุด
+                </Link>
+              )}
+              {session?.user && (
+                <BookmarkButton
+                  mangaId={manga.id}
+                  initialBookmarked={isBookmarked}
+                />
+              )}
+            </div>
+
+            {/* Stats */}
+            <div className="bg-[#141720] rounded-xl p-4 space-y-2.5 text-sm border border-white/5">
+              <div className="flex items-center gap-2 text-gray-400">
+                <Eye className="w-4 h-4 text-[#ff6b2b]" />
+                <span className="text-white">
+                  {manga.totalViews.toLocaleString()}
+                </span>
+                <span>ครั้ง</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-400">
+                <BookOpen className="w-4 h-4 text-[#ff6b2b]" />
+                <span className="text-white">{manga.chapters.length}</span>
+                <span>ตอน</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-400">
+                <Globe className="w-4 h-4 text-[#ff6b2b]" />
+                <span>{countryLabel[manga.originCountry]}</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-400">
+                <Calendar className="w-4 h-4 text-[#ff6b2b]" />
+                <span>
+                  {new Date(manga.createdAt).toLocaleDateString("th-TH")}
+                </span>
+              </div>
+              {manga.translator && (
+                <div className="flex items-center gap-2 text-gray-400">
+                  <User className="w-4 h-4 text-[#ff6b2b]" />
+                  <span>{manga.translator.penName}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Rating */}
+            <div className="bg-[#141720] rounded-xl p-4 border border-white/5">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-gray-400">คะแนน</span>
+                <span className="text-xl font-bold text-white">
+                  {avgRating.toFixed(1)}
+                </span>
+              </div>
+              <StarRating value={avgRating} readOnly />
+              <p className="text-xs text-gray-500 mt-1">
+                จาก {manga.ratings.length} คนให้คะแนน
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Right — Details + Chapters */}
+        <div className="lg:col-span-3 space-y-6">
+          {/* Header */}
+          <div>
+            <div className="flex flex-wrap gap-2 mb-2">
+              <span
+                className={`text-xs px-2 py-1 rounded-lg font-medium ${
+                  manga.status === "ONGOING"
+                    ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                    : manga.status === "COMPLETED"
+                    ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                    : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                }`}
+              >
+                {statusLabel[manga.status]}
+              </span>
+              <span className="text-xs px-2 py-1 rounded-lg bg-[#ff2d55]/20 text-[#ff2d55] border border-[#ff2d55]/30 font-medium">
+                {manga.type}
+              </span>
+            </div>
+
+            <h1 className="font-bebas text-4xl sm:text-5xl text-white tracking-wider leading-none mb-4">
+              {manga.title}
+            </h1>
+
+            {/* Genres */}
+            <div className="flex flex-wrap gap-1.5 mb-4">
+              {manga.genres.map(({ genre }) => (
+                <Link
+                  key={genre.id}
+                  href={`/manga/${genre.slug}`}
+                  className="flex items-center gap-1 text-xs px-3 py-1 rounded-full bg-[#1a1e2a] text-gray-400 border border-white/10 hover:border-[#ff2d55]/40 hover:text-white transition-all"
+                >
+                  <Tag className="w-3 h-3" />
+                  {genre.name}
+                </Link>
+              ))}
+            </div>
+
+            {/* Description */}
+            <div className="bg-[#141720] rounded-xl p-4 border border-white/5">
+              <h3 className="text-sm font-semibold text-gray-300 mb-2">
+                เรื่องย่อ
+              </h3>
+              <p className="text-sm text-gray-400 leading-relaxed whitespace-pre-line">
+                {manga.description}
+              </p>
+            </div>
+          </div>
+
+          {/* Chapter list */}
+          <div>
+            <h2 className="font-bebas text-2xl text-white tracking-wider mb-4 flex items-center gap-2">
+              <span className="w-1 h-6 bg-gradient-to-b from-[#ff2d55] to-[#ff6b2b] rounded-full" />
+              รายการตอน ({manga.chapters.length})
+            </h2>
+
+            <div className="space-y-1 max-h-[600px] overflow-y-auto pr-1">
+              {[...manga.chapters].reverse().map((ch) => (
+                <ChapterRow
+                  key={ch.id}
+                  id={ch.id}
+                  chapterNum={ch.chapterNum}
+                  title={ch.title}
+                  isPremium={ch.isPremium}
+                  coinCost={ch.coinCost}
+                  publishedAt={ch.publishedAt.toISOString()}
+                  viewCount={ch.viewCount}
+                  isUnlocked={unlockedSet.has(ch.id)}
+                  mangaSlug={slug}
+                  userCoins={userCoins}
+                  isLoggedIn={!!userId}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

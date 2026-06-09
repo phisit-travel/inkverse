@@ -1,0 +1,191 @@
+import { prisma } from "@/lib/prisma";
+import MangaCard from "@/components/ui/MangaCard";
+import DiscoverFilters from "@/components/ui/DiscoverFilters";
+import { Search } from "lucide-react";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "ค้นหามังงะ" };
+
+interface SearchParams {
+  q?: string;
+  genre?: string;
+  status?: string;
+  type?: string;
+  country?: string;
+  sort?: string;
+  page?: string;
+}
+
+export default async function DiscoverPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
+  const { q, genre, status, type, country, sort = "views", page = "1" } = params;
+  const pageNum = Number(page);
+  const take = 24;
+  const skip = (pageNum - 1) * take;
+
+  const genres = await prisma.genre.findMany({ orderBy: { name: "asc" } });
+
+  const where: Record<string, unknown> = {};
+  if (q) {
+    where.title = { contains: q };
+  }
+  if (status) where.status = status;
+  if (type) where.type = type;
+  if (country) where.originCountry = country;
+  if (genre) {
+    const g = await prisma.genre.findUnique({ where: { slug: genre } });
+    if (g) where.genres = { some: { genreId: g.id } };
+  }
+
+  const isRatingSort = sort === "rating";
+  const orderBy = isRatingSort
+    ? { totalViews: "desc" as const }
+    : sort === "latest"
+    ? { updatedAt: "desc" as const }
+    : sort === "bookmarks"
+    ? { bookmarks: { _count: "desc" as const } }
+    : { totalViews: "desc" as const };
+
+  const [fetched, total] = await Promise.all([
+    prisma.manga.findMany({
+      where,
+      orderBy,
+      take: isRatingSort ? undefined : take,
+      skip: isRatingSort ? undefined : skip,
+      include: {
+        genres: { include: { genre: true } },
+        chapters: { orderBy: { chapterNum: "desc" }, take: 1 },
+        ratings: { select: { score: true } },
+      },
+    }),
+    prisma.manga.count({ where }),
+  ]);
+
+  let mangas = fetched;
+  if (isRatingSort) {
+    mangas.sort((a, b) => {
+      const avgA = a.ratings.length > 0 ? a.ratings.reduce((s, r) => s + r.score, 0) / a.ratings.length : 0;
+      const avgB = b.ratings.length > 0 ? b.ratings.reduce((s, r) => s + r.score, 0) / b.ratings.length : 0;
+      return avgB - avgA;
+    });
+    mangas = mangas.slice(skip, skip + take);
+  }
+
+  const totalPages = Math.ceil(total / take);
+
+  function buildUrl(overrides: Partial<SearchParams>) {
+    const p = { q, genre, status, type, country, sort, page, ...overrides };
+    const qs = Object.entries(p)
+      .filter(([, v]) => v)
+      .map(([k, v]) => `${k}=${encodeURIComponent(v!)}`)
+      .join("&");
+    return `/discover?${qs}`;
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <h1 className="font-bebas text-4xl text-white tracking-wider mb-6 flex items-center gap-3">
+        <Search className="w-8 h-8 text-[#ff2d55]" />
+        ค้นหามังงะ
+      </h1>
+
+      {/* Search + Filter bar */}
+      <div className="bg-[#141720] rounded-2xl border border-white/5 p-4 mb-8 space-y-4">
+        <form className="flex gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <input
+              name="q"
+              defaultValue={q || ""}
+              placeholder="ค้นหาชื่อเรื่อง..."
+              className="w-full bg-[#1a1e2a] border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#ff2d55]/50"
+            />
+          </div>
+          <button
+            type="submit"
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white text-sm font-medium hover:opacity-90 transition-opacity"
+          >
+            ค้นหา
+          </button>
+        </form>
+
+        <DiscoverFilters
+          genres={genres}
+          current={{ q, genre, status, type, country, sort }}
+        />
+      </div>
+
+      {/* Results */}
+      <p className="text-sm text-gray-500 mb-4">
+        {q && (
+          <span>
+            ผลการค้นหา &quot;<span className="text-white">{q}</span>&quot; —{" "}
+          </span>
+        )}
+        พบ {total} เรื่อง
+      </p>
+
+      {mangas.length > 0 ? (
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {mangas.map((manga, i) => {
+              const avgRating =
+                manga.ratings.length > 0
+                  ? manga.ratings.reduce((a, b) => a + b.score, 0) /
+                    manga.ratings.length
+                  : 0;
+              return (
+                <div key={manga.id} className={`fade-in stagger-${Math.min(i + 1, 6) as 1|2|3|4|5|6}`}>
+                  <MangaCard
+                    slug={manga.slug}
+                    title={manga.title}
+                    coverUrl={manga.coverUrl}
+                    latestChapter={manga.chapters[0]?.chapterNum}
+                    rating={avgRating}
+                    views={manga.totalViews}
+                    status={manga.status}
+                    type={manga.type}
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex justify-center gap-2 mt-10">
+              {pageNum > 1 && (
+                <a
+                  href={buildUrl({ page: String(pageNum - 1) })}
+                  className="px-4 py-2 rounded-lg bg-[#1a1e2a] border border-white/10 text-sm text-gray-400 hover:text-white transition-colors"
+                >
+                  ← ก่อนหน้า
+                </a>
+              )}
+              <span className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white text-sm">
+                {pageNum} / {totalPages}
+              </span>
+              {pageNum < totalPages && (
+                <a
+                  href={buildUrl({ page: String(pageNum + 1) })}
+                  className="px-4 py-2 rounded-lg bg-[#1a1e2a] border border-white/10 text-sm text-gray-400 hover:text-white transition-colors"
+                >
+                  ถัดไป →
+                </a>
+              )}
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="text-center py-20">
+          <div className="text-6xl mb-4">🔍</div>
+          <p className="text-gray-500">ไม่พบผลลัพธ์ที่ตรงกัน</p>
+          <p className="text-sm text-gray-600 mt-1">ลองเปลี่ยนคำค้นหาหรือตัวกรอง</p>
+        </div>
+      )}
+    </div>
+  );
+}
