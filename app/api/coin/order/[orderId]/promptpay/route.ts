@@ -65,7 +65,6 @@ export async function POST(
       currency: "thb",
       source: source.id,
       description: `INKVERSE ${order.coins + order.bonus} coins`,
-      return_uri: `${process.env.NEXTAUTH_URL}/topup/success/${orderId}`,
       metadata: { orderId },
     });
 
