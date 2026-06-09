@@ -26,6 +26,7 @@ model User {
   unlockedChapters        UnlockedChapter[]
   translatorApplication   TranslatorApplication?
   coinOrders              CoinOrder[]
+  notifications           Notification[]
 }
 
 model CoinOrder {
@@ -296,4 +297,18 @@ model UnlockedChapter {
   chapter     Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
   @@id([userId, chapterId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  body      String
+  isRead    Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }

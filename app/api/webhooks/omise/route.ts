@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { createNotification } from "@/lib/notifications";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -38,6 +39,14 @@ export async function POST(req: NextRequest) {
               },
             }),
           ]);
+
+          await createNotification({
+            userId: order.userId,
+            type: "TOPUP_SUCCESS",
+            title: "เติมเหรียญสำเร็จ!",
+            body: `คุณได้รับ ${totalCoins} เหรียญ (฿${order.price.toFixed(0)}) เรียบร้อยแล้ว`,
+            link: "/topup",
+          });
         }
       }
     }
@@ -50,12 +59,21 @@ export async function POST(req: NextRequest) {
 
     const withdrawal = await prisma.withdrawalRequest.findFirst({
       where: { omiseTransferId: transfer.id, status: "PROCESSING" },
+      include: { translator: { select: { userId: true } } },
     });
 
     if (withdrawal) {
       await prisma.withdrawalRequest.update({
         where: { id: withdrawal.id },
         data: { status: "PAID", processedAt: new Date() },
+      });
+
+      await createNotification({
+        userId: withdrawal.translator.userId,
+        type: "WITHDRAWAL_PAID",
+        title: "โอนเงินเรียบร้อยแล้ว",
+        body: `ยอดเงิน ฿${withdrawal.amount.toFixed(2)} ถูกโอนเข้าบัญชีของคุณเรียบร้อยแล้ว`,
+        link: "/dashboard",
       });
     }
     return NextResponse.json({ ok: true });
@@ -67,16 +85,25 @@ export async function POST(req: NextRequest) {
 
     const withdrawal = await prisma.withdrawalRequest.findFirst({
       where: { omiseTransferId: transfer.id, status: "PROCESSING" },
+      include: { translator: { select: { userId: true } } },
     });
 
     if (withdrawal) {
+      const note = transfer.failure_code
+        ? `Transfer failed: ${transfer.failure_code}`
+        : "Transfer failed";
+
       await prisma.withdrawalRequest.update({
         where: { id: withdrawal.id },
-        data: {
-          status: "FAILED",
-          processedAt: new Date(),
-          adminNote: transfer.failure_code ? `Transfer failed: ${transfer.failure_code}` : "Transfer failed",
-        },
+        data: { status: "FAILED", processedAt: new Date(), adminNote: note },
+      });
+
+      await createNotification({
+        userId: withdrawal.translator.userId,
+        type: "WITHDRAWAL_REJECTED",
+        title: "การโอนเงินล้มเหลว",
+        body: `การโอนเงิน ฿${withdrawal.amount.toFixed(2)} ล้มเหลว กรุณาติดต่อผู้ดูแลระบบ`,
+        link: "/dashboard",
       });
     }
     return NextResponse.json({ ok: true });

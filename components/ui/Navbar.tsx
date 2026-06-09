@@ -3,9 +3,10 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, Bell, User, Menu, X, LogIn } from "lucide-react";
+import { Search, User, Menu, X, LogIn } from "lucide-react";
 import Logo from "./Logo";
 import CoinBadge from "./CoinBadge";
+import NotificationBell from "./NotificationBell";
 import clsx from "clsx";
 
 interface NavbarProps {
@@ -92,9 +93,7 @@ export default function Navbar({ user, userCoins = 0 }: NavbarProps) {
           {user ? (
             <>
               <CoinBadge initialCoins={userCoins} />
-              <button className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors relative">
-                <Bell className="w-5 h-5" />
-              </button>
+              <NotificationBell />
               <Link
                 href={`/profile/${user.name}`}
                 className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors"

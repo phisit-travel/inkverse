@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createNotification } from "@/lib/notifications";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -21,7 +22,6 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!application) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   if (action === "approve") {
-    // Atomic: update application + promote user + create Translator profile
     await prisma.$transaction([
       prisma.translatorApplication.update({
         where: { id },
@@ -37,14 +37,33 @@ export async function POST(req: NextRequest, { params }: Params) {
         update: { penName: application.penName },
       }),
     ]);
+
+    await createNotification({
+      userId: application.userId,
+      type: "APPLICATION_APPROVED",
+      title: "ยินดีด้วย! ใบสมัครนักแปลได้รับการอนุมัติ",
+      body: `ใบสมัครนักแปลของคุณในนาม "${application.penName}" ได้รับการอนุมัติแล้ว คุณสามารถเริ่มอัปโหลดผลงานได้ทันที`,
+      link: "/dashboard",
+    });
+
     return NextResponse.json({ success: true, action: "approved" });
   }
 
   if (action === "reject") {
+    const note = adminNote?.trim() || "ไม่ผ่านการพิจารณา";
     await prisma.translatorApplication.update({
       where: { id },
-      data: { status: "REJECTED", adminNote: adminNote?.trim() || "ไม่ผ่านการพิจารณา" },
+      data: { status: "REJECTED", adminNote: note },
     });
+
+    await createNotification({
+      userId: application.userId,
+      type: "APPLICATION_REJECTED",
+      title: "ใบสมัครนักแปลไม่ผ่านการพิจารณา",
+      body: note,
+      link: "/apply",
+    });
+
     return NextResponse.json({ success: true, action: "rejected" });
   }
 
