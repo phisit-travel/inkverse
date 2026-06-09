@@ -198,7 +198,10 @@ const coinPackages = [
   { name: "Starter", coins: 29,  price: 29,  bonus: 0,  isPopular: false },
   { name: "Value",   coins: 79,  price: 79,  bonus: 5,  isPopular: false },
   { name: "Popular", coins: 149, price: 149, bonus: 20, isPopular: true  },
-  { name: "Mega",    coins: 249, price: 249, bonus: 50, isPopular: false },
+  { name: "Mega",     coins: 249,  price: 249,  bonus: 50,  isPopular: false },
+  { name: "Gold",     coins: 499,  price: 499,  bonus: 100, isPopular: false },
+  { name: "Diamond",  coins: 999,  price: 999,  bonus: 250, isPopular: false },
+  { name: "Ultimate", coins: 1999, price: 1999, bonus: 600, isPopular: false },
 ];
 
 async function main() {
