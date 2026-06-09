@@ -38,7 +38,7 @@ export default async function AdminApplicationsPage({
 
   return (
     <ApplicationsClient
-      applications={applications.map((a) => ({
+      applications={applications.map((a: (typeof applications)[number]) => ({
         ...a,
         preferredGenres: JSON.parse(a.preferredGenres ?? "[]") as string[],
         createdAt: a.createdAt.toISOString(),
