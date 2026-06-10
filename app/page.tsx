@@ -7,6 +7,7 @@ import RankingPanel from "@/components/ui/RankingPanel";
 import GenreFilterBar from "@/components/ui/GenreFilterBar";
 import HeroBanner from "@/components/ui/HeroBanner";
 import ContinueReading from "@/components/ui/ContinueReading";
+import TranslatorRanking from "@/components/ui/TranslatorRanking";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
@@ -42,11 +43,40 @@ async function getData() {
       getRanking("ALL", 10),
     ]);
 
-  return { mangas, genres, latestChapters, weeklyRank, monthlyRank, allRank };
+  // Top translators ranked by total views across their works.
+  const agg = await prisma.manga.groupBy({
+    by: ["translatorId"],
+    where: { translatorId: { not: null }, contentRating: { not: "ADULT" } },
+    _sum: { totalViews: true },
+    _count: { _all: true },
+    orderBy: { _sum: { totalViews: "desc" } },
+    take: 6,
+  });
+  const tIds = agg.map((a) => a.translatorId).filter((x): x is string => !!x);
+  const translators = await prisma.translator.findMany({
+    where: { id: { in: tIds } },
+    select: { id: true, penName: true, user: { select: { username: true, avatarUrl: true } } },
+  });
+  const tMap = new Map(translators.map((t) => [t.id, t]));
+  const translatorRanking = agg
+    .map((a) => {
+      const t = a.translatorId ? tMap.get(a.translatorId) : null;
+      if (!t) return null;
+      return {
+        penName: t.penName,
+        username: t.user.username,
+        avatarUrl: t.user.avatarUrl,
+        views: a._sum.totalViews ?? 0,
+        works: a._count._all,
+      };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
+
+  return { mangas, genres, latestChapters, weeklyRank, monthlyRank, allRank, translatorRanking };
 }
 
 export default async function HomePage() {
-  const { mangas, genres, latestChapters, weeklyRank, monthlyRank, allRank } =
+  const { mangas, genres, latestChapters, weeklyRank, monthlyRank, allRank, translatorRanking } =
     await getData();
 
   const withRating = mangas.map((m) => ({
@@ -108,6 +138,9 @@ export default async function HomePage() {
           }))}
         />
       )}
+
+      {/* Translator ranking */}
+      <TranslatorRanking entries={translatorRanking} />
 
       {/* Main content grid */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
