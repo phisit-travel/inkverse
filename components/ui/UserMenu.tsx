@@ -9,6 +9,7 @@ import {
 
 interface MenuUser {
   name?: string | null;
+  username?: string | null;
   email?: string | null;
   image?: string | null;
   role?: string;
@@ -60,7 +61,7 @@ export default function UserMenu({ user }: { user: MenuUser }) {
             {user.email && <p className="text-xs text-[var(--text-secondary)] truncate">{user.email}</p>}
           </div>
 
-          <Link href={`/profile/${user.name}`} className={item}>
+          <Link href={`/profile/${user.username ?? user.name}`} className={item}>
             <User className="w-4 h-4" /> โปรไฟล์ของฉัน
           </Link>
           {isStaff && (

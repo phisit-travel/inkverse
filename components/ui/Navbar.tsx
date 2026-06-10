@@ -14,6 +14,7 @@ import clsx from "clsx";
 interface NavbarProps {
   user?: {
     name?: string | null;
+    username?: string | null;
     email?: string | null;
     image?: string | null;
     role?: string;
