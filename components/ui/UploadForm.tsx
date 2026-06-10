@@ -149,25 +149,58 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
       }
       const chapter = await createRes.json();
 
-      // Upload one page per request to stay under the serverless body limit
-      // (uploading all pages at once can exceed ~4.5MB and fail with 413).
-      for (let i = 0; i < pageFiles.length; i++) {
-        setUploadProgress(`กำลังอัปโหลดหน้า ${i + 1}/${pageFiles.length}...`);
-        const fd = new FormData();
-        fd.append("chapterId", chapter.id);
-        fd.append("startPage", String(i + 1));
-        fd.append("files", pageFiles[i]);
-        const uploadRes = await fetch("/api/upload/pages", { method: "POST", body: fd });
-        if (!uploadRes.ok) {
-          let msg = `อัปโหลดหน้า ${i + 1} ล้มเหลว`;
-          if (uploadRes.status === 413) {
-            msg = `หน้า ${i + 1} ไฟล์ใหญ่เกินไป — ลดขนาดรูปแล้วลองใหม่`;
-          } else {
-            try { const j = await uploadRes.json(); if (j.error) msg = j.error; } catch {}
-          }
-          setChapterError(`สร้างตอนแล้ว แต่${msg} (อัปสำเร็จ ${i} หน้า — เพิ่มหน้าที่เหลือได้ที่จัดการตอน)`);
+      // Direct-to-R2 upload via presigned URLs — page bytes never pass through
+      // the server, so there is no request-body size limit.
+      setUploadProgress("กำลังเตรียมอัปโหลด...");
+      const presignRes = await fetch("/api/upload/presign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chapterId: chapter.id,
+          files: pageFiles.map((f, i) => ({ pageNum: i + 1, contentType: f.type || "image/jpeg" })),
+        }),
+      });
+      if (!presignRes.ok) {
+        setChapterError("สร้างตอนแล้ว แต่เตรียมอัปโหลดไม่สำเร็จ");
+        return;
+      }
+      const { uploads } = (await presignRes.json()) as {
+        uploads: { pageNum: number; key: string; contentType: string; uploadUrl: string }[];
+      };
+
+      const registered: { pageNum: number; key: string; width: number; height: number }[] = [];
+      for (let i = 0; i < uploads.length; i++) {
+        const u = uploads[i];
+        const file = pageFiles[i];
+        setUploadProgress(`กำลังอัปโหลดหน้า ${i + 1}/${uploads.length}...`);
+
+        let width = 0, height = 0;
+        try {
+          const bmp = await createImageBitmap(file);
+          width = bmp.width; height = bmp.height; bmp.close();
+        } catch {}
+
+        const putRes = await fetch(u.uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": u.contentType },
+          body: file,
+        });
+        if (!putRes.ok) {
+          setChapterError(`สร้างตอนแล้ว แต่อัปโหลดหน้า ${i + 1} ล้มเหลว (อัปสำเร็จ ${i} หน้า — เพิ่มที่เหลือได้ที่จัดการตอน)`);
           return;
         }
+        registered.push({ pageNum: u.pageNum, key: u.key, width, height });
+      }
+
+      setUploadProgress("กำลังบันทึก...");
+      const regRes = await fetch("/api/upload/pages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chapterId: chapter.id, pages: registered }),
+      });
+      if (!regRes.ok) {
+        setChapterError("อัปโหลดรูปสำเร็จ แต่บันทึกหน้าไม่สำเร็จ");
+        return;
       }
 
       setChapterSuccess({ mangaSlug: selectedSlug, chapterNum: parseFloat(chapterNum) });

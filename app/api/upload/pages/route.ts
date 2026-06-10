@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import sharp from "sharp";
 
 const MAX_SIZE = 10 * 1024 * 1024; // 10 MB per page
+const PUBLIC_URL = process.env.CLOUDFLARE_R2_PUBLIC_URL!;
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -15,6 +16,47 @@ export async function POST(req: NextRequest) {
   const role = (session.user as { role?: string }).role;
   if (role !== "TRANSLATOR" && role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const userId = (session.user as { id: string }).id;
+
+  // JSON mode: register pages that the browser uploaded directly to R2 via
+  // presigned URLs (no image bytes pass through this function).
+  if ((req.headers.get("content-type") || "").includes("application/json")) {
+    const body = await req.json().catch(() => ({}));
+    const chapterId: string = body.chapterId;
+    const pages: { pageNum: number; key: string; width?: number; height?: number }[] =
+      Array.isArray(body.pages) ? body.pages : [];
+    if (!chapterId || pages.length === 0) {
+      return NextResponse.json({ error: "chapterId and pages required" }, { status: 400 });
+    }
+    const chapter = await prisma.chapter.findUnique({
+      where: { id: chapterId },
+      include: { manga: { select: { translatorId: true } } },
+    });
+    if (!chapter) return NextResponse.json({ error: "Chapter not found" }, { status: 404 });
+    if (role !== "ADMIN") {
+      const t = await prisma.translator.findUnique({ where: { userId } });
+      if (!t || chapter.manga.translatorId !== t.id) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    }
+
+    const results: { pageNum: number; imageUrl: string }[] = [];
+    const prefix = `pages/${chapterId}/`;
+    for (const p of pages) {
+      const pageNum = Number(p.pageNum);
+      if (!p.key || !p.key.startsWith(prefix) || !Number.isFinite(pageNum)) continue;
+      const imageUrl = `${PUBLIC_URL}/${p.key}`;
+      const width = Number.isFinite(p.width) ? Number(p.width) : null;
+      const height = Number.isFinite(p.height) ? Number(p.height) : null;
+      await prisma.page.upsert({
+        where: { chapterId_pageNum: { chapterId, pageNum } },
+        create: { chapterId, pageNum, imageUrl, width, height },
+        update: { imageUrl, width, height },
+      });
+      results.push({ pageNum, imageUrl });
+    }
+    return NextResponse.json({ pages: results, count: results.length });
   }
 
   const formData = await req.formData();
