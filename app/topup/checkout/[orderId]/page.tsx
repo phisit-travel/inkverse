@@ -43,8 +43,8 @@ export default async function CheckoutPage({
       isSandbox={!process.env.OMISE_SECRET_KEY}
       omisePublicKey={process.env.NEXT_PUBLIC_OMISE_PUBLIC_KEY}
       omiseLive={process.env.OMISE_SECRET_KEY?.startsWith("skey_live_") ?? false}
-      promptpayQrImage={process.env.PROMPTPAY_QR_IMAGE}
-      promptpayName={process.env.PROMPTPAY_ACCOUNT_NAME}
+      promptpayQrImage={process.env.PROMPTPAY_QR_IMAGE || "/promptpay-qr.jpg"}
+      promptpayName={process.env.PROMPTPAY_ACCOUNT_NAME || "นาย พิสิฐ ตันติรานนท์"}
     />
   );
 }
