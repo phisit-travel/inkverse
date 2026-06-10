@@ -59,3 +59,16 @@ export async function PATCH(
   const updated = await prisma.chapter.update({ where: { id }, data });
   return NextResponse.json(updated);
 }
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const chapter = await getOwnership(id);
+  if (!chapter) return NextResponse.json({ error: "Not found or forbidden" }, { status: 404 });
+
+  // Cascades to pages, unlocked records, read history and comments.
+  await prisma.chapter.delete({ where: { id } });
+  return NextResponse.json({ ok: true });
+}

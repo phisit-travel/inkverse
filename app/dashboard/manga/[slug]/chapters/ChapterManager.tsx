@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Lock, Unlock, Coins, ArrowUpDown, Check, X, Loader2,
-  ChevronRight, GripVertical, Edit3,
+  ChevronRight, GripVertical, Edit3, Trash2,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -23,9 +23,11 @@ interface Chapter {
 function ChapterRow({
   chapter,
   onUpdated,
+  onDeleted,
 }: {
   chapter: Chapter;
   onUpdated: (updated: Chapter) => void;
+  onDeleted: (id: string) => void;
 }) {
   const [editingPrice, setEditingPrice] = useState(false);
   const [priceInput, setPriceInput] = useState(String(chapter.coinCost || 2));
@@ -68,6 +70,18 @@ function ChapterRow({
   async function saveTitle() {
     await patchChapter({ title: titleInput.trim() || undefined });
     setEditingTitle(false);
+  }
+
+  async function deleteChapter() {
+    if (!confirm(`ลบตอนที่ ${chapter.chapterNum}${chapter.title ? ` "${chapter.title}"` : ""}?\n\nหน้าทั้งหมด ${chapter.pageCount} หน้าจะถูกลบถาวร และย้อนกลับไม่ได้`)) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/chapters/${chapter.id}`, { method: "DELETE" });
+      if (res.ok) onDeleted(chapter.id);
+      else alert("ลบไม่สำเร็จ กรุณาลองใหม่");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -188,6 +202,16 @@ function ChapterRow({
           <ArrowUpDown className="w-3.5 h-3.5" />
           หน้า
         </Link>
+
+        {/* Delete chapter */}
+        <button
+          onClick={deleteChapter}
+          disabled={loading}
+          title="ลบตอนนี้"
+          className="flex items-center justify-center w-8 h-8 rounded-xl text-[var(--text-secondary)] bg-white/5 border border-[var(--border)] hover:bg-red-500/15 hover:border-red-500/30 hover:text-red-400 transition-all"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
       </div>
     </div>
   );
@@ -237,6 +261,9 @@ export default function ChapterManager({
               chapter={ch}
               onUpdated={(updated) =>
                 setChapters((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))
+              }
+              onDeleted={(id) =>
+                setChapters((prev) => prev.filter((c) => c.id !== id))
               }
             />
           ))}
