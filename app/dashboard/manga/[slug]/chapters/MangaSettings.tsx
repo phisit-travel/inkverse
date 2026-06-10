@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Settings, Check, Loader2, Trash2, AlertTriangle, ChevronDown } from "lucide-react";
+import { Settings, Check, Loader2, Trash2, AlertTriangle, ChevronDown, Upload, ImageIcon } from "lucide-react";
 import clsx from "clsx";
 
 interface MangaData {
@@ -11,6 +11,7 @@ interface MangaData {
   status: string;
   type: string;
   contentRating: string;
+  coverUrl: string | null;
 }
 
 const STATUS = [
@@ -40,8 +41,36 @@ export default function MangaSettings({ slug, manga }: { slug: string; manga: Ma
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [cover, setCover] = useState(manga.coverUrl);
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   const set = (k: keyof MangaData, v: string) => { setForm((f) => ({ ...f, [k]: v })); setSaved(false); };
+
+  async function onCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploadingCover(true); setError("");
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("slug", slug);
+      const up = await fetch("/api/upload/cover", { method: "POST", body: fd });
+      const d = await up.json().catch(() => ({}));
+      if (!up.ok || !d.url) { setError(d.error || "อัปโหลดปกไม่สำเร็จ"); return; }
+      // Cache-bust so the new cover shows everywhere immediately (same key overwrites).
+      const url = `${d.url}?v=${Date.now()}`;
+      const patch = await fetch(`/api/manga/${slug}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ coverUrl: url }),
+      });
+      if (!patch.ok) { setError("บันทึกปกไม่สำเร็จ"); return; }
+      setCover(url);
+      router.refresh();
+    } catch { setError("เกิดข้อผิดพลาด"); }
+    finally { setUploadingCover(false); }
+  }
 
   async function save() {
     setSaving(true); setError(""); setSaved(false);
@@ -83,6 +112,26 @@ export default function MangaSettings({ slug, manga }: { slug: string; manga: Ma
 
       {open && (
         <div className="px-4 pb-4 space-y-3 border-t border-[var(--border)] pt-4">
+          {/* Cover */}
+          <div>
+            <label className="block text-xs text-[var(--text-secondary)] mb-1">ปก</label>
+            <div className="flex items-center gap-3">
+              <div className="w-16 h-[5.5rem] shrink-0 overflow-hidden border border-[var(--border)] bg-[var(--bg-card)] flex items-center justify-center">
+                {cover ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={cover} alt="ปก" className="w-full h-full object-cover" />
+                ) : (
+                  <ImageIcon className="w-6 h-6 text-[var(--text-muted)]" />
+                )}
+              </div>
+              <label className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bal-btn text-sm font-semibold cursor-pointer hover:opacity-90">
+                {uploadingCover ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                {cover ? "เปลี่ยนปก" : "อัปโหลดปก"}
+                <input type="file" accept="image/*" className="hidden" onChange={onCoverChange} disabled={uploadingCover} />
+              </label>
+            </div>
+          </div>
+
           <div>
             <label className="block text-xs text-[var(--text-secondary)] mb-1">ชื่อเรื่อง</label>
             <input value={form.title} onChange={(e) => set("title", e.target.value)} className={sel} />

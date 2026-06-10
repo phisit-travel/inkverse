@@ -91,6 +91,7 @@ export default async function MangaChaptersPage({ params }: Props) {
           status: manga.status,
           type: manga.type,
           contentRating: manga.contentRating,
+          coverUrl: manga.coverUrl ?? null,
         }}
       />
 
