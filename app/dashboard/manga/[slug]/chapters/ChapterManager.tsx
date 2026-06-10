@@ -33,9 +33,12 @@ function ChapterRow({
   const [priceInput, setPriceInput] = useState(String(chapter.coinCost || 2));
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(chapter.title ?? "");
+  const [editingNum, setEditingNum] = useState(false);
+  const [numInput, setNumInput] = useState(String(chapter.chapterNum));
+  const [numError, setNumError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function patchChapter(data: Partial<Chapter>) {
+  async function patchChapter(data: Partial<Chapter>): Promise<{ ok: boolean; error?: string }> {
     setLoading(true);
     try {
       const res = await fetch(`/api/chapters/${chapter.id}`, {
@@ -46,10 +49,22 @@ function ChapterRow({
       if (res.ok) {
         const updated = await res.json() as Chapter;
         onUpdated({ ...chapter, ...updated });
+        return { ok: true };
       }
+      const d = await res.json().catch(() => ({} as { error?: string }));
+      return { ok: false, error: d.error || "บันทึกไม่สำเร็จ" };
     } finally {
       setLoading(false);
     }
+  }
+
+  async function saveNum() {
+    const n = parseFloat(numInput);
+    if (!Number.isFinite(n) || n < 0) { setNumError("เลขไม่ถูกต้อง"); return; }
+    if (n === chapter.chapterNum) { setEditingNum(false); setNumError(""); return; }
+    const r = await patchChapter({ chapterNum: n });
+    if (r.ok) { setEditingNum(false); setNumError(""); }
+    else setNumError(r.error || "หมายเลขซ้ำ");
   }
 
   async function toggleLock() {
@@ -94,10 +109,37 @@ function ChapterRow({
       {/* Drag handle hint */}
       <GripVertical className="w-4 h-4 text-gray-700 shrink-0" />
 
-      {/* Chapter num */}
-      <span className="text-sm font-mono text-[var(--text-secondary)] w-8 shrink-0">
-        {chapter.chapterNum}
-      </span>
+      {/* Chapter num (editable) */}
+      {editingNum ? (
+        <div className="flex items-center gap-1 shrink-0">
+          <input
+            autoFocus
+            type="number"
+            min={0}
+            step={0.1}
+            value={numInput}
+            onChange={(e) => { setNumInput(e.target.value); setNumError(""); }}
+            onKeyDown={(e) => { if (e.key === "Enter") saveNum(); if (e.key === "Escape") { setEditingNum(false); setNumError(""); } }}
+            className="w-16 bg-[var(--bg-surface)] border border-white/20 rounded-lg px-2 py-1 text-sm text-[var(--text-primary)] text-center font-mono focus:outline-none focus:border-[var(--text-primary)]/50"
+            title={numError || "หมายเลขตอน"}
+          />
+          <button onClick={saveNum} disabled={loading} className="p-1 text-[var(--text-primary)]">
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+          </button>
+          <button onClick={() => { setEditingNum(false); setNumError(""); setNumInput(String(chapter.chapterNum)); }} className="p-1 text-[var(--text-secondary)]">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => setEditingNum(true)}
+          title="แก้หมายเลขตอน"
+          className="group/num flex items-center gap-0.5 w-10 shrink-0 text-left"
+        >
+          <span className="text-sm font-mono text-[var(--text-secondary)]">{chapter.chapterNum}</span>
+          <Edit3 className="w-2.5 h-2.5 text-[var(--text-muted)] opacity-0 group-hover/num:opacity-100 transition-opacity" />
+        </button>
+      )}
 
       {/* Title */}
       <div className="flex-1 min-w-0">
@@ -271,7 +313,7 @@ export default function ChapterManager({
       )}
 
       <p className="text-xs text-[var(--text-muted)] text-center">
-        คลิก "ล็อค/ฟรี" เพื่อสลับสถานะ · คลิกราคาเพื่อแก้ไข · "หน้า" เพื่อจัดเรียงหน้า
+        คลิกเลขตอนเพื่อแก้หมายเลข · คลิก "ล็อค/ฟรี" เพื่อสลับสถานะ · คลิกราคาเพื่อแก้ไข · "หน้า" เพื่อจัดเรียงหน้า
       </p>
     </div>
   );

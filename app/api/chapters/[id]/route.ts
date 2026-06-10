@@ -44,6 +44,7 @@ export async function PATCH(
     title?: string;
     isPremium?: boolean;
     coinCost?: number;
+    chapterNum?: number;
   };
 
   const data: Record<string, unknown> = {};
@@ -55,9 +56,20 @@ export async function PATCH(
   if (typeof body.coinCost === "number" && body.isPremium !== false) {
     data.coinCost = Math.max(1, body.coinCost);
   }
+  if (typeof body.chapterNum === "number" && Number.isFinite(body.chapterNum) && body.chapterNum >= 0) {
+    data.chapterNum = body.chapterNum;
+  }
 
-  const updated = await prisma.chapter.update({ where: { id }, data });
-  return NextResponse.json(updated);
+  try {
+    const updated = await prisma.chapter.update({ where: { id }, data });
+    return NextResponse.json(updated);
+  } catch (e: unknown) {
+    // Unique (mangaId, chapterNum) violation → another chapter already has this number.
+    if (typeof e === "object" && e !== null && "code" in e && (e as { code?: string }).code === "P2002") {
+      return NextResponse.json({ error: "มีตอนหมายเลขนี้อยู่แล้ว" }, { status: 409 });
+    }
+    return NextResponse.json({ error: "บันทึกไม่สำเร็จ" }, { status: 500 });
+  }
 }
 
 export async function DELETE(
