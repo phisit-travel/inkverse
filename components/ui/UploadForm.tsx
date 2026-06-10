@@ -244,6 +244,13 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
       setPageFiles([]);
       setPagePreviews([]);
       setMangasFetched(false);
+    } catch (err) {
+      // Network/CORS errors on the direct-to-R2 PUT reject (throw) rather than
+      // returning !ok — surface them instead of failing silently.
+      setChapterError(
+        `อัปโหลดล้มเหลว: ${err instanceof Error ? err.message : "เกิดข้อผิดพลาด"} — ` +
+        "ตอนถูกสร้างแล้วแต่หน้ายังไม่ครบ ลองอัปใหม่ที่หน้า 'จัดการตอน'"
+      );
     } finally {
       setChapterLoading(false);
       setUploadProgress("");
