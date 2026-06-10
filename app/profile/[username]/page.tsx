@@ -33,7 +33,7 @@ const ROLES = {
   ADMIN: {
     label: "ผู้ดูแลระบบ",
     icon: Shield,
-    chip: "bg-gradient-to-r from-[var(--accent)] to-[#b91c47] text-white",
+    chip: "bal-btn",
     ring: "ring-[var(--text-primary)]",
   },
 } as const;
