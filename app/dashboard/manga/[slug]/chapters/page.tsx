@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { ArrowLeft, BookOpen } from "lucide-react";
 import ChapterManager from "./ChapterManager";
+import MangaSettings from "./MangaSettings";
 import type { Metadata } from "next";
 
 interface Props {
@@ -73,6 +74,17 @@ export default async function MangaChaptersPage({ params }: Props) {
           </div>
         </div>
       </div>
+
+      <MangaSettings
+        slug={slug}
+        manga={{
+          title: manga.title,
+          description: manga.description,
+          status: manga.status,
+          type: manga.type,
+          contentRating: manga.contentRating,
+        }}
+      />
 
       <ChapterManager
         mangaTitle={manga.title}
