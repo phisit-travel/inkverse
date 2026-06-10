@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import { auth } from "@/lib/auth";
 import { getUserCoins } from "@/lib/coins";
 import { WebsiteJsonLd } from "@/components/seo/JsonLd";
+import HelpChatbot from "@/components/ui/HelpChatbot";
 
 const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inkverse.com";
 
@@ -90,6 +91,7 @@ export default async function RootLayout({
         <Navbar user={session?.user} userCoins={userCoins} />
         <main className="flex-1">{children}</main>
         <Footer />
+        <HelpChatbot />
       </body>
     </html>
   );

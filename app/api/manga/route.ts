@@ -38,8 +38,12 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // The "mine" list feeds the chapter-upload dropdown, so it must show ALL of
+  // the user's titles with the newest first (not a views-ranked, paginated page).
   const orderBy =
-    sort === "latest"
+    mine === "1"
+      ? { createdAt: "desc" as const }
+      : sort === "latest"
       ? { updatedAt: "desc" as const }
       : sort === "bookmarks"
       ? { bookmarks: { _count: "desc" as const } }
@@ -49,8 +53,8 @@ export async function GET(req: NextRequest) {
     prisma.manga.findMany({
       where,
       orderBy,
-      take,
-      skip,
+      take: mine === "1" ? 1000 : take,
+      skip: mine === "1" ? 0 : skip,
       include: {
         genres: { include: { genre: { select: { name: true, slug: true } } } },
         chapters: { orderBy: { chapterNum: "desc" }, take: 1 },
