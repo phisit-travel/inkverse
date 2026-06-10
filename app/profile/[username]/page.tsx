@@ -45,6 +45,17 @@ export default async function ProfilePage({ params }: Props) {
       },
       ratings: true,
       _count: { select: { bookmarks: true, comments: true } },
+      translator: {
+        include: {
+          mangas: {
+            orderBy: { updatedAt: "desc" },
+            include: {
+              chapters: { orderBy: { chapterNum: "desc" }, take: 1 },
+              ratings: { select: { score: true } },
+            },
+          },
+        },
+      },
     },
   });
 
@@ -80,11 +91,15 @@ export default async function ProfilePage({ params }: Props) {
           </div>
           <div className="pb-2">
             <h1 className="font-bebas text-3xl text-[var(--text-primary)] tracking-wider">
-              {user.username}
+              {user.translator?.penName || user.username}
             </h1>
             <p className={`text-sm font-medium ${roleInfo.color}`}>
               {roleInfo.label}
+              {user.translator && <span className="text-[var(--text-secondary)]"> · @{user.username}</span>}
             </p>
+            {user.translator?.bio && (
+              <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">{user.translator.bio}</p>
+            )}
           </div>
         </div>
       </div>
@@ -122,6 +137,36 @@ export default async function ProfilePage({ params }: Props) {
           </div>
         ))}
       </div>
+
+      {/* Uploaded works — translator channel */}
+      {user.translator && user.translator.mangas.length > 0 && (
+        <section className="mb-10">
+          <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-wider mb-4 flex items-center gap-2">
+            <span className="w-1 h-6 bg-gradient-to-b from-[#ff2d55] to-[#ff6b2b] rounded-full" />
+            ผลงานที่ลง ({user.translator.mangas.length})
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {user.translator.mangas.map((manga) => {
+              const avgRating =
+                manga.ratings.length > 0
+                  ? manga.ratings.reduce((a, b) => a + b.score, 0) / manga.ratings.length
+                  : 0;
+              return (
+                <MangaCard
+                  key={manga.id}
+                  slug={manga.slug}
+                  title={manga.title}
+                  coverUrl={manga.coverUrl}
+                  latestChapter={manga.chapters[0]?.chapterNum}
+                  rating={avgRating}
+                  status={manga.status}
+                  type={manga.type}
+                />
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Bookmarks */}
       {user.bookmarks.length > 0 && (
