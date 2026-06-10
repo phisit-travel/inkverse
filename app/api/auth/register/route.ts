@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 const schema = z.object({
   username: z
@@ -14,7 +15,14 @@ const schema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  const rl = rateLimit(`register:${clientIp(req)}`, 5, 10 * 60_000);
+  if (!rl.ok)
+    return NextResponse.json(
+      { error: "พยายามสมัครบ่อยเกินไป กรุณาลองใหม่ภายหลัง" },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
+    );
+
+  const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);
 
   if (!parsed.success) {

@@ -46,3 +46,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 test-*.mjs
+
+# local test artifacts / screenshots / logs (root-level only)
+/*.png
+/*.jpg
+/*.jpeg
+*.log

@@ -2,60 +2,108 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 
+// Omise does not sign webhooks, so the POST body cannot be trusted: anyone who
+// knows this URL could forge a `charge.complete` event and mint coins. We treat
+// the body only as a *hint* (which object id changed) and re-fetch the real
+// object from the Omise API with our secret key before acting on it.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const omise = process.env.OMISE_SECRET_KEY
+  ? require("omise")({ secretKey: process.env.OMISE_SECRET_KEY, omiseVersion: "2019-05-29" })
+  : null;
+
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ ok: false }, { status: 400 });
 
+  // Without a secret key we cannot verify anything → never mutate state.
+  if (!omise) return NextResponse.json({ ok: true });
+
+  const key = body.key as string | undefined;
+  const objectId = body.data?.id as string | undefined;
+  if (!objectId) return NextResponse.json({ ok: true });
+
   // ── charge.complete → coin top-up ────────────────────────────────────────
-  if (body.key === "charge.complete") {
-    const charge = body.data as {
+  if (key === "charge.complete") {
+    let charge: {
       id: string;
       status: string;
+      paid?: boolean;
+      amount: number;
+      currency: string;
       metadata?: { orderId?: string };
     };
+    try {
+      charge = await omise.charges.retrieve(objectId);
+    } catch {
+      // Transient Omise error → let Omise retry the webhook.
+      return NextResponse.json({ ok: false }, { status: 502 });
+    }
 
-    if (charge.status === "successful") {
-      const orderId = charge.metadata?.orderId;
-      if (orderId) {
-        const order = await prisma.coinOrder.findUnique({ where: { id: orderId } });
-        if (order && order.status === "PENDING") {
-          const totalCoins = order.coins + order.bonus;
-          await prisma.$transaction([
-            prisma.coinOrder.update({
-              where: { id: orderId },
-              data: { status: "PAID", paidAt: new Date(), omiseChargeId: charge.id },
-            }),
-            prisma.user.update({
-              where: { id: order.userId },
-              data: { coins: { increment: totalCoins } },
-            }),
-            prisma.coinTransaction.create({
-              data: {
-                userId: order.userId,
-                amount: totalCoins,
-                type: "TOPUP",
-                description: `เติมเหรียญ ${totalCoins} เหรียญ (฿${order.price.toFixed(0)})`,
-                refId: orderId,
-              },
-            }),
-          ]);
+    // Authoritative checks against the real charge, not the request body.
+    if (charge.status !== "successful" || charge.paid === false)
+      return NextResponse.json({ ok: true });
 
-          await createNotification({
-            userId: order.userId,
-            type: "TOPUP_SUCCESS",
-            title: "เติมเหรียญสำเร็จ!",
-            body: `คุณได้รับ ${totalCoins} เหรียญ (฿${order.price.toFixed(0)}) เรียบร้อยแล้ว`,
-            link: "/topup",
-          });
-        }
-      }
+    const orderId = charge.metadata?.orderId;
+    if (!orderId) return NextResponse.json({ ok: true });
+
+    const order = await prisma.coinOrder.findUnique({ where: { id: orderId } });
+    if (!order) return NextResponse.json({ ok: true });
+
+    // The charge must actually pay for THIS order's amount/currency.
+    if (
+      charge.currency?.toLowerCase() !== "thb" ||
+      charge.amount !== Math.round(order.price * 100)
+    )
+      return NextResponse.json({ ok: true });
+
+    const totalCoins = order.coins + order.bonus;
+    let credited = false;
+    await prisma.$transaction(async (tx) => {
+      // Idempotent: only the first PENDING → PAID flip credits coins.
+      const flipped = await tx.coinOrder.updateMany({
+        where: { id: orderId, status: "PENDING" },
+        data: { status: "PAID", paidAt: new Date(), omiseChargeId: charge.id },
+      });
+      if (flipped.count === 0) return;
+      credited = true;
+
+      await tx.user.update({
+        where: { id: order.userId },
+        data: { coins: { increment: totalCoins } },
+      });
+      await tx.coinTransaction.create({
+        data: {
+          userId: order.userId,
+          amount: totalCoins,
+          type: "TOPUP",
+          description: `เติมเหรียญ ${totalCoins} เหรียญ (฿${order.price.toFixed(0)})`,
+          refId: orderId,
+        },
+      });
+    });
+
+    // Notify only on the delivery that actually credited (not on retries).
+    if (credited) {
+      await createNotification({
+        userId: order.userId,
+        type: "TOPUP_SUCCESS",
+        title: "เติมเหรียญสำเร็จ!",
+        body: `คุณได้รับ ${totalCoins} เหรียญ (฿${order.price.toFixed(0)}) เรียบร้อยแล้ว`,
+        link: "/topup",
+      });
     }
     return NextResponse.json({ ok: true });
   }
 
   // ── transfer.complete / transfer.paid → withdrawal paid ──────────────────
-  if (body.key === "transfer.complete" || body.key === "transfer.paid") {
-    const transfer = body.data as { id: string; paid: boolean; failure_code?: string };
+  if (key === "transfer.complete" || key === "transfer.paid") {
+    let transfer: { id: string; paid?: boolean; sent?: boolean };
+    try {
+      transfer = await omise.transfers.retrieve(objectId);
+    } catch {
+      return NextResponse.json({ ok: false }, { status: 502 });
+    }
+    if (!transfer.paid) return NextResponse.json({ ok: true });
 
     const withdrawal = await prisma.withdrawalRequest.findFirst({
       where: { omiseTransferId: transfer.id, status: "PROCESSING" },
@@ -80,8 +128,16 @@ export async function POST(req: NextRequest) {
   }
 
   // ── transfer.destroy → withdrawal failed ─────────────────────────────────
-  if (body.key === "transfer.destroy") {
-    const transfer = body.data as { id: string; failure_code?: string };
+  if (key === "transfer.destroy") {
+    let transfer: { id: string; paid?: boolean; failure_code?: string };
+    try {
+      transfer = await omise.transfers.retrieve(objectId);
+    } catch {
+      // A destroyed transfer may no longer be retrievable; trust the event id
+      // only to look up our own record, and never mark a PAID one as failed.
+      transfer = { id: objectId };
+    }
+    if (transfer.paid) return NextResponse.json({ ok: true });
 
     const withdrawal = await prisma.withdrawalRequest.findFirst({
       where: { omiseTransferId: transfer.id, status: "PROCESSING" },

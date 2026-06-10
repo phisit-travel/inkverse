@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
+import { rateLimit } from "@/lib/rate-limit";
 
 const commentSchema = z.object({
   chapterId: z.string().min(1),
@@ -42,7 +43,14 @@ export async function POST(req: NextRequest) {
   }
   const userId = (session.user as { id: string }).id;
 
-  const body = await req.json();
+  const rl = rateLimit(`comment:${userId}`, 10, 60_000);
+  if (!rl.ok)
+    return NextResponse.json(
+      { error: "คอมเมนต์บ่อยเกินไป กรุณารอสักครู่" },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
+    );
+
+  const body = await req.json().catch(() => null);
   const parsed = commentSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });

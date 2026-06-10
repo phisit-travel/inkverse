@@ -40,6 +40,8 @@ model CoinOrder {
   method         String?   // CARD | PROMPTPAY
   paidAt         DateTime?
   omiseChargeId  String?
+  slipUrl        String?   // PromptPay payment slip (R2 URL)
+  slipRef        String?   @unique // EasySlip transRef — prevents reusing a slip
   createdAt      DateTime  @default(now())
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

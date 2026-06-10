@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Coins, CreditCard, Smartphone, ShieldCheck, ArrowLeft,
-  AlertCircle, Lock, Loader2, RefreshCw, Wallet,
+  AlertCircle, Lock, Loader2, Wallet, Upload, CheckCircle2,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -67,16 +67,29 @@ export default function CheckoutClient({
   userCoins,
   isSandbox,
   omisePublicKey,
+  omiseLive,
+  promptpayQrImage,
+  promptpayName,
 }: {
   order: Order;
   userCoins: number;
   isSandbox: boolean;
   omisePublicKey?: string;
+  omiseLive?: boolean;
+  promptpayQrImage?: string;
+  promptpayName?: string;
 }) {
   const router = useRouter();
   const total = order.coins + order.bonus;
 
-  const [method, setMethod] = useState<Method>("CARD");
+  // Only show a channel that can actually take real money:
+  //  • PromptPay → needs a configured QR image
+  //  • Card / Mobile Banking / TrueMoney / ShopeePay → need Omise LIVE keys
+  const availableTabs = TABS.filter((t) =>
+    t.id === "PROMPTPAY" ? !!promptpayQrImage : !!omiseLive
+  );
+
+  const [method, setMethod] = useState<Method>(availableTabs[0]?.id ?? "PROMPTPAY");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -86,16 +99,15 @@ export default function CheckoutClient({
   const [cvv, setCvv] = useState("");
   const [name, setName] = useState("");
 
-  // PromptPay
-  const [qrUrl, setQrUrl] = useState<string | null>(null);
-  const [qrLoading, setQrLoading] = useState(false);
-  const [polling, setPolling] = useState(false);
+  // PromptPay slip
+  const [slipFile, setSlipFile] = useState<File | null>(null);
+  const [slipPreview, setSlipPreview] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
 
   // Mobile banking bank selection
   const [selectedBank, setSelectedBank] = useState<string>("");
 
   const [omiseReady, setOmiseReady] = useState(false);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (!omisePublicKey) return;
@@ -108,36 +120,34 @@ export default function CheckoutClient({
   }, [omisePublicKey]);
 
   useEffect(() => {
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, []);
+    return () => { if (slipPreview) URL.revokeObjectURL(slipPreview); };
+  }, [slipPreview]);
 
-  function startPolling() {
-    setPolling(true);
-    pollRef.current = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/coin/order/${order.id}/status`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.status === "PAID") {
-            clearInterval(pollRef.current!);
-            router.push(`/topup/success/${order.id}`);
-          }
-        }
-      } catch { /* ignore */ }
-    }, 3000);
+  function onSlipChange(file: File | null) {
+    setError("");
+    if (slipPreview) URL.revokeObjectURL(slipPreview);
+    setSlipFile(file);
+    setSlipPreview(file ? URL.createObjectURL(file) : null);
   }
 
-  async function loadPromptPayQR() {
-    setQrLoading(true);
+  async function verifySlip() {
+    if (!slipFile) { setError("กรุณาแนบรูปสลิปการโอนเงิน"); return; }
+    setVerifying(true);
     setError("");
     try {
-      const res = await fetch(`/api/coin/order/${order.id}/promptpay`, { method: "POST" });
+      const fd = new FormData();
+      fd.append("file", slipFile);
+      const res = await fetch(`/api/coin/order/${order.id}/verify-slip`, {
+        method: "POST",
+        body: fd,
+      });
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "ไม่สามารถสร้าง QR ได้"); return; }
-      setQrUrl(data.qrProxyUrl ?? null);
-      if (!data.sandbox) startPolling();
+      if (!res.ok) { setError(data.error ?? "ตรวจสอบสลิปไม่สำเร็จ"); return; }
+      router.push(`/topup/success/${order.id}`);
+    } catch {
+      setError("เกิดข้อผิดพลาด กรุณาลองใหม่");
     } finally {
-      setQrLoading(false);
+      setVerifying(false);
     }
   }
 
@@ -181,24 +191,6 @@ export default function CheckoutClient({
 
   async function handlePay() {
     setError("");
-
-    if (method === "PROMPTPAY") {
-      if (isSandbox) {
-        setLoading(true);
-        try {
-          const res = await fetch(`/api/coin/order/${order.id}/pay`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ method: "PROMPTPAY" }),
-          });
-          if (res.ok) router.push(`/topup/success/${order.id}`);
-          else setError("เกิดข้อผิดพลาด");
-        } finally { setLoading(false); }
-      } else {
-        await loadPromptPayQR();
-      }
-      return;
-    }
 
     if (method === "MOBILE_BANKING") {
       if (!selectedBank) { setError("กรุณาเลือกธนาคาร"); return; }
@@ -251,9 +243,7 @@ export default function CheckoutClient({
     await chargeCard(undefined);
   }
 
-  const isQrShowing = method === "PROMPTPAY" && qrUrl && !isSandbox;
   const buttonLabel = () => {
-    if (method === "PROMPTPAY" && !qrUrl && !isSandbox) return "รับ QR Code";
     if (method === "MOBILE_BANKING") return "เปิดแอปธนาคาร";
     if (method === "TRUEMONEY") return "เปิด TrueMoney Wallet";
     if (method === "SHOPEEPAY") return "เปิด ShopeePay";
@@ -267,7 +257,7 @@ export default function CheckoutClient({
           <ArrowLeft className="w-4 h-4" /> กลับ
         </Link>
 
-        {isSandbox && (
+        {isSandbox && method !== "PROMPTPAY" && (
           <div className="flex items-center gap-2 px-4 py-2.5 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-yellow-400 text-xs">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>
@@ -304,12 +294,12 @@ export default function CheckoutClient({
 
         {/* Payment tabs */}
         <div className="bg-[#141720] rounded-2xl border border-white/5 overflow-hidden">
-          {/* Scrollable tab bar */}
-          <div className="flex overflow-x-auto border-b border-white/5 scrollbar-none">
-            {TABS.map((tab) => (
+          {/* Scrollable tab bar — hidden when only one channel is available */}
+          <div className={clsx("flex overflow-x-auto border-b border-white/5 scrollbar-none", availableTabs.length <= 1 && "hidden")}>
+            {availableTabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => { setMethod(tab.id); setError(""); setQrUrl(null); setSelectedBank(""); }}
+                onClick={() => { setMethod(tab.id); setError(""); setSelectedBank(""); }}
                 className={clsx(
                   "flex items-center gap-1.5 whitespace-nowrap px-4 py-3.5 text-xs font-medium transition-colors shrink-0",
                   method === tab.id ? "bg-white/5 text-white border-b-2 border-[#ff2d55]" : "text-gray-500 hover:text-gray-300"
@@ -371,41 +361,64 @@ export default function CheckoutClient({
             {/* PROMPTPAY */}
             {method === "PROMPTPAY" && (
               <div className="flex flex-col items-center gap-4 py-2">
-                {qrLoading ? (
-                  <div className="flex flex-col items-center gap-3 py-8">
-                    <Loader2 className="w-8 h-8 text-[#ff2d55] animate-spin" />
-                    <p className="text-sm text-gray-400">กำลังสร้าง QR Code...</p>
+                {!promptpayQrImage ? (
+                  <div className="flex items-center gap-2 px-3 py-2.5 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    ยังไม่ได้ตั้งค่า QR PromptPay กรุณาเลือกช่องทางอื่น
                   </div>
-                ) : qrUrl ? (
-                  <>
-                    <p className="text-sm text-gray-400 text-center">สแกน QR Code ด้วยแอปธนาคารของคุณ</p>
-                    <div className="bg-white p-3 rounded-2xl">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={qrUrl}
-                        alt="PromptPay QR"
-                        width={200}
-                        height={200}
-                        onError={() => setError("ไม่สามารถโหลด QR Code ได้ กรุณาลองใหม่")}
-                      />
-                    </div>
-                    <p className="text-2xl font-bold text-white">฿{order.price.toFixed(0)}</p>
-                    {polling && (
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
-                        <RefreshCw className="w-3 h-3 animate-spin" />
-                        กำลังรอการยืนยันการชำระเงิน...
-                      </div>
-                    )}
-                  </>
                 ) : (
                   <>
-                    <Smartphone className="w-12 h-12 text-[#ff2d55]" />
+                    {/* Step 1 — scan & pay */}
                     <p className="text-sm text-gray-400 text-center">
-                      {isSandbox
-                        ? "Sandbox mode — กดยืนยันเพื่อจำลองการชำระผ่าน PromptPay"
-                        : "กดปุ่มด้านล่างเพื่อรับ QR Code สำหรับชำระผ่าน PromptPay"}
+                      <span className="text-white font-medium">1.</span> สแกน QR ด้วยแอปธนาคาร แล้วโอนยอดให้ตรงตามจำนวน
                     </p>
-                    <p className="text-2xl font-bold text-white">฿{order.price.toFixed(0)}</p>
+                    <div className="bg-white p-3 rounded-2xl">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={promptpayQrImage} alt="PromptPay QR" width={220} height={220} />
+                    </div>
+                    {promptpayName && (
+                      <p className="text-xs text-gray-500 text-center -mt-1">{promptpayName}</p>
+                    )}
+                    <div className="text-center">
+                      <p className="text-xs text-gray-600">ยอดที่ต้องโอน</p>
+                      <p className="text-2xl font-bold text-white">฿{order.price.toFixed(0)}</p>
+                    </div>
+
+                    {/* Step 2 — upload slip */}
+                    <div className="w-full border-t border-white/5 pt-4">
+                      <p className="text-sm text-gray-400 text-center mb-3">
+                        <span className="text-white font-medium">2.</span> อัปโหลดสลิปการโอนเพื่อยืนยันอัตโนมัติ
+                      </p>
+                      <label
+                        className={clsx(
+                          "flex flex-col items-center justify-center gap-2 w-full rounded-xl border border-dashed cursor-pointer transition-colors",
+                          slipPreview
+                            ? "border-[#ff2d55]/40 bg-[#1a1e2a] p-3"
+                            : "border-white/15 bg-[#1a1e2a] hover:border-white/30 py-8 px-4"
+                        )}
+                      >
+                        {slipPreview ? (
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={slipPreview} alt="สลิป" className="max-h-44 rounded-lg" />
+                            <span className="flex items-center gap-1.5 text-xs text-green-400">
+                              <CheckCircle2 className="w-3.5 h-3.5" /> แนบสลิปแล้ว · แตะเพื่อเปลี่ยน
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-7 h-7 text-gray-500" />
+                            <span className="text-xs text-gray-500">แตะเพื่อเลือกรูปสลิป (สูงสุด 4MB)</span>
+                          </>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => onSlipChange(e.target.files?.[0] ?? null)}
+                        />
+                      </label>
+                    </div>
                   </>
                 )}
               </div>
@@ -481,13 +494,25 @@ export default function CheckoutClient({
               </div>
             )}
 
-            {!isQrShowing && (
+            {method === "PROMPTPAY" ? (
+              promptpayQrImage && (
+                <button
+                  onClick={verifySlip}
+                  disabled={verifying || !slipFile}
+                  className="mt-4 w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  {verifying
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> กำลังตรวจสอบสลิป...</>
+                    : <><CheckCircle2 className="w-4 h-4" /> ยืนยันการชำระเงิน</>}
+                </button>
+              )
+            ) : (
               <button
                 onClick={handlePay}
-                disabled={loading || qrLoading}
+                disabled={loading}
                 className="mt-4 w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                {loading || qrLoading
+                {loading
                   ? <Loader2 className="w-4 h-4 animate-spin" />
                   : <Lock className="w-4 h-4" />}
                 {buttonLabel()}
