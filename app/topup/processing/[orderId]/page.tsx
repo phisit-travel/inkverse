@@ -59,8 +59,8 @@ export default function ProcessingPage({
       <div className="min-h-[70vh] flex items-center justify-center px-4">
         <div className="w-full max-w-sm text-center space-y-5">
           <div className="flex justify-center">
-            <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-              <XCircle className="w-8 h-8 text-red-400" />
+            <div className="w-16 h-16 rounded-full bg-[var(--bg-card)] border border-[var(--border)] flex items-center justify-center">
+              <XCircle className="w-8 h-8 text-[var(--text-primary)]" />
             </div>
           </div>
           <h2 className="text-xl font-bold text-[var(--text-primary)]">การชำระเงินไม่สำเร็จ</h2>
@@ -91,7 +91,7 @@ export default function ProcessingPage({
           หน้านี้จะอัปเดตอัตโนมัติ กรุณาอย่าปิดหน้าต่าง
         </p>
         <div className="flex items-center justify-center gap-2 text-xs text-[var(--text-muted)]">
-          <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+          <CheckCircle2 className="w-3.5 h-3.5 text-[var(--text-primary)]" />
           <span>ระบบกำลังรอการยืนยันจากธนาคาร / wallet</span>
         </div>
       </div>

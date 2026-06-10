@@ -112,7 +112,7 @@ export default function MangaSettings({ slug, manga }: { slug: string; manga: Ma
             </div>
           </div>
 
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && <p className="text-sm text-[var(--text-primary)]">{error}</p>}
 
           <div className="flex items-center gap-3">
             <button
@@ -126,15 +126,15 @@ export default function MangaSettings({ slug, manga }: { slug: string; manga: Ma
           </div>
 
           {/* Danger zone */}
-          <div className="mt-2 rounded-xl border border-red-500/30 bg-red-500/5 p-3">
-            <div className="flex items-center gap-2 text-sm text-red-400 font-medium mb-1">
+          <div className="mt-2 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3">
+            <div className="flex items-center gap-2 text-sm text-[var(--text-primary)] font-medium mb-1">
               <AlertTriangle className="w-4 h-4" /> โซนอันตราย
             </div>
             <p className="text-xs text-[var(--text-secondary)] mb-2">ลบเรื่องนี้พร้อมทุกตอนและหน้าถาวร</p>
             <button
               onClick={deleteManga}
               disabled={deleting}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/40 text-red-400 text-xs font-medium hover:bg-red-500/15 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border)] text-[var(--text-primary)] text-xs font-medium hover:bg-[var(--bg-surface)] disabled:opacity-50"
             >
               {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
               ลบเรื่องนี้

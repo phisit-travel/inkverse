@@ -45,7 +45,7 @@ export default function StarRating({
             className={clsx(
               sizes[size],
               display >= star
-                ? "fill-yellow-400 text-yellow-400"
+                ? "fill-[var(--text-primary)] text-[var(--text-primary)]"
                 : "fill-transparent text-[var(--text-muted)]"
             )}
           />

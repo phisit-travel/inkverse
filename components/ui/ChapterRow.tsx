@@ -58,9 +58,9 @@ export default function ChapterRow({
         <div className="flex items-center gap-3">
           {isPremium ? (
             isUnlocked ? (
-              <Unlock className="w-4 h-4 text-green-400 flex-shrink-0" />
+              <Unlock className="w-4 h-4 text-[var(--text-primary)] flex-shrink-0" />
             ) : (
-              <Lock className="w-4 h-4 text-yellow-400 flex-shrink-0" />
+              <Lock className="w-4 h-4 text-[var(--text-primary)] flex-shrink-0" />
             )
           ) : null}
 
@@ -72,12 +72,12 @@ export default function ChapterRow({
           </span>
 
           {isPremium && !isUnlocked && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 flex-shrink-0">
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border)] flex-shrink-0">
               {coinCost} เหรียญ
             </span>
           )}
           {isPremium && isUnlocked && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-400 border border-green-500/30 flex-shrink-0">
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border)] flex-shrink-0">
               ปลดล็อกแล้ว
             </span>
           )}

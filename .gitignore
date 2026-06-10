@@ -53,4 +53,8 @@ test-*.mjs
 /*.jpeg
 *.log
 
+# verification screenshot folders (local only)
+/bal-after/
+/bal-audit/
+
 .vercel

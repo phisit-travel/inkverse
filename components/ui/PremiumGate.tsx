@@ -68,9 +68,9 @@ export default function PremiumGate({
 
         <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-3xl overflow-hidden">
           {/* Icon banner */}
-          <div className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-b border-[var(--border)] p-8 text-center">
-            <div className="w-20 h-20 rounded-full bg-yellow-500/20 border-2 border-yellow-500/40 flex items-center justify-center mx-auto mb-4">
-              <Lock className="w-9 h-9 text-yellow-400" />
+          <div className="bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-surface)] border-b border-[var(--border)] p-8 text-center">
+            <div className="w-20 h-20 rounded-full bg-[var(--bg-card)] border-2 border-[var(--border)] flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-9 h-9 text-[var(--text-primary)]" />
             </div>
             <h1 className="font-bebas text-3xl text-[var(--text-primary)] tracking-wider">
               ตอน Premium
@@ -84,10 +84,10 @@ export default function PremiumGate({
             {/* Cost row */}
             <div className="flex items-center justify-between bg-[var(--bg-card)] rounded-xl px-4 py-3">
               <div className="flex items-center gap-2 text-[var(--text-secondary)]">
-                <Zap className="w-4 h-4 text-yellow-400" />
+                <Zap className="w-4 h-4 text-[var(--text-primary)]" />
                 <span className="text-sm">ราคา</span>
               </div>
-              <div className="flex items-center gap-1.5 text-yellow-400 font-semibold">
+              <div className="flex items-center gap-1.5 text-[var(--text-primary)] font-semibold">
                 <Coins className="w-4 h-4" />
                 <span>{coinCost} เหรียญ</span>
               </div>
@@ -98,7 +98,7 @@ export default function PremiumGate({
               <span className="text-sm text-[var(--text-secondary)]">เหรียญของคุณ</span>
               <div
                 className={`flex items-center gap-1.5 font-semibold ${
-                  canAfford ? "text-green-400" : "text-red-400"
+                  canAfford ? "text-[var(--text-primary)]" : "text-[var(--text-primary)]"
                 }`}
               >
                 <Coins className="w-4 h-4" />
@@ -107,13 +107,13 @@ export default function PremiumGate({
             </div>
 
             {!canAfford && (
-              <p className="text-sm text-red-400 bg-red-500/10 rounded-xl px-4 py-3 text-center">
+              <p className="text-sm text-[var(--text-primary)] bg-[var(--bg-card)] rounded-xl px-4 py-3 text-center">
                 เหรียญไม่พอ ต้องการอีก {coinCost - userCoins} เหรียญ
               </p>
             )}
 
             {error && (
-              <p className="text-sm text-red-400 bg-red-500/10 rounded-xl px-4 py-3 text-center">
+              <p className="text-sm text-[var(--text-primary)] bg-[var(--bg-card)] rounded-xl px-4 py-3 text-center">
                 {error}
               </p>
             )}
@@ -131,7 +131,7 @@ export default function PremiumGate({
               ) : (
                 <Link
                   href="/topup"
-                  className="w-full py-3.5 rounded-xl bg-yellow-500 text-black font-semibold text-center hover:bg-yellow-400 transition-colors"
+                  className="w-full py-3.5 rounded-xl bg-[var(--text-primary)] text-black font-semibold text-center hover:bg-[var(--bg-surface)] transition-colors"
                 >
                   เติมเหรียญ
                 </Link>

@@ -194,14 +194,18 @@ const mangas = [
   },
 ];
 
-// 1 coin = 1 บาท. base = price; bonus kept modest so every tier stays
-// profitable at the 80% translator share (see SECURITY/economics notes).
+// 1 coin = 1 บาท. base = price. Bonus % widens with tier (0/8/12/16/18%) to pull
+// buyers toward larger packs. Ceiling is 18% on purpose: at the 80% translator
+// share, a package only stays profitable in the worst case (every coin spent on
+// unlocks) while bonus < 25%. See docs/PRICING-PROMO.md for the full math.
 const coinPackages = [
-  { name: "Starter",  coins: 50,   price: 50,   bonus: 0,   isPopular: false },
-  { name: "Standard", coins: 100,  price: 100,  bonus: 8,   isPopular: false },
-  { name: "Popular",  coins: 300,  price: 300,  bonus: 30,  isPopular: true  },
-  { name: "Pro",      coins: 500,  price: 500,  bonus: 60,  isPopular: false },
-  { name: "Mega",     coins: 1000, price: 1000, bonus: 130, isPopular: false },
+  { name: "Starter",  coins: 50,   price: 50,   bonus: 0,   vipDays: 0,  isPopular: false },
+  { name: "Standard", coins: 100,  price: 100,  bonus: 8,   vipDays: 0,  isPopular: false },
+  { name: "Popular",  coins: 300,  price: 300,  bonus: 36,  vipDays: 0,  isPopular: true  },
+  { name: "Pro",      coins: 500,  price: 500,  bonus: 80,  vipDays: 0,  isPopular: false },
+  { name: "Mega",     coins: 1000, price: 1000, bonus: 180, vipDays: 0,  isPopular: false },
+  // VIP 30-day pass: monthly coin stipend + 10% unlock discount (no auto-renew).
+  { name: "VIP",      coins: 120,  price: 99,   bonus: 0,   vipDays: 30, isPopular: false },
 ];
 
 async function main() {

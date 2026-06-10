@@ -13,7 +13,10 @@ model User {
   passwordHash     String?
   role             String            @default("READER")
   avatarUrl        String?
+  coverUrl         String?           // profile banner image (R2 URL)
+  bio              String?           // short profile bio (readers; translators use Translator.bio)
   coins            Int               @default(0)
+  vipExpiresAt     DateTime?         // active VIP while in the future (coin stipend + unlock discount)
   createdAt        DateTime          @default(now())
   // Fields required by @auth/prisma-adapter for OAuth (Google) sign-in
   name             String?
@@ -31,6 +34,38 @@ model User {
   translatorApplication   TranslatorApplication?
   coinOrders              CoinOrder[]
   notifications           Notification[]
+  dailyCheckIns           DailyCheckIn[]
+  referralsGiven          Referral[]        @relation("Referrer")
+  referralReceived        Referral?         @relation("Referee")
+  contactMessages         ContactMessage[]
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  userId    String?  // null when sent by a logged-out visitor
+  name      String
+  email     String
+  subject   String?
+  message   String
+  status    String   @default("OPEN") // OPEN | RESOLVED
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+}
+
+model Referral {
+  id           String    @id @default(cuid())
+  referrerId   String
+  refereeId    String    @unique // a user can only be referred once
+  status       String    @default("PENDING") // PENDING | REWARDED
+  coinsAwarded Int       @default(0)
+  createdAt    DateTime  @default(now())
+  rewardedAt   DateTime?
+  referrer     User      @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referee      User      @relation("Referee", fields: [refereeId], references: [id], onDelete: Cascade)
+
+  @@index([referrerId])
 }
 
 model CoinOrder {
@@ -39,6 +74,7 @@ model CoinOrder {
   packageId      String
   coins          Int
   bonus          Int       @default(0)
+  vipDays        Int       @default(0) // >0 → grants this many VIP days when paid
   price          Float
   status         String    @default("PENDING") // PENDING | PAID | FAILED | CANCELLED
   method         String?   // CARD | PROMPTPAY
@@ -141,11 +177,12 @@ model Translator {
 model TranslatorEarning {
   id           String     @id @default(cuid())
   translatorId String
-  chapterId    String
-  mangaId      String
+  chapterId    String?    // null for tips (not tied to a chapter)
+  mangaId      String?    // null for tips
   userId       String
+  type         String     @default("UNLOCK") // UNLOCK | TIP
   coinsSpent   Int
-  amount       Float      // THB after 30% platform fee
+  amount       Float      // THB after platform fee
   createdAt    DateTime   @default(now())
   translator   Translator @relation(fields: [translatorId], references: [id], onDelete: Cascade)
 }
@@ -284,6 +321,7 @@ model CoinPackage {
   coins       Int
   price       Float
   bonus       Int      @default(0)
+  vipDays     Int      @default(0) // >0 → this package also grants VIP days
   isPopular   Boolean  @default(false)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -309,6 +347,19 @@ model UnlockedChapter {
   chapter     Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
   @@id([userId, chapterId])
+}
+
+model DailyCheckIn {
+  id          String   @id @default(cuid())
+  userId      String
+  date        DateTime // truncated to 00:00 UTC of the claim day
+  coinsEarned Int
+  streak      Int      @default(1)
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
 }
 
 model Notification {

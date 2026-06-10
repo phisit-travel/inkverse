@@ -157,7 +157,7 @@ function CommentItem({
             {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: th })}
           </span>
           {comment.isSpoiler && (
-            <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+            <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border)]">
               <AlertTriangle className="w-3 h-3" />สปอยล์
             </span>
           )}
@@ -201,7 +201,7 @@ function CommentItem({
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="flex items-center gap-1 text-xs text-[var(--text-muted)] hover:text-red-400 transition-colors ml-auto"
+              className="flex items-center gap-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors ml-auto"
             >
               <Trash2 className="w-3 h-3" />
             </button>
@@ -333,7 +333,7 @@ export default function CommentSection({
                 rows={3}
                 className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] placeholder-gray-500 resize-none focus:outline-none focus:border-[var(--text-primary)]/50 transition-colors"
               />
-              {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
+              {error && <p className="text-xs text-[var(--text-primary)] mt-1">{error}</p>}
               <div className="flex items-center justify-between mt-2">
                 <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)] cursor-pointer select-none">
                   <input type="checkbox" checked={isSpoiler} onChange={(e) => setIsSpoiler(e.target.checked)} className="accent-[var(--text-primary)]" />

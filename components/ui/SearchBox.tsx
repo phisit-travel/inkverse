@@ -103,7 +103,7 @@ export default function SearchBox({
       </form>
 
       {open && (
-        <div className="absolute left-0 right-0 mt-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] shadow-2xl overflow-hidden z-50 max-h-[70vh] overflow-y-auto">
+        <div className="absolute left-0 right-0 mt-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)]  overflow-hidden z-50 max-h-[70vh] overflow-y-auto">
           {results.length === 0 ? (
             <p className="px-4 py-3 text-sm text-[var(--text-secondary)] text-center">ไม่พบเรื่องที่ตรงกับ &ldquo;{q.trim()}&rdquo;</p>
           ) : (

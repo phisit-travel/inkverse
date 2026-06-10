@@ -1,10 +1,14 @@
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import MangaCard from "@/components/ui/MangaCard";
+import ProfileImageButton from "@/components/ui/ProfileImageButton";
 import {
   BookMarked, History, Star, Calendar, Eye, Layers,
-  Shield, PenTool, User as UserIcon, BookOpen,
+  Shield, PenTool, User as UserIcon, BookOpen, Coins, Heart,
+  LayoutDashboard, Wallet, Banknote, Settings, Plus, BadgeCheck,
 } from "lucide-react";
 import type { Metadata } from "next";
 
@@ -18,30 +22,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 const ROLES = {
-  READER: {
-    label: "นักอ่าน",
-    icon: UserIcon,
-    chip: "bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border)]",
-    ring: "ring-[var(--border)]",
-  },
-  TRANSLATOR: {
-    label: "นักแปล",
-    icon: PenTool,
-    chip: "bal-btn",
-    ring: "ring-[var(--text-primary)]",
-  },
-  ADMIN: {
-    label: "ผู้ดูแลระบบ",
-    icon: Shield,
-    chip: "bal-btn",
-    ring: "ring-[var(--text-primary)]",
-  },
+  READER: { label: "นักอ่าน", icon: UserIcon, eyebrow: "MEMBER", verified: false, chip: "bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border)]" },
+  TRANSLATOR: { label: "นักแปล", icon: PenTool, eyebrow: "VERIFIED CREATOR", verified: true, chip: "bal-btn" },
+  ADMIN: { label: "ผู้ดูแลระบบ", icon: Shield, eyebrow: "OFFICIAL · ADMINISTRATOR", verified: true, chip: "bal-btn" },
 } as const;
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-wider mb-4 flex items-center gap-2">
-      <span className="w-1 h-6 bg-[var(--accent)] rounded-full" />
+    <h2 className="font-bebas text-xl text-[var(--text-primary)] tracking-[0.2em] uppercase mb-5 flex items-center gap-2.5 pb-2 border-b border-[var(--border)]">
       {children}
     </h2>
   );
@@ -49,6 +37,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 export default async function ProfilePage({ params }: Props) {
   const { username } = await params;
+  const session = await auth();
 
   const user = await prisma.user.findUnique({
     where: { username },
@@ -90,15 +79,43 @@ export default async function ProfilePage({ params }: Props) {
 
   if (!user) notFound();
 
+  const isOwner = !!session?.user && (session.user as { id?: string }).id === user.id;
   const role = ROLES[user.role as keyof typeof ROLES] ?? ROLES.READER;
   const RoleIcon = role.icon;
 
   const works = user.translator?.mangas ?? [];
-  const isCreator = !!user.translator && works.length > 0;
+  const isCreator = !!user.translator;
   const totalViews = works.reduce((s, m) => s + m.totalViews, 0);
   const totalChapters = works.reduce((s, m) => s + m._count.chapters, 0);
   const displayName = user.translator?.penName || user.username;
+  const bio = user.translator?.bio || user.bio;
   const joined = new Date(user.createdAt).toLocaleDateString("th-TH", { year: "numeric", month: "short" });
+
+  // Top Fans — readers who spent the most coins on this creator's work (incl. tips).
+  let topFans: { id: string; username: string; avatarUrl: string | null; coins: number }[] = [];
+  if (user.translator) {
+    const fanAgg = await prisma.translatorEarning.groupBy({
+      by: ["userId"],
+      where: { translatorId: user.translator.id },
+      _sum: { coinsSpent: true },
+      orderBy: { _sum: { coinsSpent: "desc" } },
+      take: 10,
+    });
+    const fanIds = fanAgg.map((f) => f.userId);
+    if (fanIds.length) {
+      const fanUsers = await prisma.user.findMany({
+        where: { id: { in: fanIds } },
+        select: { id: true, username: true, avatarUrl: true },
+      });
+      const fanMap = new Map(fanUsers.map((u) => [u.id, u]));
+      topFans = fanAgg
+        .map((f) => {
+          const u = fanMap.get(f.userId);
+          return u ? { ...u, coins: f._sum.coinsSpent ?? 0 } : null;
+        })
+        .filter((f): f is NonNullable<typeof f> => !!f && f.coins > 0);
+    }
+  }
 
   const stats = isCreator
     ? [
@@ -114,53 +131,159 @@ export default async function ProfilePage({ params }: Props) {
         { icon: Calendar, label: "เข้าร่วม", value: joined },
       ];
 
-  const hasActivity = isCreator || user.bookmarks.length > 0 || user.readHistory.length > 0;
+  const hasActivity = works.length > 0 || user.bookmarks.length > 0 || user.readHistory.length > 0;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-      {/* Header */}
-      <div className="relative mb-8">
-        <div className="h-36 rounded-2xl bg-gradient-to-r from-[var(--accent)]/25 via-[var(--bg-card)] to-[var(--accent)]/25 border border-[var(--border)]" />
-        <div className="flex flex-col sm:flex-row sm:items-end gap-4 px-4 sm:px-6 -mt-12">
-          <div className={`relative w-24 h-24 rounded-full overflow-hidden ring-4 ${role.ring} border-4 border-[var(--bg-primary)] bg-[var(--bg-card)] shrink-0`}>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      {/* ── Cover banner ───────────────────────────────────────────── */}
+      <div className="relative h-48 sm:h-64 w-full border border-[var(--border)] overflow-hidden bg-[var(--bg-card)]">
+        {user.coverUrl ? (
+          <Image src={user.coverUrl} alt="" fill unoptimized className="object-cover" priority />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-[var(--bg-card)] via-[var(--bg-surface)] to-[var(--bg-card)]" />
+        )}
+        {/* legibility fade */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-primary)] via-transparent to-transparent" />
+        {/* couture inset frame */}
+        <div className="absolute inset-3 sm:inset-4 border border-[var(--text-primary)]/15 pointer-events-none" />
+        {/* maison wordmark */}
+        <span className="absolute left-4 sm:left-6 top-4 sm:top-5 text-[10px] text-[var(--text-primary)]/60 uppercase tracking-[0.4em]">
+          INKVERSE
+        </span>
+        {isOwner && (
+          <div className="absolute top-3 right-3">
+            <ProfileImageButton type="cover" label="เปลี่ยนปก" />
+          </div>
+        )}
+      </div>
+
+      {/* ── Identity ───────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-end gap-5 px-1 sm:px-4 -mt-14 sm:-mt-16 relative">
+        {/* Square avatar — double-framed for a couture, gallery feel */}
+        <div className="relative shrink-0">
+          <div className={`relative w-28 h-28 sm:w-32 sm:h-32 border-4 border-[var(--bg-primary)] bg-[var(--bg-card)] overflow-hidden ${role.verified ? "outline outline-1 outline-offset-[3px] outline-[var(--text-primary)]/40" : ""}`}>
             {user.avatarUrl ? (
-              <Image src={user.avatarUrl} alt={user.username} fill className="object-cover" />
+              <Image src={user.avatarUrl} alt={user.username} fill unoptimized className="object-cover" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-white bg-[var(--accent)]">
+              <div className="w-full h-full flex items-center justify-center font-bebas text-5xl tracking-wider text-[var(--text-primary)]">
                 {user.username[0]?.toUpperCase()}
               </div>
             )}
-          </div>
-          <div className="pb-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="font-bebas text-3xl text-[var(--text-primary)] tracking-wider leading-none">
-                {displayName}
-              </h1>
-              <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${role.chip}`}>
-                <RoleIcon className="w-3.5 h-3.5" /> {role.label}
-              </span>
-            </div>
-            <p className="text-sm text-[var(--text-secondary)] mt-1">@{user.username}</p>
-            {user.translator?.bio && (
-              <p className="text-sm text-[var(--text-secondary)] mt-2 max-w-2xl leading-relaxed">{user.translator.bio}</p>
+            {isOwner && (
+              <div className="absolute bottom-1 right-1">
+                <ProfileImageButton type="avatar" className="!px-1.5 !py-1.5" />
+              </div>
             )}
           </div>
+          {/* Verified seal */}
+          {role.verified && !isOwner && (
+            <span className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-[var(--text-primary)] text-[var(--bg-primary)] flex items-center justify-center">
+              <BadgeCheck className="w-3.5 h-3.5" />
+            </span>
+          )}
+        </div>
+
+        <div className="pb-1 min-w-0 flex-1">
+          {/* Eyebrow — couture micro-label */}
+          <p className="flex items-center gap-2 text-[10px] text-[var(--text-muted)] uppercase tracking-[0.35em] mb-1.5">
+            <span className="w-5 h-px bg-[var(--text-muted)]" />
+            {role.eyebrow}
+          </p>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <h1 className="font-bebas text-4xl sm:text-5xl text-[var(--text-primary)] tracking-[0.06em] leading-[0.9] uppercase">
+              {displayName}
+            </h1>
+            {role.verified && (
+              <BadgeCheck className="w-5 h-5 text-[var(--text-primary)] shrink-0" />
+            )}
+            <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] ${role.chip}`}>
+              <RoleIcon className="w-3.5 h-3.5" /> {role.label}
+            </span>
+          </div>
+          <p className="text-xs text-[var(--text-secondary)] mt-2 uppercase tracking-[0.2em]">@{user.username}</p>
+          {bio && (
+            <p className="text-sm text-[var(--text-secondary)] mt-3 max-w-2xl leading-relaxed">{bio}</p>
+          )}
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
+      {/* ── Stats — editorial hairline strip ───────────────────────── */}
+      <div className="mt-8 mb-12 border-y border-[var(--border)] grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-[var(--border)]">
         {stats.map(({ icon: Icon, label, value }) => (
-          <div key={label} className="bg-[var(--bg-surface)] rounded-xl p-4 border border-[var(--border)] text-center">
-            <Icon className="w-5 h-5 text-[var(--text-primary)] mx-auto mb-1.5" />
-            <p className="text-xl font-bold text-[var(--text-primary)]">{value}</p>
-            <p className="text-xs text-[var(--text-secondary)]">{label}</p>
+          <div key={label} className="px-4 py-6 text-center">
+            <Icon className="w-4 h-4 text-[var(--text-muted)] mx-auto mb-2" />
+            <p className="font-bebas text-3xl sm:text-4xl text-[var(--text-primary)] tracking-wider leading-none">{value}</p>
+            <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-[0.25em] mt-2">{label}</p>
           </div>
         ))}
       </div>
 
-      {/* Translator / admin channel — uploaded works */}
-      {isCreator && (
+      {/* ── Creator tools (own translator/admin profile only) ──────── */}
+      {isOwner && isCreator && (
+        <section className="mb-10">
+          <SectionTitle>
+            <PenTool className="w-5 h-5" /> เครื่องมือนักแปล
+          </SectionTitle>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {[
+              { href: "/upload", icon: Plus, label: "ลงผลงานใหม่", primary: true },
+              { href: "/dashboard", icon: LayoutDashboard, label: "แดชบอร์ด" },
+              { href: "/dashboard/earnings", icon: Wallet, label: "รายได้" },
+              { href: "/dashboard/withdraw", icon: Banknote, label: "ถอนเงิน" },
+              { href: "/settings", icon: Settings, label: "ตั้งค่า" },
+            ].map(({ href, icon: Icon, label, primary }) => (
+              <Link
+                key={href}
+                href={href}
+                className={`flex flex-col items-center justify-center gap-2 py-5 text-xs font-semibold uppercase tracking-widest transition-colors ${
+                  primary
+                    ? "bal-btn"
+                    : "border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--text-primary)]/50"
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                {label}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Top Fans (creators only) ───────────────────────────────── */}
+      {isCreator && topFans.length > 0 && (
+        <section className="mb-10">
+          <SectionTitle>
+            <Heart className="w-5 h-5" /> TOP FANS
+          </SectionTitle>
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {topFans.map((fan, i) => (
+              <Link
+                key={fan.id}
+                href={`/profile/${fan.username}`}
+                className="group relative w-28 shrink-0 border border-[var(--border)] bg-[var(--bg-surface)] p-3 text-center hover:border-[var(--text-primary)]/50 transition-colors"
+              >
+                <span className="absolute top-1.5 left-1.5 font-bebas text-sm text-[var(--text-muted)]">#{i + 1}</span>
+                <div className="relative w-14 h-14 mx-auto mb-2 border border-[var(--border)] overflow-hidden bg-[var(--bg-card)]">
+                  {fan.avatarUrl ? (
+                    <Image src={fan.avatarUrl} alt={fan.username} fill unoptimized className="object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-lg font-bold text-[var(--text-primary)]">
+                      {fan.username[0]?.toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-[var(--text-primary)] truncate">@{fan.username}</p>
+                <p className="flex items-center justify-center gap-1 text-[10px] text-[var(--text-secondary)] mt-0.5">
+                  <Coins className="w-3 h-3" /> {fan.coins.toLocaleString()}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Works (creators) ───────────────────────────────────────── */}
+      {isCreator && works.length > 0 && (
         <section className="mb-10">
           <SectionTitle>ผลงานที่ลง ({works.length})</SectionTitle>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -170,23 +293,32 @@ export default async function ProfilePage({ params }: Props) {
                   ? manga.ratings.reduce((a, b) => a + b.score, 0) / manga.ratings.length
                   : 0;
               return (
-                <MangaCard
-                  key={manga.id}
-                  slug={manga.slug}
-                  title={manga.title}
-                  coverUrl={manga.coverUrl}
-                  latestChapter={manga.chapters[0]?.chapterNum}
-                  rating={avgRating}
-                  status={manga.status}
-                  type={manga.type}
-                />
+                <div key={manga.id} className="space-y-1.5">
+                  <MangaCard
+                    slug={manga.slug}
+                    title={manga.title}
+                    coverUrl={manga.coverUrl}
+                    latestChapter={manga.chapters[0]?.chapterNum}
+                    rating={avgRating}
+                    status={manga.status}
+                    type={manga.type}
+                  />
+                  {isOwner && (
+                    <Link
+                      href={`/dashboard/manga/${manga.slug}/chapters`}
+                      className="flex items-center justify-center gap-1.5 w-full py-1.5 border border-[var(--border)] text-[10px] font-semibold uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] hover:border-[var(--text-primary)] transition-colors"
+                    >
+                      <Settings className="w-3 h-3" /> จัดการ
+                    </Link>
+                  )}
+                </div>
               );
             })}
           </div>
         </section>
       )}
 
-      {/* Bookmarks */}
+      {/* ── Bookmarks ──────────────────────────────────────────────── */}
       {user.bookmarks.length > 0 && (
         <section className="mb-10">
           <SectionTitle>บุ๊กมาร์ก</SectionTitle>
@@ -213,7 +345,7 @@ export default async function ProfilePage({ params }: Props) {
         </section>
       )}
 
-      {/* Read history */}
+      {/* ── Read history ───────────────────────────────────────────── */}
       {user.readHistory.length > 0 && (
         <section>
           <SectionTitle>ประวัติการอ่าน</SectionTitle>
@@ -221,11 +353,11 @@ export default async function ProfilePage({ params }: Props) {
             {user.readHistory.map((h) => (
               <div
                 key={`${h.userId}-${h.chapterId}`}
-                className="flex items-center gap-4 p-3 bg-[var(--bg-surface)] rounded-xl border border-[var(--border)]"
+                className="flex items-center gap-4 p-3 bg-[var(--bg-surface)] border border-[var(--border)]"
               >
-                <div className="relative w-10 h-14 rounded-lg overflow-hidden bg-[var(--bg-card)] flex-shrink-0">
+                <div className="relative w-10 h-14 overflow-hidden bg-[var(--bg-card)] flex-shrink-0">
                   {h.chapter.manga.coverUrl && (
-                    <Image src={h.chapter.manga.coverUrl} alt={h.chapter.manga.title} fill className="object-cover" sizes="40px" />
+                    <Image src={h.chapter.manga.coverUrl} alt={h.chapter.manga.title} fill unoptimized className="object-cover" sizes="40px" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -241,7 +373,6 @@ export default async function ProfilePage({ params }: Props) {
         </section>
       )}
 
-      {/* Empty state */}
       {!hasActivity && (
         <div className="text-center py-16 text-[var(--text-secondary)] text-sm">
           ยังไม่มีกิจกรรม

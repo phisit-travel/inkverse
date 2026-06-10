@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
       packageId,
       coins: pkg.coins,
       bonus: pkg.bonus,
+      vipDays: pkg.vipDays,
       price: pkg.price,
       status: "PENDING",
     },

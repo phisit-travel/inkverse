@@ -33,7 +33,7 @@ export default function CoinBadge({ initialCoins = 0 }: CoinBadgeProps) {
   return (
     <Link
       href="/topup"
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 hover:bg-yellow-500/20 transition-colors text-sm font-medium"
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors text-sm font-medium"
     >
       <Coins className="w-4 h-4" />
       <span>{coins.toLocaleString()}</span>

@@ -58,7 +58,7 @@ export default function FeaturedSpotlight({
               {featured.genres?.slice(0, 3).map((g) => (
                 <span
                   key={g}
-                  className="text-xs px-2 py-0.5 rounded-full bg-[var(--text-primary)]/80 text-[var(--text-primary)] font-medium"
+                  className="text-xs px-2 py-0.5 rounded-full bg-[var(--text-primary)]/80 text-[var(--bg-primary)] font-medium"
                 >
                   {g}
                 </span>
@@ -78,7 +78,7 @@ export default function FeaturedSpotlight({
             <div className="flex items-center gap-4 mt-3 text-sm text-[var(--text-secondary)]">
               {featured.rating !== undefined && (
                 <span className="flex items-center gap-1">
-                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                  <Star className="w-4 h-4 fill-[var(--text-primary)] text-[var(--text-primary)]" />
                   {featured.rating.toFixed(1)}
                 </span>
               )}

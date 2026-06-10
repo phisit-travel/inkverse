@@ -26,12 +26,12 @@ interface Request {
 }
 
 const STATUS_STYLE: Record<string, { label: string; cls: string; icon: React.ElementType }> = {
-  PENDING:    { label: "รอดำเนินการ", cls: "bg-yellow-500/20 text-yellow-400",  icon: Clock },
-  PROCESSING: { label: "กำลังโอน",    cls: "bg-blue-500/20 text-blue-400",     icon: Zap },
-  APPROVED:   { label: "อนุมัติแล้ว", cls: "bg-blue-500/20 text-blue-400",    icon: CheckCircle2 },
-  PAID:       { label: "โอนแล้ว",     cls: "bg-green-500/20 text-green-400",  icon: CheckCircle2 },
-  REJECTED:   { label: "ถูกปฏิเสธ",   cls: "bg-red-500/20 text-red-400",      icon: XCircle },
-  FAILED:     { label: "ไม่สำเร็จ",   cls: "bg-red-500/20 text-red-400",      icon: XCircle },
+  PENDING:    { label: "รอดำเนินการ", cls: "bg-[var(--bg-card)] text-[var(--text-primary)]",  icon: Clock },
+  PROCESSING: { label: "กำลังโอน",    cls: "bg-[var(--bg-card)] text-[var(--text-secondary)]",     icon: Zap },
+  APPROVED:   { label: "อนุมัติแล้ว", cls: "bg-[var(--bg-card)] text-[var(--text-secondary)]",    icon: CheckCircle2 },
+  PAID:       { label: "โอนแล้ว",     cls: "bg-[var(--bg-card)] text-[var(--text-primary)]",  icon: CheckCircle2 },
+  REJECTED:   { label: "ถูกปฏิเสธ",   cls: "bg-[var(--bg-card)] text-[var(--text-primary)]",      icon: XCircle },
+  FAILED:     { label: "ไม่สำเร็จ",   cls: "bg-[var(--bg-card)] text-[var(--text-primary)]",      icon: XCircle },
 };
 
 function RequestCard({ req, onAction }: { req: Request; onAction: () => void }) {
@@ -114,7 +114,7 @@ function RequestCard({ req, onAction }: { req: Request; onAction: () => void }) 
           {/* Auto-payout badge */}
           {req.paymentMethod === "BANK_TRANSFER" && req.omiseTransferId && (
             <div className="flex flex-wrap items-center gap-2 mt-2">
-              <span className="flex items-center gap-1 text-xs bg-green-500/10 text-green-400 px-2 py-0.5 rounded-full">
+              <span className="flex items-center gap-1 text-xs bg-[var(--bg-card)] text-[var(--text-primary)] px-2 py-0.5 rounded-full">
                 <Zap className="w-3 h-3" /> Auto-payout
               </span>
               <span className="font-mono text-xs text-[var(--text-muted)] truncate max-w-[180px]" title={req.omiseTransferId}>
@@ -130,7 +130,7 @@ function RequestCard({ req, onAction }: { req: Request; onAction: () => void }) 
       </div>
 
       {req.adminNote && (
-        <p className="text-xs text-yellow-400/80 bg-yellow-500/5 px-3 py-2 rounded-xl">
+        <p className="text-xs text-[var(--text-primary)] bg-[var(--bg-card)] px-3 py-2 rounded-xl">
           หมายเหตุ: {req.adminNote}
         </p>
       )}
@@ -141,7 +141,7 @@ function RequestCard({ req, onAction }: { req: Request; onAction: () => void }) 
           <button
             onClick={refreshOmise}
             disabled={refreshing}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-500/10 text-blue-400 text-xs font-medium hover:bg-blue-500/20 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--bg-card)] text-[var(--text-secondary)] text-xs font-medium hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-50"
           >
             {refreshing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
             ตรวจสอบสถานะจาก Omise
@@ -159,12 +159,12 @@ function RequestCard({ req, onAction }: { req: Request; onAction: () => void }) 
       {req.status === "PENDING" && (
         <div className="space-y-3 pt-2 border-t border-[var(--border)]">
           {req.paymentMethod === "PROMPTPAY" && (
-            <p className="text-xs text-yellow-400/80 bg-yellow-500/5 px-3 py-2 rounded-xl">
+            <p className="text-xs text-[var(--text-primary)] bg-[var(--bg-card)] px-3 py-2 rounded-xl">
               PromptPay — ต้องโอนด้วยตนเอง แล้วกด "ยืนยันโอนแล้ว"
             </p>
           )}
           {req.paymentMethod === "BANK_TRANSFER" && !req.omiseTransferId && (
-            <p className="text-xs text-orange-400/80 bg-orange-500/5 px-3 py-2 rounded-xl">
+            <p className="text-xs text-[var(--text-primary)] bg-[var(--bg-card)] px-3 py-2 rounded-xl">
               Auto-payout ล้มเหลว — ต้องอนุมัติและโอนด้วยตนเอง
             </p>
           )}
@@ -186,7 +186,7 @@ function RequestCard({ req, onAction }: { req: Request; onAction: () => void }) 
             <button
               onClick={() => action("paid")}
               disabled={loading}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-green-500/20 text-green-400 text-sm font-medium hover:bg-green-500/30 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-[var(--bg-card)] text-[var(--text-primary)] text-sm font-medium hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-50"
             >
               {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
               ยืนยันโอนแล้ว
@@ -194,7 +194,7 @@ function RequestCard({ req, onAction }: { req: Request; onAction: () => void }) 
             <button
               onClick={() => action("reject")}
               disabled={loading}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-red-500/20 text-red-400 text-sm font-medium hover:bg-red-500/30 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-[var(--bg-card)] text-[var(--text-primary)] text-sm font-medium hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-50"
             >
               {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
               ปฏิเสธ
@@ -208,7 +208,7 @@ function RequestCard({ req, onAction }: { req: Request; onAction: () => void }) 
           <button
             onClick={() => action("paid")}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-green-500/20 text-green-400 text-sm font-medium hover:bg-green-500/30 transition-colors disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-[var(--bg-card)] text-[var(--text-primary)] text-sm font-medium hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-50"
           >
             {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
             ยืนยันว่าโอนเงินแล้ว
@@ -218,7 +218,7 @@ function RequestCard({ req, onAction }: { req: Request; onAction: () => void }) 
 
       {req.status === "FAILED" && (
         <div className="pt-2 border-t border-[var(--border)]">
-          <p className="text-xs text-red-400/80 bg-red-500/5 px-3 py-2 rounded-xl">
+          <p className="text-xs text-[var(--text-primary)] bg-[var(--bg-card)] px-3 py-2 rounded-xl">
             Auto-payout ล้มเหลว — ตรวจสอบ adminNote ด้านบน ติดต่อ Omise หรือโอนด้วยตนเอง
           </p>
         </div>
@@ -243,15 +243,15 @@ export default function WithdrawalsAdmin({ requests }: { requests: Request[] }) 
       {(pendingCount > 0 || processingCount > 0) && (
         <div className="flex gap-3 flex-wrap">
           {pendingCount > 0 && (
-            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-3 py-2 text-center">
-              <p className="text-sm font-bold text-yellow-400">{pendingCount} รายการ</p>
-              <p className="text-xs text-yellow-600">รอดำเนินการ (Manual)</p>
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-center">
+              <p className="text-sm font-bold text-[var(--text-primary)]">{pendingCount} รายการ</p>
+              <p className="text-xs text-[var(--text-primary)]">รอดำเนินการ (Manual)</p>
             </div>
           )}
           {processingCount > 0 && (
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl px-3 py-2 text-center">
-              <p className="text-sm font-bold text-blue-400">{processingCount} รายการ</p>
-              <p className="text-xs text-blue-600">Omise กำลังโอน</p>
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-center">
+              <p className="text-sm font-bold text-[var(--text-secondary)]">{processingCount} รายการ</p>
+              <p className="text-xs text-[var(--text-secondary)]">Omise กำลังโอน</p>
             </div>
           )}
         </div>
@@ -274,7 +274,7 @@ export default function WithdrawalsAdmin({ requests }: { requests: Request[] }) 
               {count > 0 && (
                 <span className={clsx(
                   "ml-1.5 px-1.5 py-0.5 rounded-full text-xs",
-                  f === "PROCESSING" ? "bg-blue-500/30 text-blue-400" : "bg-yellow-500/30 text-yellow-400"
+                  f === "PROCESSING" ? "bg-[var(--bg-card)] text-[var(--text-secondary)]" : "bg-[var(--bg-card)] text-[var(--text-primary)]"
                 )}>
                   {count}
                 </span>

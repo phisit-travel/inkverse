@@ -24,9 +24,9 @@ interface Application {
 }
 
 const STATUS_TABS = [
-  { key: "PENDING",  label: "รอพิจารณา",  icon: Clock,         color: "text-yellow-400" },
-  { key: "APPROVED", label: "อนุมัติแล้ว", icon: CheckCircle,   color: "text-green-400"  },
-  { key: "REJECTED", label: "ปฏิเสธแล้ว", icon: XCircle,       color: "text-red-400"    },
+  { key: "PENDING",  label: "รอพิจารณา",  icon: Clock,         color: "text-[var(--text-primary)]" },
+  { key: "APPROVED", label: "อนุมัติแล้ว", icon: CheckCircle,   color: "text-[var(--text-primary)]"  },
+  { key: "REJECTED", label: "ปฏิเสธแล้ว", icon: XCircle,       color: "text-[var(--text-primary)]"    },
 ];
 
 export default function ApplicationsClient({
@@ -187,8 +187,8 @@ export default function ApplicationsClient({
 
                     {/* Admin note (if rejected) */}
                     {app.adminNote && (
-                      <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
-                        <p className="text-xs text-red-400 font-medium mb-1">เหตุผลที่ปฏิเสธ</p>
+                      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-3">
+                        <p className="text-xs text-[var(--text-primary)] font-medium mb-1">เหตุผลที่ปฏิเสธ</p>
                         <p className="text-sm text-[var(--text-secondary)]">{app.adminNote}</p>
                       </div>
                     )}
@@ -201,13 +201,13 @@ export default function ApplicationsClient({
                           onChange={(e) => setRejectNote((n) => ({ ...n, [app.id]: e.target.value }))}
                           placeholder="เหตุผลที่ปฏิเสธ (กรอกเฉพาะกรณีปฏิเสธ)"
                           rows={2}
-                          className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder-gray-600 focus:outline-none focus:border-red-500/40 resize-none"
+                          className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder-gray-600 focus:outline-none focus:border-[var(--border)] resize-none"
                         />
                         <div className="flex gap-3">
                           <button
                             onClick={() => handleAction(app.id, "approve")}
                             disabled={!!loading}
-                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-500/20 border border-green-500/30 text-green-400 text-sm font-medium hover:bg-green-500/30 transition-all disabled:opacity-50"
+                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] text-sm font-medium hover:bg-[var(--bg-surface)] transition-all disabled:opacity-50"
                           >
                             <CheckCircle className="w-4 h-4" />
                             {loading === `${app.id}-approve` ? "กำลังอนุมัติ..." : "อนุมัติ"}
@@ -215,7 +215,7 @@ export default function ApplicationsClient({
                           <button
                             onClick={() => handleAction(app.id, "reject")}
                             disabled={!!loading}
-                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 text-sm font-medium hover:bg-red-500/30 transition-all disabled:opacity-50"
+                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] text-sm font-medium hover:bg-[var(--bg-surface)] transition-all disabled:opacity-50"
                           >
                             <XCircle className="w-4 h-4" />
                             {loading === `${app.id}-reject` ? "กำลังปฏิเสธ..." : "ปฏิเสธ"}

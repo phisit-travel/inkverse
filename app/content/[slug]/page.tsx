@@ -20,6 +20,7 @@ import {
 import type { Metadata } from "next";
 import { MangaJsonLd, BreadcrumbJsonLd } from "@/components/seo/JsonLd";
 import BulkUnlock from "@/components/ui/BulkUnlock";
+import TipButton from "@/components/ui/TipButton";
 
 const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inkverse.com";
 
@@ -168,7 +169,7 @@ export default async function MangaProfilePage({ params }: Props) {
         <div className="md:col-span-1 lg:col-span-1">
           <div className="md:sticky md:top-20 space-y-4">
             {/* Cover */}
-            <div className="relative aspect-[3/4] w-full max-w-[180px] mx-auto md:max-w-none rounded-2xl overflow-hidden border border-[var(--border)] shadow-2xl">
+            <div className="relative aspect-[3/4] w-full max-w-[180px] mx-auto md:max-w-none rounded-2xl overflow-hidden border border-[var(--border)] ">
               {manga.coverUrl ? (
                 <Image
                   src={manga.coverUrl}
@@ -268,10 +269,10 @@ export default async function MangaProfilePage({ params }: Props) {
               <span
                 className={`text-xs px-2 py-1 rounded-lg font-medium ${
                   manga.status === "ONGOING"
-                    ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                    ? "bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border)]"
                     : manga.status === "COMPLETED"
-                    ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                    : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                    ? "bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border)]"
+                    : "bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border)]"
                 }`}
               >
                 {statusLabel[manga.status]}
@@ -280,12 +281,12 @@ export default async function MangaProfilePage({ params }: Props) {
                 {manga.type}
               </span>
               {manga.contentRating === "ADULT" && (
-                <span className="text-xs px-2 py-1 rounded-lg bg-red-600/20 text-red-400 border border-red-600/30 font-bold">
+                <span className="text-xs px-2 py-1 rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border)] font-bold">
                   18+
                 </span>
               )}
               {manga.contentRating === "TEEN" && (
-                <span className="text-xs px-2 py-1 rounded-lg bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-medium">
+                <span className="text-xs px-2 py-1 rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border)] font-medium">
                   13+
                 </span>
               )}
@@ -297,13 +298,20 @@ export default async function MangaProfilePage({ params }: Props) {
 
             {/* Uploaded by */}
             {manga.translator ? (
-              <Link
-                href={`/profile/${manga.translator.user.username}`}
-                className="inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] mb-4 transition-colors"
-              >
-                <User className="w-4 h-4 text-[var(--text-primary)]" />
-                ลงโดย <span className="text-[var(--text-primary)] font-medium">{manga.translator.penName}</span>
-              </Link>
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                <Link
+                  href={`/profile/${manga.translator.user.username}`}
+                  className="inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  <User className="w-4 h-4 text-[var(--text-primary)]" />
+                  ลงโดย <span className="text-[var(--text-primary)] font-medium">{manga.translator.penName}</span>
+                </Link>
+                <TipButton
+                  translatorId={manga.translator.id}
+                  penName={manga.translator.penName}
+                  isLoggedIn={!!session?.user}
+                />
+              </div>
             ) : manga.author ? (
               <p className="inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)] mb-4">
                 <User className="w-4 h-4 text-[var(--text-primary)]" />

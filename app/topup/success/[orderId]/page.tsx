@@ -35,8 +35,8 @@ export default async function TopupSuccessPage({
       <div className="w-full max-w-md text-center space-y-6">
         {/* Icon */}
         <div className="flex justify-center">
-          <div className="w-20 h-20 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center">
-            <CheckCircle2 className="w-10 h-10 text-green-400" />
+          <div className="w-20 h-20 rounded-full bg-[var(--bg-card)] border border-[var(--border)] flex items-center justify-center">
+            <CheckCircle2 className="w-10 h-10 text-[var(--text-primary)]" />
           </div>
         </div>
 
@@ -56,20 +56,20 @@ export default async function TopupSuccessPage({
             {pkg?.name ?? "แพ็กเกจเหรียญ"}
           </p>
           <div className="flex items-center justify-center gap-3 mb-3">
-            <Coins className="w-10 h-10 text-yellow-400" />
-            <span className="font-bebas text-5xl text-yellow-400 tracking-wider">
+            <Coins className="w-10 h-10 text-[var(--text-primary)]" />
+            <span className="font-bebas text-5xl text-[var(--text-primary)] tracking-wider">
               +{total.toLocaleString()}
             </span>
           </div>
           {order.bonus > 0 && (
-            <p className="text-xs text-green-400 mb-3">
+            <p className="text-xs text-[var(--text-primary)] mb-3">
               รวมโบนัส {order.bonus.toLocaleString()} เหรียญ
             </p>
           )}
           <div className="border-t border-[var(--border)] pt-3 flex items-center justify-between text-sm">
             <span className="text-[var(--text-secondary)]">ยอดเหรียญปัจจุบัน</span>
             <span className="flex items-center gap-1.5 text-[var(--text-primary)] font-semibold">
-              <Coins className="w-4 h-4 text-yellow-400" />
+              <Coins className="w-4 h-4 text-[var(--text-primary)]" />
               {order.user.coins.toLocaleString()} เหรียญ
             </span>
           </div>

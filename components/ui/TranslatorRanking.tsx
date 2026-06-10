@@ -9,7 +9,7 @@ export interface TranslatorRankEntry {
   works: number;
 }
 
-const MEDAL = ["text-yellow-400", "text-gray-300", "text-amber-600"];
+const MEDAL = ["text-[var(--text-primary)]", "text-gray-300", "text-[var(--text-primary)]"];
 
 export default function TranslatorRanking({ entries }: { entries: TranslatorRankEntry[] }) {
   if (entries.length === 0) return null;

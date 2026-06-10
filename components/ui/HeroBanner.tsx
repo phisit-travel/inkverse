@@ -54,7 +54,7 @@ export default function HeroBanner({
             {genres.slice(0, 4).map((g) => (
               <span
                 key={g}
-                className="text-xs px-2 py-0.5 rounded-full bg-[var(--text-primary)]/80 text-[var(--text-primary)] font-medium"
+                className="text-xs px-2 py-0.5 rounded-full bg-[var(--text-primary)]/80 text-[var(--bg-primary)] font-medium"
               >
                 {g}
               </span>
@@ -75,7 +75,7 @@ export default function HeroBanner({
           <div className="flex items-center gap-4 mb-5 text-sm text-[var(--text-secondary)]">
             {rating !== undefined && rating > 0 && (
               <span className="flex items-center gap-1">
-                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                <Star className="w-4 h-4 fill-[var(--text-primary)] text-[var(--text-primary)]" />
                 {rating.toFixed(1)}
               </span>
             )}
@@ -91,7 +91,7 @@ export default function HeroBanner({
           <div className="flex items-center gap-3">
             <Link
               href={`/content/${slug}`}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bal-btn font-semibold text-sm hover:opacity-90 transition-colors shadow-lg shadow-[var(--text-primary)]/25"
+              className="flex items-center gap-2 px-6 py-3 rounded-xl bal-btn font-semibold text-sm hover:opacity-90 transition-colors  "
             >
               <Play className="w-4 h-4 fill-white" />
               อ่านเลย

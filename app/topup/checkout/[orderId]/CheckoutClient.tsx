@@ -258,7 +258,7 @@ export default function CheckoutClient({
         </Link>
 
         {isSandbox && method !== "PROMPTPAY" && (
-          <div className="flex items-center gap-2 px-4 py-2.5 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-yellow-400 text-xs">
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl text-[var(--text-primary)] text-xs">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>
               <strong>Sandbox mode</strong> — ไม่มีการเรียกเก็บเงินจริง
@@ -276,15 +276,15 @@ export default function CheckoutClient({
           </div>
           {order.bonus > 0 && (
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-green-400">โบนัส</span>
-              <span className="text-sm text-green-400">+{order.bonus.toLocaleString()} เหรียญ</span>
+              <span className="text-sm text-[var(--text-primary)]">โบนัส</span>
+              <span className="text-sm text-[var(--text-primary)]">+{order.bonus.toLocaleString()} เหรียญ</span>
             </div>
           )}
           <div className="border-t border-[var(--border)] mt-3 pt-3 flex items-center justify-between">
             <span className="text-sm text-[var(--text-secondary)] flex items-center gap-1.5">
-              <Coins className="w-4 h-4 text-yellow-400" /> รวมได้รับ
+              <Coins className="w-4 h-4 text-[var(--text-primary)]" /> รวมได้รับ
             </span>
-            <span className="font-bebas text-2xl text-yellow-400 tracking-wider">{total.toLocaleString()} เหรียญ</span>
+            <span className="font-bebas text-2xl text-[var(--text-primary)] tracking-wider">{total.toLocaleString()} เหรียญ</span>
           </div>
           <div className="flex items-center justify-between mt-1">
             <span className="text-xs text-[var(--text-muted)]">ยอดที่ต้องชำระ</span>
@@ -362,7 +362,7 @@ export default function CheckoutClient({
             {method === "PROMPTPAY" && (
               <div className="flex flex-col items-center gap-4 py-2">
                 {!promptpayQrImage ? (
-                  <div className="flex items-center gap-2 px-3 py-2.5 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
+                  <div className="flex items-center gap-2 px-3 py-2.5 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl text-[var(--text-primary)] text-sm">
                     <AlertCircle className="w-4 h-4 shrink-0" />
                     ยังไม่ได้ตั้งค่า QR PromptPay กรุณาเลือกช่องทางอื่น
                   </div>
@@ -401,7 +401,7 @@ export default function CheckoutClient({
                           <>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={slipPreview} alt="สลิป" className="max-h-44 rounded-lg" />
-                            <span className="flex items-center gap-1.5 text-xs text-green-400">
+                            <span className="flex items-center gap-1.5 text-xs text-[var(--text-primary)]">
                               <CheckCircle2 className="w-3.5 h-3.5" /> แนบสลิปแล้ว · แตะเพื่อเปลี่ยน
                             </span>
                           </>
@@ -488,7 +488,7 @@ export default function CheckoutClient({
             )}
 
             {error && (
-              <div className="mt-3 flex items-center gap-2 px-3 py-2.5 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
+              <div className="mt-3 flex items-center gap-2 px-3 py-2.5 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl text-[var(--text-primary)] text-sm">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 {error}
               </div>
@@ -526,7 +526,7 @@ export default function CheckoutClient({
           <span>{omisePublicKey ? "ชำระเงินปลอดภัยด้วย Omise · SSL 256-bit" : "ข้อมูลของคุณถูกเข้ารหัสด้วย SSL 256-bit"}</span>
         </div>
         <p className="text-center text-xs text-[var(--text-muted)]">
-          เหรียญปัจจุบัน: <span className="text-yellow-400">{userCoins.toLocaleString()}</span> เหรียญ
+          เหรียญปัจจุบัน: <span className="text-[var(--text-primary)]">{userCoins.toLocaleString()}</span> เหรียญ
         </p>
       </div>
     </div>

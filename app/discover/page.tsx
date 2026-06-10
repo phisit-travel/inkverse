@@ -145,7 +145,7 @@ export default async function DiscoverPage({
             href={buildUrl({ adult: showAdult ? undefined : "1", page: "1" })}
             className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl border transition-all ${
               showAdult
-                ? "bg-red-500/20 border-red-500/30 text-red-400"
+                ? "bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)]"
                 : "bg-white/5 border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >

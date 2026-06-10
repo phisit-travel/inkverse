@@ -75,14 +75,18 @@ export default async function EarningsPage() {
   const pending = pendingAgg._sum.amount ?? 0;
   const available = Math.max(0, totalEarned - paidOut - pending);
 
-  const mangaIds = byMangaRaw.map((b) => b.mangaId);
+  // Tips have no mangaId; exclude them from the per-title breakdown.
+  const byMangaNonNull = byMangaRaw.filter(
+    (b): b is typeof b & { mangaId: string } => b.mangaId !== null
+  );
+  const mangaIds = byMangaNonNull.map((b) => b.mangaId);
   const mangas = await prisma.manga.findMany({
     where: { id: { in: mangaIds } },
     select: { id: true, title: true, slug: true, coverUrl: true },
   });
   const mangaMap = Object.fromEntries(mangas.map((m) => [m.id, m]));
 
-  const byManga = byMangaRaw.map((b) => ({
+  const byManga = byMangaNonNull.map((b) => ({
     ...b,
     title: mangaMap[b.mangaId]?.title ?? "ไม่ทราบ",
     slug: mangaMap[b.mangaId]?.slug ?? "",
@@ -92,10 +96,10 @@ export default async function EarningsPage() {
   }));
 
   const statusLabel: Record<string, { label: string; cls: string }> = {
-    PENDING:  { label: "รอดำเนินการ", cls: "bg-yellow-500/20 text-yellow-400" },
-    APPROVED: { label: "อนุมัติแล้ว", cls: "bg-blue-500/20 text-blue-400" },
-    PAID:     { label: "โอนแล้ว",     cls: "bg-green-500/20 text-green-400" },
-    REJECTED: { label: "ถูกปฏิเสธ",   cls: "bg-red-500/20 text-red-400" },
+    PENDING:  { label: "รอดำเนินการ", cls: "bg-[var(--bg-card)] text-[var(--text-primary)]" },
+    APPROVED: { label: "อนุมัติแล้ว", cls: "bg-[var(--bg-card)] text-[var(--text-secondary)]" },
+    PAID:     { label: "โอนแล้ว",     cls: "bg-[var(--bg-card)] text-[var(--text-primary)]" },
+    REJECTED: { label: "ถูกปฏิเสธ",   cls: "bg-[var(--bg-card)] text-[var(--text-primary)]" },
   };
 
   return (
@@ -135,19 +139,19 @@ export default async function EarningsPage() {
           value={`฿${available.toFixed(2)}`}
           sub={available >= 100 ? "พร้อมถอน" : `ขั้นต่ำ ฿100`}
           icon={Wallet}
-          color="bg-green-500/80"
+          color="bg-[var(--bg-card)]"
         />
         <StatCard
           label="รอดำเนินการ"
           value={`฿${pending.toFixed(2)}`}
           icon={Clock}
-          color="bg-yellow-500/80"
+          color="bg-[var(--bg-card)]"
         />
         <StatCard
           label="โอนแล้วทั้งหมด"
           value={`฿${paidOut.toFixed(2)}`}
           icon={BadgeDollarSign}
-          color="bg-blue-500/80"
+          color="bg-[var(--bg-card)]"
         />
       </div>
 
@@ -155,7 +159,7 @@ export default async function EarningsPage() {
       {byManga.length > 0 && (
         <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5">
           <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-            <Coins className="w-4 h-4 text-yellow-400" />
+            <Coins className="w-4 h-4 text-[var(--text-primary)]" />
             รายได้แยกตามผลงาน
           </h2>
           <div className="space-y-3">
@@ -169,7 +173,7 @@ export default async function EarningsPage() {
                   <p className="text-sm text-[var(--text-primary)] truncate">{m.title}</p>
                   <p className="text-xs text-[var(--text-secondary)]">{m._count} ครั้งปลดล็อก · {m.totalCoins} coins</p>
                 </div>
-                <span className="text-sm font-semibold text-yellow-400 shrink-0">
+                <span className="text-sm font-semibold text-[var(--text-primary)] shrink-0">
                   ฿{m.totalAmount.toFixed(2)}
                 </span>
               </div>
@@ -197,7 +201,7 @@ export default async function EarningsPage() {
                   </p>
                   <p className="text-xs text-[var(--text-muted)]">{e.coinsSpent} coins</p>
                 </div>
-                <span className="text-sm font-semibold text-green-400 shrink-0">+฿{e.amount.toFixed(2)}</span>
+                <span className="text-sm font-semibold text-[var(--text-primary)] shrink-0">+฿{e.amount.toFixed(2)}</span>
               </div>
             ))}
           </div>

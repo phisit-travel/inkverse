@@ -63,10 +63,10 @@ export default async function AdminWithdrawalsPage() {
           </h1>
         </div>
         {totalPendingGross > 0 && (
-          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-3 text-center">
-            <p className="text-2xl font-bold text-yellow-400">฿{totalPendingNet.toFixed(2)}</p>
-            <p className="text-xs text-yellow-500/80">ต้องโอนจริง ({pendingRequests.length} รายการ)</p>
-            <p className="text-xs text-yellow-700 mt-0.5">ขอ ฿{totalPendingGross.toFixed(2)} · หัก 20%</p>
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-center">
+            <p className="text-2xl font-bold text-[var(--text-primary)]">฿{totalPendingNet.toFixed(2)}</p>
+            <p className="text-xs text-[var(--text-primary)]">ต้องโอนจริง ({pendingRequests.length} รายการ)</p>
+            <p className="text-xs text-[var(--text-primary)] mt-0.5">ขอ ฿{totalPendingGross.toFixed(2)} · หัก 20%</p>
           </div>
         )}
       </div>

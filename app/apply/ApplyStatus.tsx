@@ -19,8 +19,8 @@ export default function ApplyStatus({ application }: { application: Application 
       <div className="w-full max-w-md text-center">
         {isPending && (
           <>
-            <div className="w-20 h-20 rounded-full bg-yellow-500/20 border-2 border-yellow-500/40 flex items-center justify-center mx-auto mb-6">
-              <Clock className="w-9 h-9 text-yellow-400" />
+            <div className="w-20 h-20 rounded-full bg-[var(--bg-card)] border-2 border-[var(--border)] flex items-center justify-center mx-auto mb-6">
+              <Clock className="w-9 h-9 text-[var(--text-primary)]" />
             </div>
             <h1 className="font-bebas text-3xl text-[var(--text-primary)] tracking-wider mb-2">
               กำลังรอการพิจารณา
@@ -35,11 +35,11 @@ export default function ApplyStatus({ application }: { application: Application 
                 year: "numeric", month: "long", day: "numeric",
               })}
             </p>
-            <div className="mt-8 bg-[var(--bg-surface)] border border-yellow-500/20 rounded-2xl p-5 text-sm text-[var(--text-secondary)] text-left space-y-2">
-              <p className="text-yellow-400 font-medium mb-3">ขั้นตอนถัดไป</p>
+            <div className="mt-8 bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl p-5 text-sm text-[var(--text-secondary)] text-left space-y-2">
+              <p className="text-[var(--text-primary)] font-medium mb-3">ขั้นตอนถัดไป</p>
               {["ทีมงานตรวจสอบใบสมัครภายใน 3-5 วันทำการ", "รับการแจ้งเตือนทางอีเมลเมื่อมีการอัปเดต", "เมื่ออนุมัติแล้ว สามารถเริ่มอัปโหลดผลงานได้ทันที"].map((s, i) => (
                 <div key={i} className="flex gap-3">
-                  <span className="w-5 h-5 rounded-full bg-yellow-500/20 text-yellow-400 text-xs flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
+                  <span className="w-5 h-5 rounded-full bg-[var(--bg-card)] text-[var(--text-primary)] text-xs flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
                   <span>{s}</span>
                 </div>
               ))}
@@ -49,8 +49,8 @@ export default function ApplyStatus({ application }: { application: Application 
 
         {isApproved && (
           <>
-            <div className="w-20 h-20 rounded-full bg-green-500/20 border-2 border-green-500/40 flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-9 h-9 text-green-400" />
+            <div className="w-20 h-20 rounded-full bg-[var(--bg-card)] border-2 border-[var(--border)] flex items-center justify-center mx-auto mb-6">
+              <CheckCircle className="w-9 h-9 text-[var(--text-primary)]" />
             </div>
             <h1 className="font-bebas text-3xl text-[var(--text-primary)] tracking-wider mb-2">
               ยินดีด้วย!

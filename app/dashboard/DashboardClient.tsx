@@ -123,10 +123,10 @@ function StatusBadge({ status }: { status: string }) {
       className={clsx(
         "text-xs px-2 py-0.5 rounded-full font-medium",
         status === "ONGOING"
-          ? "bg-green-500/20 text-green-400"
+          ? "bg-[var(--bg-card)] text-[var(--text-primary)]"
           : status === "COMPLETED"
-          ? "bg-blue-500/20 text-blue-400"
-          : "bg-yellow-500/20 text-yellow-400"
+          ? "bg-[var(--bg-card)] text-[var(--text-secondary)]"
+          : "bg-[var(--bg-card)] text-[var(--text-primary)]"
       )}
     >
       {status === "ONGOING" ? "กำลังดำเนินเรื่อง" : status === "COMPLETED" ? "จบแล้ว" : status}
@@ -163,7 +163,7 @@ export default function DashboardClient({
             href="/dashboard/earnings"
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-[var(--border)] text-[var(--text-primary)] text-sm font-medium hover:bg-white/10 transition-colors"
           >
-            <Coins className="w-4 h-4 text-yellow-400" />
+            <Coins className="w-4 h-4 text-[var(--text-primary)]" />
             รายได้ & ถอนเงิน
           </Link>
           <Link
@@ -194,26 +194,26 @@ export default function DashboardClient({
           label="ตอนทั้งหมด"
           value={stats.totalChapters}
           icon={BarChart2}
-          color="bg-purple-500/80"
+          color="bg-[var(--bg-card)]"
         />
         <StatCard
           label="บุ๊กมาร์ก"
           value={stats.totalBookmarks}
           icon={Bookmark}
-          color="bg-blue-500/80"
+          color="bg-[var(--bg-card)]"
         />
         <StatCard
           label="ผู้อ่าน 7 วัน"
           value={stats.recentReaders}
           icon={Users}
-          color="bg-green-500/80"
+          color="bg-[var(--bg-card)]"
           sub="unique reads"
         />
         <StatCard
           label="เหรียญรับมา"
           value={stats.totalCoins}
           icon={Coins}
-          color="bg-yellow-500/80"
+          color="bg-[var(--bg-card)]"
           sub={`${stats.totalUnlocks} ครั้งที่ unlock`}
         />
       </div>
@@ -320,12 +320,12 @@ export default function DashboardClient({
                         </span>
                         {m.avgRating > 0 && (
                           <span className="flex items-center gap-1">
-                            <Star className="w-3 h-3 text-yellow-400" />
+                            <Star className="w-3 h-3 text-[var(--text-primary)]" />
                             {m.avgRating.toFixed(1)}
                           </span>
                         )}
                         {m.unlockCount > 0 && (
-                          <span className="flex items-center gap-1 text-yellow-400">
+                          <span className="flex items-center gap-1 text-[var(--text-primary)]">
                             <Coins className="w-3 h-3" />
                             {m.coinsEarned.toLocaleString()} เหรียญ
                           </span>
@@ -412,7 +412,7 @@ export default function DashboardClient({
                             )}
                           </span>
                           {ch.isPremium && (
-                            <span className="ml-2 inline-flex items-center gap-0.5 text-xs text-yellow-400">
+                            <span className="ml-2 inline-flex items-center gap-0.5 text-xs text-[var(--text-primary)]">
                               <Lock className="w-2.5 h-2.5" />
                               {ch.coinCost}
                             </span>
@@ -431,7 +431,7 @@ export default function DashboardClient({
                         </td>
                         <td className="px-4 py-3">
                           {ch.unlockCount > 0 ? (
-                            <span className="flex items-center gap-1 text-yellow-400 text-xs">
+                            <span className="flex items-center gap-1 text-[var(--text-primary)] text-xs">
                               <Coins className="w-3 h-3" />
                               {ch.coinsEarned}
                             </span>
@@ -458,7 +458,7 @@ export default function DashboardClient({
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5">
                 <p className="text-xs text-[var(--text-secondary)] mb-1">เหรียญทั้งหมดที่รับมา</p>
-                <p className="text-3xl font-bold text-yellow-400">
+                <p className="text-3xl font-bold text-[var(--text-primary)]">
                   {stats.totalCoins.toLocaleString()}
                 </p>
                 <p className="text-xs text-[var(--text-muted)] mt-1">จาก {stats.totalUnlocks} ครั้ง unlock</p>
@@ -504,11 +504,11 @@ export default function DashboardClient({
                           </Link>
                           <div className="flex-1 bg-white/5 rounded-full h-1.5">
                             <div
-                              className="h-1.5 rounded-full bg-gradient-to-r from-yellow-500 to-orange-400"
+                              className="h-1.5 rounded-full bg-gradient-to-r from-[var(--bg-card)] to-[var(--bg-surface)]"
                               style={{ width: `${pct}%` }}
                             />
                           </div>
-                          <span className="text-xs text-yellow-400 w-20 text-right shrink-0">
+                          <span className="text-xs text-[var(--text-primary)] w-20 text-right shrink-0">
                             <Coins className="w-3 h-3 inline mr-0.5" />
                             {m.coinsEarned.toLocaleString()}
                           </span>
@@ -548,7 +548,7 @@ export default function DashboardClient({
                         )}
                       </div>
                       <div className="flex items-center gap-4 shrink-0 ml-4">
-                        <span className="text-yellow-400 text-sm font-medium flex items-center gap-1">
+                        <span className="text-[var(--text-primary)] text-sm font-medium flex items-center gap-1">
                           <Coins className="w-3.5 h-3.5" />
                           {u.coinSpent}
                         </span>

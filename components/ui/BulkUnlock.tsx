@@ -25,12 +25,20 @@ export default function BulkUnlock({
   const [count, setCount] = useState(Math.min(5, total));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [done, setDone] = useState<{ unlocked: number; spent: number } | null>(null);
+  const [done, setDone] = useState<{ unlocked: number; spent: number; saved: number } | null>(null);
 
   // The first `count` locked chapters (cheapest to reach = earliest).
   const selected = useMemo(() => chapters.slice(0, count), [chapters, count]);
-  const totalCost = useMemo(() => selected.reduce((s, c) => s + c.coinCost, 0), [selected]);
-  const canAfford = userCoins >= totalCost;
+  const rawCost = useMemo(() => selected.reduce((s, c) => s + c.coinCost, 0), [selected]);
+  // Mirror of bulkDiscountRate() in lib/coins.ts — keep the tiers in sync.
+  const discountRate = count >= 50 ? 0.15 : count >= 20 ? 0.1 : count >= 10 ? 0.05 : 0;
+  const payCost = Math.round(rawCost * (1 - discountRate));
+  const saved = rawCost - payCost;
+  const canAfford = userCoins >= payCost;
+
+  // How many more chapters until the next discount tier kicks in.
+  const nextTier = count < 10 ? 10 : count < 20 ? 20 : count < 50 ? 50 : null;
+  const nextTierPct = nextTier === 10 ? 5 : nextTier === 20 ? 10 : 15;
 
   const quickPicks = [5, 10, 20, 50].filter((n) => n < total);
 
@@ -58,7 +66,11 @@ export default function BulkUnlock({
         );
         return;
       }
-      setDone({ unlocked: data.unlockedCount, spent: data.coinsSpent });
+      setDone({
+        unlocked: data.unlockedCount,
+        spent: data.coinsSpent,
+        saved: data.coinsSaved ?? 0,
+      });
       router.refresh();
     } catch {
       setError("เกิดข้อผิดพลาด กรุณาลองใหม่");
@@ -71,9 +83,10 @@ export default function BulkUnlock({
 
   if (done) {
     return (
-      <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-green-500/10 border border-green-500/30 text-green-400 text-sm">
+      <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] text-sm">
         <CheckCircle2 className="w-4 h-4 shrink-0" />
-        ปลดล็อก {done.unlocked} ตอนสำเร็จ (ใช้ {done.spent} เหรียญ)
+        ปลดล็อก {done.unlocked} ตอนสำเร็จ (ใช้ {done.spent} เหรียญ
+        {done.saved > 0 ? ` · ประหยัด ${done.saved} เหรียญ` : ""})
       </div>
     );
   }
@@ -135,22 +148,43 @@ export default function BulkUnlock({
       {/* Cost summary */}
       <div className="flex items-center justify-between bg-[var(--bg-card)] rounded-xl px-4 py-3">
         <span className="text-sm text-[var(--text-secondary)]">ราคารวม</span>
-        <div className="flex items-center gap-1.5 text-yellow-400 font-semibold">
-          <Coins className="w-4 h-4" />
-          <span className="tabular-nums">{totalCost.toLocaleString()} เหรียญ</span>
+        <div className="flex items-center gap-2 font-semibold">
+          {discountRate > 0 && (
+            <span className="text-xs text-[var(--text-muted)] line-through tabular-nums">
+              {rawCost.toLocaleString()}
+            </span>
+          )}
+          <div className="flex items-center gap-1.5 text-[var(--text-primary)]">
+            <Coins className="w-4 h-4" />
+            <span className="tabular-nums">{payCost.toLocaleString()} เหรียญ</span>
+          </div>
         </div>
       </div>
+
+      {/* Discount line / next-tier nudge */}
+      {discountRate > 0 ? (
+        <p className="text-xs text-[var(--text-primary)] text-center">
+          ส่วนลด {Math.round(discountRate * 100)}% · ประหยัด {saved.toLocaleString()} เหรียญ
+        </p>
+      ) : (
+        nextTier !== null && nextTier <= total && (
+          <p className="text-xs text-[var(--text-muted)] text-center">
+            ปลดอีก {nextTier - count} ตอน รับส่วนลด {nextTierPct}%
+          </p>
+        )
+      )}
+
       <div className="flex items-center justify-between text-xs px-1">
         <span className="text-[var(--text-secondary)]">
-          เหรียญของคุณ: <span className={canAfford ? "text-[var(--text-primary)]" : "text-red-400"}>{userCoins.toLocaleString()}</span>
+          เหรียญของคุณ: <span className={canAfford ? "text-[var(--text-primary)]" : "text-[var(--text-primary)]"}>{userCoins.toLocaleString()}</span>
         </span>
         {canAfford && (
-          <span className="text-[var(--text-secondary)]">หลังปลดล็อก: {(userCoins - totalCost).toLocaleString()}</span>
+          <span className="text-[var(--text-secondary)]">หลังปลดล็อก: {(userCoins - payCost).toLocaleString()}</span>
         )}
       </div>
 
       {error && (
-        <p className="text-sm text-red-400 text-center bg-red-500/10 rounded-lg py-2 px-3">{error}</p>
+        <p className="text-sm text-[var(--text-primary)] text-center bg-[var(--bg-card)] rounded-lg py-2 px-3">{error}</p>
       )}
 
       {/* Action */}
@@ -165,10 +199,10 @@ export default function BulkUnlock({
           className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bal-btn font-semibold text-sm hover:opacity-90 transition-colors disabled:opacity-50"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Unlock className="w-4 h-4" />}
-          {loading ? "กำลังปลดล็อก..." : `ปลดล็อก ${count} ตอน · ${totalCost.toLocaleString()} เหรียญ`}
+          {loading ? "กำลังปลดล็อก..." : `ปลดล็อก ${count} ตอน · ${payCost.toLocaleString()} เหรียญ`}
         </button>
       ) : (
-        <a href="/topup" className="block w-full py-3 rounded-xl bg-yellow-500 text-black font-semibold text-sm text-center hover:bg-yellow-400 transition-colors">
+        <a href="/topup" className="block w-full py-3 rounded-xl bg-[var(--text-primary)] text-black font-semibold text-sm text-center hover:bg-[var(--bg-surface)] transition-colors">
           เติมเหรียญ
         </a>
       )}

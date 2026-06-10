@@ -41,7 +41,7 @@ export default function MangaCard({
       className={clsx(
         "group relative flex flex-col rounded-xl overflow-hidden bal-invert",
         "bg-[var(--bg-card)] border border-[var(--border)]",
-        "transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl",
+        "transition-all duration-300 hover:-translate-y-1 hover:",
         isLarge ? "h-80" : isCompact ? "h-36 flex-row" : "h-auto",
         className
       )}
@@ -77,10 +77,10 @@ export default function MangaCard({
             className={clsx(
               "absolute top-2 left-2 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider",
               status === "ONGOING"
-                ? "bg-green-500/90 text-[var(--text-primary)]"
+                ? "bg-[var(--bg-card)] text-[var(--text-primary)]"
                 : status === "COMPLETED"
-                ? "bg-blue-500/90 text-[var(--text-primary)]"
-                : "bg-yellow-500/90 text-black"
+                ? "bg-[var(--bg-card)] text-[var(--text-primary)]"
+                : "bg-[var(--bg-card)] text-black"
             )}
           >
             {status}
@@ -89,14 +89,14 @@ export default function MangaCard({
 
         {/* Type badge */}
         {type && !isCompact && contentRating !== "ADULT" && (
-          <span className="absolute top-2 right-2 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-[var(--text-primary)]/90 text-[var(--text-primary)]">
+          <span className="absolute top-2 right-2 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-[var(--text-primary)]/90 text-[var(--bg-primary)]">
             {type}
           </span>
         )}
 
         {/* 18+ badge */}
         {contentRating === "ADULT" && (
-          <span className="absolute top-2 right-2 text-[10px] font-black px-1.5 py-0.5 rounded bg-red-600 text-[var(--text-primary)] border border-red-400/50 shadow-lg">
+          <span className="absolute top-2 right-2 text-[10px] font-black px-1.5 py-0.5 rounded bg-[var(--text-primary)] text-[var(--bg-primary)] border border-[var(--border)]">
             18+
           </span>
         )}
@@ -131,7 +131,7 @@ export default function MangaCard({
           )}
           {rating !== undefined && (
             <span className="flex items-center gap-0.5">
-              <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+              <Star className="w-3 h-3 fill-[var(--text-primary)] text-[var(--text-primary)]" />
               {rating.toFixed(1)}
             </span>
           )}

@@ -49,15 +49,18 @@ export async function GET() {
   const availableBalance = parseFloat((totalEarned - totalWithdrawn).toFixed(2));
   const pendingWithdrawal = pendingAgg._sum.amount ?? 0;
 
-  // Resolve manga titles
-  const mangaIds = byManga.map((b) => b.mangaId);
+  // Resolve manga titles (tips have no mangaId — exclude from per-title breakdown)
+  const byMangaNonNull = byManga.filter(
+    (b): b is typeof b & { mangaId: string } => b.mangaId !== null
+  );
+  const mangaIds = byMangaNonNull.map((b) => b.mangaId);
   const mangas = await prisma.manga.findMany({
     where: { id: { in: mangaIds } },
     select: { id: true, title: true, slug: true, coverUrl: true },
   });
   const mangaMap = Object.fromEntries(mangas.map((m) => [m.id, m]));
 
-  const earningsByManga = byManga
+  const earningsByManga = byMangaNonNull
     .map((b) => ({
       mangaId: b.mangaId,
       title: mangaMap[b.mangaId]?.title ?? "ไม่ทราบ",

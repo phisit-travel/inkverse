@@ -39,13 +39,13 @@ export default function AgeGate({ title, coverUrl }: AgeGateProps) {
 
       <div className="w-full max-w-sm space-y-6 text-center">
         {/* Icon */}
-        <div className="w-20 h-20 rounded-full bg-red-500/10 border-2 border-red-500/30 flex items-center justify-center mx-auto">
-          <ShieldAlert className="w-10 h-10 text-red-400" />
+        <div className="w-20 h-20 rounded-full bg-[var(--bg-card)] border-2 border-[var(--border)] flex items-center justify-center mx-auto">
+          <ShieldAlert className="w-10 h-10 text-[var(--text-primary)]" />
         </div>
 
         {/* Warning */}
         <div>
-          <div className="inline-block px-3 py-1 bg-red-500/20 border border-red-500/30 rounded-full text-red-400 text-xs font-bold tracking-widest uppercase mb-3">
+          <div className="inline-block px-3 py-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-full text-[var(--text-primary)] text-xs font-bold tracking-widest uppercase mb-3">
             เนื้อหาสำหรับผู้ใหญ่
           </div>
           <h1 className="font-bebas text-3xl text-[var(--text-primary)] tracking-wider mb-2">

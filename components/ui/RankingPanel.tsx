@@ -86,11 +86,11 @@ export default function RankingPanel({
                 className={clsx(
                   "w-7 h-7 flex items-center justify-center rounded-lg text-sm font-bold flex-shrink-0",
                   i === 0
-                    ? "bg-gradient-to-br from-yellow-400 to-yellow-600 text-black"
+                    ? "bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-surface)] text-black"
                     : i === 1
                     ? "bg-gradient-to-br from-gray-300 to-gray-500 text-black"
                     : i === 2
-                    ? "bg-gradient-to-br from-orange-400 to-orange-700 text-black"
+                    ? "bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-surface)] text-black"
                     : "bg-white/10 text-[var(--text-secondary)]"
                 )}
               >

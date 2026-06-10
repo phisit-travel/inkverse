@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { authConfig } from "./auth.config";
 import { rateLimit } from "@/lib/rate-limit";
+import { grantSignupBonus } from "@/lib/coins";
 
 // Our User model has a required, unique `username` that the default adapter
 // doesn't provide on OAuth sign-up. Wrap createUser to synthesise a unique
@@ -32,6 +33,8 @@ const adapter: Adapter = {
         role: "READER",
       },
     });
+    // Welcome coins for new Google sign-ups (idempotent).
+    await grantSignupBonus(user.id);
     return user as AdapterUser;
   },
 };

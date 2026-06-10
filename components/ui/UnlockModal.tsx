@@ -57,11 +57,11 @@ export default function UnlockModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl w-full max-w-sm shadow-2xl">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl w-full max-w-sm ">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-[var(--border)]">
           <div className="flex items-center gap-2">
-            <Lock className="w-5 h-5 text-yellow-400" />
+            <Lock className="w-5 h-5 text-[var(--text-primary)]" />
             <h2 className="text-[var(--text-primary)] font-semibold">ปลดล็อกตอน</h2>
           </div>
           <button
@@ -82,7 +82,7 @@ export default function UnlockModal({
           {/* Cost */}
           <div className="flex items-center justify-between bg-[var(--bg-card)] rounded-xl px-4 py-3">
             <span className="text-sm text-[var(--text-secondary)]">ราคา</span>
-            <div className="flex items-center gap-1.5 text-yellow-400 font-semibold">
+            <div className="flex items-center gap-1.5 text-[var(--text-primary)] font-semibold">
               <Coins className="w-4 h-4" />
               <span>{coinCost} เหรียญ</span>
             </div>
@@ -93,7 +93,7 @@ export default function UnlockModal({
             <span className="text-sm text-[var(--text-secondary)]">เหรียญของคุณ</span>
             <div
               className={`flex items-center gap-1.5 font-semibold ${
-                canAfford ? "text-green-400" : "text-red-400"
+                canAfford ? "text-[var(--text-primary)]" : "text-[var(--text-primary)]"
               }`}
             >
               <Coins className="w-4 h-4" />
@@ -109,7 +109,7 @@ export default function UnlockModal({
           )}
 
           {error && (
-            <p className="text-sm text-red-400 text-center bg-red-500/10 rounded-lg py-2 px-3">
+            <p className="text-sm text-[var(--text-primary)] text-center bg-[var(--bg-card)] rounded-lg py-2 px-3">
               {error}
             </p>
           )}
@@ -128,7 +128,7 @@ export default function UnlockModal({
           ) : (
             <a
               href="/topup"
-              className="flex-1 py-3 rounded-xl bg-yellow-500 text-black font-semibold text-sm text-center hover:bg-yellow-400 transition-colors"
+              className="flex-1 py-3 rounded-xl bg-[var(--text-primary)] text-black font-semibold text-sm text-center hover:bg-[var(--bg-surface)] transition-colors"
             >
               เติมเหรียญ
             </a>

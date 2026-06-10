@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { grantSignupBonus, recordReferral } from "@/lib/coins";
 
 const schema = z.object({
   username: z
@@ -12,6 +13,7 @@ const schema = z.object({
     .regex(/^[a-zA-Z0-9_]+$/, "ใช้ได้เฉพาะตัวอักษร ตัวเลข และ _"),
   email: z.string().email(),
   password: z.string().min(8),
+  ref: z.string().max(30).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -29,7 +31,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { username, email, password } = parsed.data;
+  const { username, email, password, ref } = parsed.data;
 
   const existing = await prisma.user.findFirst({
     where: { OR: [{ email }, { username }] },
@@ -48,6 +50,12 @@ export async function POST(req: NextRequest) {
     data: { username, email, passwordHash, role: "READER" },
     select: { id: true, username: true, email: true, role: true },
   });
+
+  // Welcome coins for new email/password sign-ups (idempotent).
+  await grantSignupBonus(user.id);
+
+  // Attribute the referral if they arrived via an invite link (best-effort).
+  if (ref) await recordReferral(user.id, ref);
 
   return NextResponse.json(user, { status: 201 });
 }

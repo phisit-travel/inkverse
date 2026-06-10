@@ -7,6 +7,7 @@ import RankingPanel from "@/components/ui/RankingPanel";
 import GenreFilterBar from "@/components/ui/GenreFilterBar";
 import HeroBanner from "@/components/ui/HeroBanner";
 import ContinueReading from "@/components/ui/ContinueReading";
+import DailyCheckIn from "@/components/ui/DailyCheckIn";
 import TranslatorRanking from "@/components/ui/TranslatorRanking";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
@@ -105,6 +106,9 @@ export default async function HomePage() {
           latestChapter={featured.latestChapter}
         />
       )}
+
+      {/* Daily check-in (per-user, client-fetched so the page stays cached) */}
+      <DailyCheckIn />
 
       {/* Continue reading (per-user, client-fetched so the page stays cached) */}
       <ContinueReading />

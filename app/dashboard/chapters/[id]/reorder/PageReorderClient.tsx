@@ -123,12 +123,12 @@ export default function PageReorderClient({
       <div className="sticky top-16 z-20 bg-[var(--bg-primary)]/90 backdrop-blur-md border-b border-[var(--border)] py-3 -mx-4 px-4 sm:-mx-6 sm:px-6 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm">
           {saved ? (
-            <span className="flex items-center gap-1.5 text-green-400">
+            <span className="flex items-center gap-1.5 text-[var(--text-primary)]">
               <CheckCircle2 className="w-4 h-4" />
               บันทึกแล้ว
             </span>
           ) : hasChanges ? (
-            <span className="flex items-center gap-1.5 text-yellow-400 text-xs">
+            <span className="flex items-center gap-1.5 text-[var(--text-primary)] text-xs">
               <AlertCircle className="w-3.5 h-3.5" />
               มีการเปลี่ยนแปลง — กด "บันทึก" เพื่อยืนยัน
             </span>
@@ -161,7 +161,7 @@ export default function PageReorderClient({
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
+        <div className="flex items-center gap-2 px-4 py-3 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl text-[var(--text-primary)] text-sm">
           <AlertCircle className="w-4 h-4 shrink-0" />
           {error}
         </div>
@@ -187,7 +187,7 @@ export default function PageReorderClient({
                 dragIndex === index
                   ? "opacity-40 border-[var(--text-primary)]/60 scale-95"
                   : overIndex === index && dragIndex !== null
-                  ? "border-[var(--text-primary)] shadow-lg shadow-[var(--text-primary)]/20 scale-[1.03]"
+                  ? "border-[var(--text-primary)]   scale-[1.03]"
                   : "border-[var(--border)] hover:border-white/30"
               )}
               style={{ aspectRatio: "3/4" }}
@@ -221,7 +221,7 @@ export default function PageReorderClient({
 
               {/* Changed indicator */}
               {page.pageNum !== index + 1 && (
-                <div className="absolute bottom-1.5 right-1.5 w-2 h-2 rounded-full bg-yellow-400" title="ลำดับเปลี่ยน" />
+                <div className="absolute bottom-1.5 right-1.5 w-2 h-2 rounded-full bg-[var(--text-primary)]" title="ลำดับเปลี่ยน" />
               )}
             </div>
           ))}

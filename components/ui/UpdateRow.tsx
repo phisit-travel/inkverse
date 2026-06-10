@@ -67,7 +67,7 @@ export default function UpdateRow({
           <span
             className={clsx(
               "text-xs font-medium",
-              isPremium ? "text-yellow-400" : "text-[var(--text-primary)]"
+              isPremium ? "text-[var(--text-primary)]" : "text-[var(--text-primary)]"
             )}
           >
             {isPremium ? "🔒 " : ""}ตอนที่ {chapterNum}

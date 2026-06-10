@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Logo from "@/components/ui/Logo";
-import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, Gift } from "lucide-react";
 import Link from "next/link";
 
 export default function SignUpPage() {
@@ -13,6 +13,13 @@ export default function SignUpPage() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [ref, setRef] = useState("");
+
+  // Capture an invite code (?ref=username) without needing a Suspense boundary.
+  useEffect(() => {
+    const r = new URLSearchParams(window.location.search).get("ref");
+    if (r) setRef(r);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +29,7 @@ export default function SignUpPage() {
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify(ref ? { ...form, ref } : form),
     });
 
     if (!res.ok) {
@@ -54,6 +61,13 @@ export default function SignUpPage() {
           <h1 className="font-bebas text-3xl text-[var(--text-primary)] tracking-wider text-center mb-6">
             สมัครสมาชิก
           </h1>
+
+          {ref && (
+            <div className="flex items-center justify-center gap-2 mb-6 px-4 py-2 border border-[var(--border)] bg-[var(--bg-card)] text-xs text-[var(--text-secondary)] uppercase tracking-widest">
+              <Gift className="w-3.5 h-3.5" />
+              ได้รับเชิญโดย @{ref} · รับ 50 เหรียญเมื่อเติมครั้งแรก
+            </div>
+          )}
 
           <button
             onClick={() => signIn("google", { callbackUrl: "/" })}
@@ -120,7 +134,7 @@ export default function SignUpPage() {
             </div>
 
             {error && (
-              <p className="text-sm text-red-400 text-center">{error}</p>
+              <p className="text-sm text-[var(--text-primary)] text-center">{error}</p>
             )}
 
             <button

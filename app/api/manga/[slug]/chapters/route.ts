@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { notifyNewChapter } from "@/lib/notifications";
 
 export async function POST(
   req: NextRequest,
@@ -57,6 +58,14 @@ export async function POST(
   await prisma.manga.update({
     where: { id: manga.id },
     data: { updatedAt: new Date() },
+  });
+
+  // Re-engagement: tell everyone who bookmarked this manga (best-effort).
+  await notifyNewChapter({
+    mangaId: manga.id,
+    mangaTitle: manga.title,
+    mangaSlug: manga.slug,
+    chapterNum,
   });
 
   return NextResponse.json(chapter, { status: 201 });

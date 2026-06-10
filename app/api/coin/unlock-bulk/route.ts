@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { unlockChaptersBulk } from "@/lib/coins";
 import { rateLimit } from "@/lib/rate-limit";
+import { maybeNotifyLowCoins } from "@/lib/notifications";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -29,5 +30,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: result.error }, { status });
   }
 
+  await maybeNotifyLowCoins(userId, result.coinsLeft);
   return NextResponse.json(result);
 }

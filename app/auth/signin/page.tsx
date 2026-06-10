@@ -115,7 +115,7 @@ export default function SignInPage() {
             </div>
 
             {error && (
-              <p className="text-sm text-red-400 text-center">{error}</p>
+              <p className="text-sm text-[var(--text-primary)] text-center">{error}</p>
             )}
 
             <button

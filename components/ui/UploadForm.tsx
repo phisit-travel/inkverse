@@ -322,9 +322,9 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
       {/* ── Manga Tab ── */}
       {tab === "manga" && (
         mangaSuccess ? (
-          <div className="bg-[var(--bg-surface)] rounded-2xl border border-green-500/20 p-10 text-center space-y-5">
-            <div className="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center mx-auto">
-              <CheckCircle2 className="w-8 h-8 text-green-400" />
+          <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-10 text-center space-y-5">
+            <div className="w-16 h-16 rounded-full bg-[var(--bg-card)] border border-[var(--border)] flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-8 h-8 text-[var(--text-primary)]" />
             </div>
             <div>
               <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-wider mb-1">สร้างมังงะสำเร็จ!</h2>
@@ -372,7 +372,7 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
                     <button
                       type="button"
                       onClick={() => { setCoverFile(null); setCoverPreview(""); }}
-                      className="absolute top-1 right-1 p-0.5 rounded-full bg-black/60 text-[var(--text-primary)] hover:bg-red-500 transition-colors"
+                      className="absolute top-1 right-1 p-0.5 rounded-full bg-black/60 text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -400,19 +400,19 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
                   placeholder="ชื่อเรื่อง..."
                   className={inputCls}
                 />
-                {errors.title && <p className="text-xs text-red-400 mt-1">{errors.title.message}</p>}
+                {errors.title && <p className="text-xs text-[var(--text-primary)] mt-1">{errors.title.message}</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">Slug (URL) *</label>
                 <input {...register("slug")} placeholder="manga-slug-here" className={inputCls} />
-                {errors.slug && <p className="text-xs text-red-400 mt-1">{errors.slug.message}</p>}
+                {errors.slug && <p className="text-xs text-[var(--text-primary)] mt-1">{errors.slug.message}</p>}
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">คำอธิบาย *</label>
               <textarea {...register("description")} rows={4} placeholder="เรื่องย่อ..." className={`${inputCls} resize-none`} />
-              {errors.description && <p className="text-xs text-red-400 mt-1">{errors.description.message}</p>}
+              {errors.description && <p className="text-xs text-[var(--text-primary)] mt-1">{errors.description.message}</p>}
             </div>
 
             {/* Genre selector */}
@@ -488,7 +488,7 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
             </div>
 
             {mangaError && (
-              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-sm text-red-400">
+              <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-sm text-[var(--text-primary)]">
                 {mangaError}
               </div>
             )}
@@ -508,9 +508,9 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
       {/* ── Chapter Tab ── */}
       {tab === "chapter" && (
         chapterSuccess ? (
-          <div className="bg-[var(--bg-surface)] rounded-2xl border border-green-500/20 p-10 text-center space-y-5">
-            <div className="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center mx-auto">
-              <CheckCircle2 className="w-8 h-8 text-green-400" />
+          <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-10 text-center space-y-5">
+            <div className="w-16 h-16 rounded-full bg-[var(--bg-card)] border border-[var(--border)] flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-8 h-8 text-[var(--text-primary)]" />
             </div>
             <div>
               <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-wider mb-1">อัปโหลดสำเร็จ!</h2>
@@ -627,7 +627,7 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
                     onChange={e => setCoinCost(e.target.value)}
                     className="w-20 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-[var(--text-primary)] text-center focus:outline-none focus:border-[var(--text-primary)]/50"
                   />
-                  <span className="text-xs text-yellow-400">เหรียญ</span>
+                  <span className="text-xs text-[var(--text-primary)]">เหรียญ</span>
                 </div>
               )}
             </div>
@@ -643,7 +643,7 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
                   <button
                     type="button"
                     onClick={() => { pagePreviews.forEach(u => URL.revokeObjectURL(u)); setPageFiles([]); setPagePreviews([]); }}
-                    className="text-xs text-red-400 hover:text-red-300 transition-colors"
+                    className="text-xs text-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors"
                   >
                     ล้างทั้งหมด
                   </button>
@@ -666,7 +666,7 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
                       <button
                         type="button"
                         onClick={() => removePageFile(i)}
-                        className="absolute top-0.5 right-0.5 p-0.5 rounded-full bg-black/70 text-[var(--text-primary)] hover:bg-red-500 transition-colors"
+                        className="absolute top-0.5 right-0.5 p-0.5 rounded-full bg-black/70 text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors"
                       >
                         <X className="w-2.5 h-2.5" />
                       </button>
@@ -684,13 +684,13 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
             </div>
 
             {chapterError && (
-              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-sm text-red-400">
+              <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-sm text-[var(--text-primary)]">
                 {chapterError}
               </div>
             )}
 
             {uploadProgress && (
-              <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/30 text-sm text-blue-400 flex items-center gap-2">
+              <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-sm text-[var(--text-secondary)] flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
                 {uploadProgress}
               </div>

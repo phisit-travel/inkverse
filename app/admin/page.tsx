@@ -14,13 +14,14 @@ export default async function AdminPage() {
     redirect("/");
   }
 
-  const [userCount, mangaCount, chapterCount, commentCount, pendingApps, recentMangas] =
+  const [userCount, mangaCount, chapterCount, commentCount, pendingApps, openContacts, recentMangas] =
     await Promise.all([
       prisma.user.count(),
       prisma.manga.count(),
       prisma.chapter.count(),
       prisma.comment.count(),
       prisma.translatorApplication.count({ where: { status: "PENDING" } }),
+      prisma.contactMessage.count({ where: { status: "OPEN" } }),
       prisma.manga.findMany({
         take: 10,
         orderBy: { createdAt: "desc" },
@@ -38,10 +39,10 @@ export default async function AdminPage() {
     ]);
 
   const stats = [
-    { label: "ผู้ใช้ทั้งหมด", value: userCount, icon: Users, color: "text-blue-400" },
+    { label: "ผู้ใช้ทั้งหมด", value: userCount, icon: Users, color: "text-[var(--text-secondary)]" },
     { label: "มังงะทั้งหมด", value: mangaCount, icon: BookOpen, color: "text-[var(--text-primary)]" },
     { label: "ตอนทั้งหมด", value: chapterCount, icon: TrendingUp, color: "text-[var(--text-primary)]" },
-    { label: "ความคิดเห็น", value: commentCount, icon: MessageSquare, color: "text-green-400" },
+    { label: "ความคิดเห็น", value: commentCount, icon: MessageSquare, color: "text-[var(--text-primary)]" },
   ];
 
   return (
@@ -76,20 +77,37 @@ export default async function AdminPage() {
         </Link>
         <Link
           href="/admin/applications"
-          className="relative py-3 px-5 rounded-xl bg-gradient-to-r from-yellow-500 to-orange-500 text-[var(--text-primary)] text-sm font-medium text-center hover:opacity-90 transition-colors"
+          className="relative py-3 px-5 rounded-xl bg-gradient-to-r from-[var(--bg-card)] to-[var(--bg-surface)] text-[var(--text-primary)] text-sm font-medium text-center hover:opacity-90 transition-colors"
         >
           ใบสมัครนักแปล
           {pendingApps > 0 && (
-            <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1.5 rounded-full bg-red-600 text-white text-xs font-bold flex items-center justify-center shadow-lg">
+            <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1.5 rounded-full bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-bold flex items-center justify-center ">
               {pendingApps}
             </span>
           )}
         </Link>
         <Link
           href="/admin/withdrawals"
-          className="py-3 px-5 rounded-xl bg-gradient-to-r from-green-500 to-teal-500 text-[var(--text-primary)] text-sm font-medium text-center hover:opacity-90 transition-colors"
+          className="py-3 px-5 rounded-xl bg-gradient-to-r from-[var(--bg-card)] to-[var(--bg-surface)] text-[var(--text-primary)] text-sm font-medium text-center hover:opacity-90 transition-colors"
         >
           คำขอถอนเงิน
+        </Link>
+        <Link
+          href="/admin/coin-packages"
+          className="py-3 px-5 rounded-xl bg-gradient-to-r from-[var(--bg-card)] to-[var(--bg-surface)] text-[var(--text-primary)] text-sm font-medium text-center hover:opacity-90 transition-colors"
+        >
+          จัดการแพ็กเหรียญ
+        </Link>
+        <Link
+          href="/admin/contact"
+          className="relative py-3 px-5 rounded-xl bg-gradient-to-r from-[var(--bg-card)] to-[var(--bg-surface)] text-[var(--text-primary)] text-sm font-medium text-center hover:opacity-90 transition-colors"
+        >
+          กล่องข้อความติดต่อ
+          {openContacts > 0 && (
+            <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1.5 rounded-full bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-bold flex items-center justify-center ">
+              {openContacts}
+            </span>
+          )}
         </Link>
         <RecalculateButton />
       </div>
@@ -127,10 +145,10 @@ export default async function AdminPage() {
                     <span
                       className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         manga.status === "ONGOING"
-                          ? "bg-green-500/20 text-green-400"
+                          ? "bg-[var(--bg-card)] text-[var(--text-primary)]"
                           : manga.status === "COMPLETED"
-                          ? "bg-blue-500/20 text-blue-400"
-                          : "bg-yellow-500/20 text-yellow-400"
+                          ? "bg-[var(--bg-card)] text-[var(--text-secondary)]"
+                          : "bg-[var(--bg-card)] text-[var(--text-primary)]"
                       }`}
                     >
                       {manga.status}

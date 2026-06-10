@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { applyFirstTopupBonus, extendVipDays, rewardReferralOnFirstTopup } from "@/lib/coins";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const omise = process.env.OMISE_SECRET_KEY
@@ -65,16 +66,18 @@ export async function POST(
   // ── Sandbox: allow without real charge when OMISE_SECRET_KEY not set ──
   const totalCoins = order.coins + order.bonus;
 
-  await prisma.$transaction([
-    prisma.coinOrder.update({
-      where: { id: orderId },
+  const firstTopupBonus = await prisma.$transaction(async (tx) => {
+    // Guard against double-credit: only a PENDING → PAID flip proceeds.
+    const flipped = await tx.coinOrder.updateMany({
+      where: { id: orderId, status: "PENDING" },
       data: { status: "PAID", method, paidAt: new Date() },
-    }),
-    prisma.user.update({
-      where: { id: userId },
-      data: { coins: { increment: totalCoins } },
-    }),
-    prisma.coinTransaction.create({
+    });
+    if (flipped.count === 0) return 0;
+
+    const bonus = await applyFirstTopupBonus(tx, userId, order.coins);
+    if (order.vipDays > 0) await extendVipDays(tx, userId, order.vipDays);
+    if (bonus > 0) await rewardReferralOnFirstTopup(tx, userId);
+    await tx.coinTransaction.create({
       data: {
         userId,
         amount: totalCoins,
@@ -82,8 +85,17 @@ export async function POST(
         description: `เติมเหรียญ ${totalCoins} เหรียญ (฿${order.price.toFixed(0)})`,
         refId: orderId,
       },
-    }),
-  ]);
+    });
+    await tx.user.update({
+      where: { id: userId },
+      data: { coins: { increment: totalCoins + bonus } },
+    });
+    return bonus;
+  });
 
-  return NextResponse.json({ success: true, coinsAdded: totalCoins });
+  return NextResponse.json({
+    success: true,
+    coinsAdded: totalCoins + firstTopupBonus,
+    firstTopupBonus,
+  });
 }

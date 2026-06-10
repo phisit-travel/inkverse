@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import {
-  User, LayoutDashboard, Settings, LogOut, Coins, Shield, Upload, ChevronDown,
+  User, LayoutDashboard, Settings, LogOut, Coins, Shield, Upload, ChevronDown, Gift, MessageSquare,
 } from "lucide-react";
 
 interface MenuUser {
@@ -54,7 +54,7 @@ export default function UserMenu({ user }: { user: MenuUser }) {
       {open && (
         <div
           onClick={() => setOpen(false)}
-          className="absolute right-0 mt-2 w-56 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] shadow-2xl overflow-hidden z-50 py-1"
+          className="absolute right-0 mt-2 w-56 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)]  overflow-hidden z-50 py-1"
         >
           <div className="px-3 py-2.5 border-b border-[var(--border)]">
             <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{username}</p>
@@ -82,13 +82,19 @@ export default function UserMenu({ user }: { user: MenuUser }) {
           <Link href="/topup" className={item}>
             <Coins className="w-4 h-4" /> เติมเหรียญ
           </Link>
+          <Link href="/referral" className={item}>
+            <Gift className="w-4 h-4" /> ชวนเพื่อน
+          </Link>
           <Link href="/settings" className={item}>
             <Settings className="w-4 h-4" /> ตั้งค่า
+          </Link>
+          <Link href="/contact" className={item}>
+            <MessageSquare className="w-4 h-4" /> ติดต่อแอดมิน
           </Link>
 
           <button
             onClick={() => signOut({ callbackUrl: "/" })}
-            className={`${item} text-red-400 hover:text-red-300 border-t border-[var(--border)] mt-1`}
+            className={`${item} text-[var(--text-primary)] hover:text-[var(--text-primary)] border-t border-[var(--border)] mt-1`}
           >
             <LogOut className="w-4 h-4" /> ออกจากระบบ
           </button>

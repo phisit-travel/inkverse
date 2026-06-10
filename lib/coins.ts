@@ -1,4 +1,48 @@
 import { prisma } from "./prisma";
+import type { Prisma } from "@prisma/client";
+
+// Reader gets this many coins the moment their account is created (both Google
+// OAuth and email/password). Granted once per user — see grantSignupBonus.
+export const SIGNUP_BONUS_COINS = 20;
+
+// Tiered discount for unlocking many chapters at once — encourages spending the
+// whole balance in one go (raises coins-used). Kept in sync with the UI hint in
+// components/ui/BulkUnlock.tsx.
+export function bulkDiscountRate(count: number): number {
+  if (count >= 50) return 0.15;
+  if (count >= 20) return 0.10;
+  if (count >= 10) return 0.05;
+  return 0;
+}
+
+// VIP perks (30-day pass, no auto-renew): a monthly coin stipend + this discount
+// on every unlock. Discounts are always margin-safe — they reduce the reader's
+// charge and the translator's 80% share proportionally; platform keeps 20%.
+export const VIP_UNLOCK_DISCOUNT = 0.10;
+export const VIP_DEFAULT_DAYS = 30;
+
+export function isVipActive(vipExpiresAt: Date | null | undefined): boolean {
+  return !!vipExpiresAt && vipExpiresAt.getTime() > Date.now();
+}
+
+// Extend a user's VIP window by `days`, stacking onto any remaining time.
+// Call inside the same transaction that credits the purchase.
+export async function extendVipDays(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  days: number
+): Promise<void> {
+  const u = await tx.user.findUnique({
+    where: { id: userId },
+    select: { vipExpiresAt: true },
+  });
+  const base =
+    u?.vipExpiresAt && u.vipExpiresAt.getTime() > Date.now()
+      ? u.vipExpiresAt.getTime()
+      : Date.now();
+  const expires = new Date(base + days * 24 * 60 * 60 * 1000);
+  await tx.user.update({ where: { id: userId }, data: { vipExpiresAt: expires } });
+}
 
 export async function getUserCoins(userId: string): Promise<number> {
   const user = await prisma.user.findUnique({
@@ -44,29 +88,35 @@ export async function unlockChapter(
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { coins: true },
+    select: { coins: true, vipExpiresAt: true },
   });
-  if (!user || user.coins < chapter.coinCost) {
+  // VIP readers get a discount on the coin cost.
+  const vipRate = isVipActive(user?.vipExpiresAt) ? VIP_UNLOCK_DISCOUNT : 0;
+  const cost = Math.round(chapter.coinCost * (1 - vipRate));
+  if (!user || user.coins < cost) {
     return { success: false, error: "INSUFFICIENT_COINS" };
   }
 
   const translatorId = chapter.manga?.translatorId ?? null;
-  const earningAmount = parseFloat((chapter.coinCost * TRANSLATOR_SHARE).toFixed(2));
+  const earningAmount = parseFloat((cost * TRANSLATOR_SHARE).toFixed(2));
 
   const updatedUser = await prisma.$transaction(async (tx) => {
     const u = await tx.user.update({
       where: { id: userId },
-      data: { coins: { decrement: chapter.coinCost } },
+      data: { coins: { decrement: cost } },
     });
     await tx.unlockedChapter.create({
-      data: { userId, chapterId, coinSpent: chapter.coinCost },
+      data: { userId, chapterId, coinSpent: cost },
     });
     await tx.coinTransaction.create({
       data: {
         userId,
-        amount: -chapter.coinCost,
+        amount: -cost,
         type: "SPEND",
-        description: `ปลดล็อกตอนที่ ${chapter.chapterNum}`,
+        description:
+          vipRate > 0
+            ? `ปลดล็อกตอนที่ ${chapter.chapterNum} (VIP ลด 10%)`
+            : `ปลดล็อกตอนที่ ${chapter.chapterNum}`,
         refId: chapterId,
       },
     });
@@ -77,7 +127,7 @@ export async function unlockChapter(
           chapterId,
           mangaId: chapter.mangaId,
           userId,
-          coinsSpent: chapter.coinCost,
+          coinsSpent: cost,
           amount: earningAmount,
         },
       });
@@ -89,7 +139,14 @@ export async function unlockChapter(
 }
 
 export type BulkUnlockResult =
-  | { success: true; unlockedCount: number; coinsSpent: number; coinsLeft: number }
+  | {
+      success: true;
+      unlockedCount: number;
+      coinsSpent: number;
+      coinsSaved: number;
+      discountRate: number;
+      coinsLeft: number;
+    }
   | { success: false; error: "NOTHING_TO_UNLOCK" | "INSUFFICIENT_COINS" };
 
 /**
@@ -122,7 +179,19 @@ export async function unlockChaptersBulk(
   const toUnlock = chapters.filter((c) => !ownedSet.has(c.id));
   if (toUnlock.length === 0) return { success: false, error: "NOTHING_TO_UNLOCK" };
 
-  const totalCost = toUnlock.reduce((sum, c) => sum + c.coinCost, 0);
+  const buyer = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { vipExpiresAt: true },
+  });
+  const vipRate = isVipActive(buyer?.vipExpiresAt) ? VIP_UNLOCK_DISCOUNT : 0;
+  const rawCost = toUnlock.reduce((sum, c) => sum + c.coinCost, 0);
+  const discountRate = bulkDiscountRate(toUnlock.length);
+  // Bulk + VIP discounts stack multiplicatively. `keep` = fraction the user pays.
+  // Translator earns on the discounted amount too (prorated per chapter) so the
+  // platform's margin never goes negative.
+  const keep = (1 - discountRate) * (1 - vipRate);
+  const totalCost = Math.round(rawCost * keep);
+  const coinsSaved = rawCost - totalCost;
 
   const result = await prisma.$transaction(async (tx) => {
     // Conditional decrement guards against double-spend / negative balance.
@@ -133,7 +202,11 @@ export async function unlockChaptersBulk(
     if (dec.count === 0) return null;
 
     await tx.unlockedChapter.createMany({
-      data: toUnlock.map((c) => ({ userId, chapterId: c.id, coinSpent: c.coinCost })),
+      data: toUnlock.map((c) => ({
+        userId,
+        chapterId: c.id,
+        coinSpent: Math.round(c.coinCost * keep),
+      })),
       skipDuplicates: true,
     });
     await tx.coinTransaction.create({
@@ -141,20 +214,26 @@ export async function unlockChaptersBulk(
         userId,
         amount: -totalCost,
         type: "SPEND",
-        description: `ปลดล็อก ${toUnlock.length} ตอน`,
+        description:
+          coinsSaved > 0
+            ? `ปลดล็อก ${toUnlock.length} ตอน (ลด ${Math.round((1 - keep) * 100)}%${vipRate > 0 ? " · VIP" : ""})`
+            : `ปลดล็อก ${toUnlock.length} ตอน`,
         refId: toUnlock[0].mangaId,
       },
     });
     const earnings = toUnlock
       .filter((c) => c.manga?.translatorId)
-      .map((c) => ({
-        translatorId: c.manga!.translatorId!,
-        chapterId: c.id,
-        mangaId: c.mangaId,
-        userId,
-        coinsSpent: c.coinCost,
-        amount: parseFloat((c.coinCost * TRANSLATOR_SHARE).toFixed(2)),
-      }));
+      .map((c) => {
+        const charged = Math.round(c.coinCost * keep);
+        return {
+          translatorId: c.manga!.translatorId!,
+          chapterId: c.id,
+          mangaId: c.mangaId,
+          userId,
+          coinsSpent: charged,
+          amount: parseFloat((charged * TRANSLATOR_SHARE).toFixed(2)),
+        };
+      });
     if (earnings.length) await tx.translatorEarning.createMany({ data: earnings });
 
     const u = await tx.user.findUnique({ where: { id: userId }, select: { coins: true } });
@@ -166,6 +245,8 @@ export async function unlockChaptersBulk(
     success: true,
     unlockedCount: toUnlock.length,
     coinsSpent: totalCost,
+    coinsSaved,
+    discountRate,
     coinsLeft: result.coins,
   };
 }
@@ -181,12 +262,9 @@ export async function topupCoins(
 
   const total = pkg.coins + pkg.bonus;
 
-  const [updatedUser] = await prisma.$transaction([
-    prisma.user.update({
-      where: { id: userId },
-      data: { coins: { increment: total } },
-    }),
-    prisma.coinTransaction.create({
+  const updatedUser = await prisma.$transaction(async (tx) => {
+    const firstBonus = await applyFirstTopupBonus(tx, userId, pkg.coins);
+    await tx.coinTransaction.create({
       data: {
         userId,
         amount: total,
@@ -194,8 +272,321 @@ export async function topupCoins(
         description: `ซื้อแพ็กเกจ ${pkg.name} (${pkg.coins}+${pkg.bonus} เหรียญ)`,
         refId: packageId,
       },
-    }),
-  ]);
+    });
+    if (pkg.vipDays > 0) await extendVipDays(tx, userId, pkg.vipDays);
+    if (firstBonus > 0) await rewardReferralOnFirstTopup(tx, userId);
+    return tx.user.update({
+      where: { id: userId },
+      data: { coins: { increment: total + firstBonus } },
+    });
+  });
 
   return { success: true, coinsAdded: total, coinsTotal: updatedUser.coins };
+}
+
+/**
+ * Grant the one-time signup bonus. Idempotent: a marker CoinTransaction keyed by
+ * `signup:<userId>` guarantees a user can never receive it twice (re-runs, retries,
+ * or being called from both the OAuth adapter and the credentials register route).
+ * Safe to call right after a User row is created.
+ */
+export async function grantSignupBonus(userId: string): Promise<void> {
+  try {
+    await prisma.$transaction(async (tx) => {
+      const already = await tx.coinTransaction.findFirst({
+        where: { userId, refId: `signup:${userId}` },
+        select: { id: true },
+      });
+      if (already) return;
+      await tx.coinTransaction.create({
+        data: {
+          userId,
+          amount: SIGNUP_BONUS_COINS,
+          type: "BONUS",
+          description: "โบนัสสมัครสมาชิกใหม่",
+          refId: `signup:${userId}`,
+        },
+      });
+      await tx.user.update({
+        where: { id: userId },
+        data: { coins: { increment: SIGNUP_BONUS_COINS } },
+      });
+    });
+  } catch (err) {
+    // Non-critical: never block account creation if the bonus fails.
+    console.error("[grantSignupBonus]", err);
+  }
+}
+
+/**
+ * First-top-up "2x" promo. On a user's very first credited top-up, returns an
+ * EXTRA coin amount equal to the package's base coins (doubling the purchase) and
+ * records a one-time BONUS marker keyed by `firsttopup:<userId>`. Every later call
+ * returns 0. Must be called INSIDE the same interactive transaction that credits
+ * the top-up, so the extra coins and the marker commit atomically with it. The
+ * caller is responsible for adding the returned amount to `user.coins`.
+ */
+export async function applyFirstTopupBonus(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  baseCoins: number
+): Promise<number> {
+  const already = await tx.coinTransaction.findFirst({
+    where: { userId, refId: `firsttopup:${userId}` },
+    select: { id: true },
+  });
+  if (already) return 0;
+  await tx.coinTransaction.create({
+    data: {
+      userId,
+      amount: baseCoins,
+      type: "BONUS",
+      description: `โบนัสเติมครั้งแรก รับ 2 เท่า (+${baseCoins})`,
+      refId: `firsttopup:${userId}`,
+    },
+  });
+  return baseCoins;
+}
+
+// ── Daily check-in ──────────────────────────────────────────────────────────
+export const DAILY_CHECKIN_BASE = 2; // coins per day
+export const DAILY_CHECKIN_STREAK_BONUS = 10; // extra coins every 7th day in a row
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// Midnight UTC of the given day — the canonical key for one check-in per day.
+function dayStartUTC(d = new Date()): Date {
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+}
+
+function checkInReward(streak: number): number {
+  return DAILY_CHECKIN_BASE + (streak % 7 === 0 ? DAILY_CHECKIN_STREAK_BONUS : 0);
+}
+
+export type CheckInStatus = {
+  claimedToday: boolean;
+  streak: number;
+  nextReward: number;
+};
+
+export async function getCheckInStatus(userId: string): Promise<CheckInStatus> {
+  const today = dayStartUTC();
+  const last = await prisma.dailyCheckIn.findFirst({
+    where: { userId },
+    orderBy: { date: "desc" },
+  });
+  const claimedToday = !!last && last.date.getTime() === today.getTime();
+  // Streak continues only if the last check-in was today or yesterday.
+  const continues =
+    !!last &&
+    (last.date.getTime() === today.getTime() ||
+      last.date.getTime() === today.getTime() - DAY_MS);
+  const currentStreak = continues ? last!.streak : 0;
+  const nextStreak = claimedToday ? currentStreak : currentStreak + 1;
+  return {
+    claimedToday,
+    streak: currentStreak,
+    nextReward: checkInReward(nextStreak),
+  };
+}
+
+export type CheckInResult =
+  | { success: true; coinsEarned: number; streak: number; coinsTotal: number }
+  | { success: false; error: "ALREADY_CLAIMED" };
+
+export async function claimDailyCheckIn(userId: string): Promise<CheckInResult> {
+  const today = dayStartUTC();
+  const last = await prisma.dailyCheckIn.findFirst({
+    where: { userId },
+    orderBy: { date: "desc" },
+  });
+  if (last && last.date.getTime() === today.getTime())
+    return { success: false, error: "ALREADY_CLAIMED" };
+
+  const streak =
+    last && last.date.getTime() === today.getTime() - DAY_MS ? last.streak + 1 : 1;
+  const coinsEarned = checkInReward(streak);
+
+  try {
+    const user = await prisma.$transaction(async (tx) => {
+      // Unique (userId, date) makes this the single source of truth: a racing
+      // request hits the constraint and throws, so coins are credited once.
+      await tx.dailyCheckIn.create({
+        data: { userId, date: today, coinsEarned, streak },
+      });
+      await tx.coinTransaction.create({
+        data: {
+          userId,
+          amount: coinsEarned,
+          type: "BONUS",
+          description: `เช็คอินรายวัน (สตรีค ${streak} วัน)`,
+          refId: `checkin:${userId}:${today.toISOString().slice(0, 10)}`,
+        },
+      });
+      return tx.user.update({
+        where: { id: userId },
+        data: { coins: { increment: coinsEarned } },
+      });
+    });
+    return { success: true, coinsEarned, streak, coinsTotal: user.coins };
+  } catch {
+    // Unique violation → already claimed today (concurrent request won the race).
+    return { success: false, error: "ALREADY_CLAIMED" };
+  }
+}
+
+// ── Referral ─────────────────────────────────────────────────────────────────
+export const REFERRAL_REWARD_COINS = 50; // each side, paid on referee's first top-up
+
+/**
+ * Attribute a new user to a referrer (referrer identified by username `refCode`).
+ * No-ops on empty/unknown code, self-referral, or an already-attributed referee
+ * (the @unique on refereeId). Best-effort: never blocks signup.
+ */
+export async function recordReferral(refereeId: string, refCode: string): Promise<void> {
+  try {
+    const code = (refCode || "").trim();
+    if (!code) return;
+    const referrer = await prisma.user.findUnique({
+      where: { username: code },
+      select: { id: true },
+    });
+    if (!referrer || referrer.id === refereeId) return;
+    await prisma.referral.create({
+      data: { referrerId: referrer.id, refereeId },
+    });
+  } catch {
+    // Unique violation (already referred) or any error → ignore.
+  }
+}
+
+/**
+ * Pay out a pending referral when the referee makes their FIRST top-up. Credits
+ * REFERRAL_REWARD_COINS to both sides and marks the referral REWARDED. Must run
+ * inside the crediting transaction. Idempotent via the PENDING → REWARDED guard.
+ */
+export async function rewardReferralOnFirstTopup(
+  tx: Prisma.TransactionClient,
+  refereeId: string
+): Promise<void> {
+  const ref = await tx.referral.findUnique({
+    where: { refereeId },
+    select: { id: true, referrerId: true, status: true },
+  });
+  if (!ref || ref.status !== "PENDING") return;
+
+  const flipped = await tx.referral.updateMany({
+    where: { id: ref.id, status: "PENDING" },
+    data: { status: "REWARDED", rewardedAt: new Date(), coinsAwarded: REFERRAL_REWARD_COINS * 2 },
+  });
+  if (flipped.count === 0) return; // raced
+
+  await tx.user.update({
+    where: { id: ref.referrerId },
+    data: { coins: { increment: REFERRAL_REWARD_COINS } },
+  });
+  await tx.coinTransaction.create({
+    data: {
+      userId: ref.referrerId,
+      amount: REFERRAL_REWARD_COINS,
+      type: "BONUS",
+      description: "รางวัลชวนเพื่อน (เพื่อนเติมเงินครั้งแรก)",
+      refId: `referral:${refereeId}`,
+    },
+  });
+  await tx.user.update({
+    where: { id: refereeId },
+    data: { coins: { increment: REFERRAL_REWARD_COINS } },
+  });
+  await tx.coinTransaction.create({
+    data: {
+      userId: refereeId,
+      amount: REFERRAL_REWARD_COINS,
+      type: "BONUS",
+      description: "โบนัสจากคำเชิญของเพื่อน",
+      refId: `referral-bonus:${refereeId}`,
+    },
+  });
+}
+
+export type ReferralStats = {
+  code: string;
+  total: number;
+  rewarded: number;
+  coinsEarned: number;
+};
+
+export async function getReferralStats(userId: string): Promise<ReferralStats> {
+  const [user, refs] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId }, select: { username: true } }),
+    prisma.referral.findMany({ where: { referrerId: userId }, select: { status: true } }),
+  ]);
+  const rewarded = refs.filter((r) => r.status === "REWARDED").length;
+  return {
+    code: user?.username ?? "",
+    total: refs.length,
+    rewarded,
+    coinsEarned: rewarded * REFERRAL_REWARD_COINS,
+  };
+}
+
+// ── Tipping a translator ─────────────────────────────────────────────────────
+export const TIP_TRANSLATOR_SHARE = 0.90; // tips are a gift → translator keeps 90%
+
+export type TipResult =
+  | { success: true; coinsLeft: number; amountThb: number }
+  | { success: false; error: "INVALID_AMOUNT" | "INSUFFICIENT_COINS" | "TRANSLATOR_NOT_FOUND" | "SELF_TIP" };
+
+/**
+ * Tip a translator with coins. Deducts the reader's coins and credits the
+ * translator a TIP earning (90% share). Atomic + guarded against overspend.
+ */
+export async function tipTranslator(
+  userId: string,
+  translatorId: string,
+  coins: number
+): Promise<TipResult> {
+  if (!Number.isInteger(coins) || coins < 1 || coins > 100000) {
+    return { success: false, error: "INVALID_AMOUNT" };
+  }
+  const translator = await prisma.translator.findUnique({
+    where: { id: translatorId },
+    select: { id: true, userId: true, penName: true },
+  });
+  if (!translator) return { success: false, error: "TRANSLATOR_NOT_FOUND" };
+  if (translator.userId === userId) return { success: false, error: "SELF_TIP" };
+
+  const amountThb = parseFloat((coins * TIP_TRANSLATOR_SHARE).toFixed(2));
+
+  const result = await prisma.$transaction(async (tx) => {
+    const dec = await tx.user.updateMany({
+      where: { id: userId, coins: { gte: coins } },
+      data: { coins: { decrement: coins } },
+    });
+    if (dec.count === 0) return null;
+
+    await tx.coinTransaction.create({
+      data: {
+        userId,
+        amount: -coins,
+        type: "SPEND",
+        description: `ทิปนักแปล ${translator.penName}`,
+        refId: `tip:${translatorId}`,
+      },
+    });
+    await tx.translatorEarning.create({
+      data: {
+        translatorId,
+        chapterId: null,
+        mangaId: null,
+        userId,
+        type: "TIP",
+        coinsSpent: coins,
+        amount: amountThb,
+      },
+    });
+    return tx.user.findUnique({ where: { id: userId }, select: { coins: true } });
+  });
+
+  if (!result) return { success: false, error: "INSUFFICIENT_COINS" };
+  return { success: true, coinsLeft: result.coins, amountThb };
 }

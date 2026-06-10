@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { uploadToR2 } from "@/lib/r2";
 import { rateLimit } from "@/lib/rate-limit";
+import { applyFirstTopupBonus, extendVipDays, rewardReferralOnFirstTopup } from "@/lib/coins";
 
 // EasySlip API v1 — the image-upload endpoint EasySlip's own clients use.
 // (v2 /verify/bank multipart is not parsed by standard HTTP clients; v1 works
@@ -157,6 +158,7 @@ export async function POST(
 
   // ── Mark paid + credit coins (guard against duplicate slip & double-credit) ─
   const totalCoins = order.coins + order.bonus;
+  let firstTopupBonus = 0;
 
   // Persist the slip image for records (best-effort).
   let slipUrl: string | null = null;
@@ -192,9 +194,12 @@ export async function POST(
       });
       if (flipped.count === 0) return; // already processed elsewhere
 
+      firstTopupBonus = await applyFirstTopupBonus(tx, order.userId, order.coins);
+      if (order.vipDays > 0) await extendVipDays(tx, order.userId, order.vipDays);
+      if (firstTopupBonus > 0) await rewardReferralOnFirstTopup(tx, order.userId);
       await tx.user.update({
         where: { id: order.userId },
-        data: { coins: { increment: totalCoins } },
+        data: { coins: { increment: totalCoins + firstTopupBonus } },
       });
       await tx.coinTransaction.create({
         data: {
@@ -220,13 +225,16 @@ export async function POST(
     );
   }
 
+  const granted = totalCoins + firstTopupBonus;
   await createNotification({
     userId: order.userId,
     type: "TOPUP_SUCCESS",
     title: "เติมเหรียญสำเร็จ!",
-    body: `คุณได้รับ ${totalCoins} เหรียญ (฿${order.price.toFixed(0)}) เรียบร้อยแล้ว`,
+    body: firstTopupBonus > 0
+      ? `คุณได้รับ ${granted} เหรียญ (รวมโบนัสเติมครั้งแรก 2 เท่า +${firstTopupBonus}) เรียบร้อยแล้ว`
+      : `คุณได้รับ ${totalCoins} เหรียญ (฿${order.price.toFixed(0)}) เรียบร้อยแล้ว`,
     link: "/topup",
   });
 
-  return NextResponse.json({ ok: true, coins: totalCoins });
+  return NextResponse.json({ ok: true, coins: granted, firstTopupBonus });
 }

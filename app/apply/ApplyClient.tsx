@@ -85,8 +85,8 @@ export default function ApplyClient({ genres, prevApplication }: {
     return (
       <div className="min-h-[70vh] flex items-center justify-center px-4">
         <div className="text-center">
-          <div className="w-20 h-20 rounded-full bg-green-500/20 border-2 border-green-500/40 flex items-center justify-center mx-auto mb-6">
-            <Check className="w-9 h-9 text-green-400" />
+          <div className="w-20 h-20 rounded-full bg-[var(--bg-card)] border-2 border-[var(--border)] flex items-center justify-center mx-auto mb-6">
+            <Check className="w-9 h-9 text-[var(--text-primary)]" />
           </div>
           <h2 className="font-bebas text-3xl text-[var(--text-primary)] tracking-wider mb-2">ส่งใบสมัครแล้ว!</h2>
           <p className="text-[var(--text-secondary)] text-sm">ทีมงานจะตรวจสอบและแจ้งผลภายใน 3-5 วันทำการ</p>
@@ -113,10 +113,10 @@ export default function ApplyClient({ genres, prevApplication }: {
 
       {/* Rejected notice */}
       {prevApplication?.status === "REJECTED" && (
-        <div className="mb-6 flex gap-3 bg-red-500/10 border border-red-500/30 rounded-xl p-4">
-          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+        <div className="mb-6 flex gap-3 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-4">
+          <AlertCircle className="w-5 h-5 text-[var(--text-primary)] flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm text-red-400 font-medium">ใบสมัครครั้งก่อนไม่ผ่าน</p>
+            <p className="text-sm text-[var(--text-primary)] font-medium">ใบสมัครครั้งก่อนไม่ผ่าน</p>
             <p className="text-xs text-[var(--text-secondary)] mt-1">{prevApplication.adminNote ?? "ไม่ผ่านการพิจารณา"}</p>
             <p className="text-xs text-[var(--text-secondary)] mt-1">คุณสามารถสมัครใหม่ได้โดยกรอกข้อมูลด้านล่าง</p>
           </div>
@@ -136,7 +136,7 @@ export default function ApplyClient({ genres, prevApplication }: {
               )}>
                 <div className={clsx(
                   "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all",
-                  done  ? "bg-[var(--text-primary)] border-[var(--text-primary)] text-[var(--text-primary)]" :
+                  done  ? "bg-[var(--text-primary)] border-[var(--text-primary)] text-[var(--bg-primary)]" :
                   active ? "bg-[var(--text-primary)]/20 border-[var(--text-primary)] text-[var(--text-primary)]" :
                            "bg-[var(--bg-surface)] border-[var(--border)] text-[var(--text-secondary)]"
                 )}>
@@ -288,7 +288,7 @@ export default function ApplyClient({ genres, prevApplication }: {
                   <p className="text-[var(--text-primary)] font-semibold">ส่วนแบ่งรายได้ 80 / 20</p>
                   <p className="text-[var(--text-secondary)] text-xs mt-0.5">
                     เมื่อผู้อ่านใช้เหรียญปลดล็อกตอนของคุณ คุณได้รับ{" "}
-                    <span className="text-green-400 font-semibold">80%</span> ของมูลค่า และแพลตฟอร์มหัก{" "}
+                    <span className="text-[var(--text-primary)] font-semibold">80%</span> ของมูลค่า และแพลตฟอร์มหัก{" "}
                     <span className="text-[var(--text-primary)] font-semibold">20%</span> เป็นค่าบริการ (ระบบ เซิร์ฟเวอร์ และการชำระเงิน)
                   </p>
                 </div>
@@ -333,9 +333,9 @@ export default function ApplyClient({ genres, prevApplication }: {
             </div>
 
             {error && (
-              <div className="flex gap-2 bg-red-500/10 border border-red-500/30 rounded-xl p-3">
-                <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-400">{error}</p>
+              <div className="flex gap-2 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-3">
+                <AlertCircle className="w-4 h-4 text-[var(--text-primary)] flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-[var(--text-primary)]">{error}</p>
               </div>
             )}
           </>

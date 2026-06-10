@@ -11,6 +11,8 @@ import {
   Coins,
   Trash2,
   Check,
+  BookOpen,
+  MessageSquare,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -27,17 +29,23 @@ interface Notification {
 function typeIcon(type: string) {
   switch (type) {
     case "APPLICATION_APPROVED":
-      return <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />;
+      return <CheckCircle className="w-4 h-4 text-[var(--text-primary)] flex-shrink-0" />;
     case "APPLICATION_REJECTED":
-      return <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />;
+      return <XCircle className="w-4 h-4 text-[var(--text-primary)] flex-shrink-0" />;
     case "WITHDRAWAL_PAID":
-      return <Banknote className="w-4 h-4 text-green-400 flex-shrink-0" />;
+      return <Banknote className="w-4 h-4 text-[var(--text-primary)] flex-shrink-0" />;
     case "WITHDRAWAL_APPROVED":
-      return <Clock className="w-4 h-4 text-blue-400 flex-shrink-0" />;
+      return <Clock className="w-4 h-4 text-[var(--text-secondary)] flex-shrink-0" />;
     case "WITHDRAWAL_REJECTED":
-      return <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />;
+      return <XCircle className="w-4 h-4 text-[var(--text-primary)] flex-shrink-0" />;
     case "TOPUP_SUCCESS":
-      return <Coins className="w-4 h-4 text-yellow-400 flex-shrink-0" />;
+    case "LOW_COINS":
+    case "RECEIVED_TIP":
+      return <Coins className="w-4 h-4 text-[var(--text-primary)] flex-shrink-0" />;
+    case "NEW_CHAPTER":
+      return <BookOpen className="w-4 h-4 text-[var(--text-primary)] flex-shrink-0" />;
+    case "CONTACT_MESSAGE":
+      return <MessageSquare className="w-4 h-4 text-[var(--text-primary)] flex-shrink-0" />;
     default:
       return <Bell className="w-4 h-4 text-[var(--text-secondary)] flex-shrink-0" />;
   }
@@ -122,14 +130,14 @@ export default function NotificationBell() {
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-0.5 flex items-center justify-center rounded-full bg-[var(--text-primary)] text-[var(--text-primary)] text-[10px] font-bold leading-none">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-0.5 flex items-center justify-center rounded-full bg-[var(--text-primary)] text-[var(--bg-primary)] text-[10px] font-bold leading-none">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl shadow-2xl overflow-hidden z-50">
+        <div className="absolute right-0 top-full mt-2 w-80 bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl  overflow-hidden z-50">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
             <span className="text-sm font-semibold text-[var(--text-primary)]">การแจ้งเตือน</span>
@@ -190,7 +198,7 @@ export default function NotificationBell() {
                   </div>
                   <button
                     onClick={() => deleteNotification(n.id, n.isRead)}
-                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-white/10 text-[var(--text-secondary)] hover:text-red-400 transition-all flex-shrink-0"
+                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-white/10 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all flex-shrink-0"
                     aria-label="ลบ"
                   >
                     <Trash2 className="w-3 h-3" />
