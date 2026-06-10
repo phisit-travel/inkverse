@@ -22,6 +22,38 @@ type MangaForm = z.infer<typeof mangaSchema>;
 interface Genre { id: string; name: string; slug: string }
 interface MangaOption { id: string; title: string; slug: string; latestChapter?: number | null }
 
+// Compress a page image in the browser (downscale very wide images and
+// re-encode as WebP) to cut upload size & R2 storage. Falls back to the
+// original file if the canvas/WebP path is unavailable or not smaller.
+async function compressImage(
+  file: File
+): Promise<{ blob: Blob; contentType: string; width: number; height: number }> {
+  const MAX_WIDTH = 1600;
+  const QUALITY = 0.85;
+  const original = { blob: file, contentType: file.type || "image/jpeg", width: 0, height: 0 };
+  try {
+    const bitmap = await createImageBitmap(file);
+    let width = bitmap.width;
+    let height = bitmap.height;
+    if (width > MAX_WIDTH) {
+      height = Math.round(height * (MAX_WIDTH / width));
+      width = MAX_WIDTH;
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) { bitmap.close(); return { ...original, width: bitmap.width, height: bitmap.height }; }
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close();
+    const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/webp", QUALITY));
+    if (!blob || blob.size >= file.size) return { ...original, width, height };
+    return { blob, contentType: "image/webp", width, height };
+  } catch {
+    return original;
+  }
+}
+
 export default function UploadForm({ genres }: { genres: Genre[] }) {
   const [tab, setTab] = useState<"manga" | "chapter">("manga");
 
@@ -149,15 +181,20 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
       }
       const chapter = await createRes.json();
 
-      // Direct-to-R2 upload via presigned URLs — page bytes never pass through
-      // the server, so there is no request-body size limit.
-      setUploadProgress("กำลังเตรียมอัปโหลด...");
+      // Compress each page in the browser (→ WebP), then upload straight to R2
+      // via presigned URLs — bytes never pass through the server (no size limit).
+      const prepared: { blob: Blob; contentType: string; width: number; height: number }[] = [];
+      for (let i = 0; i < pageFiles.length; i++) {
+        setUploadProgress(`กำลังบีบอัดรูป ${i + 1}/${pageFiles.length}...`);
+        prepared.push(await compressImage(pageFiles[i]));
+      }
+
       const presignRes = await fetch("/api/upload/presign", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chapterId: chapter.id,
-          files: pageFiles.map((f, i) => ({ pageNum: i + 1, contentType: f.type || "image/jpeg" })),
+          files: prepared.map((p, i) => ({ pageNum: i + 1, contentType: p.contentType })),
         }),
       });
       if (!presignRes.ok) {
@@ -171,25 +208,19 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
       const registered: { pageNum: number; key: string; width: number; height: number }[] = [];
       for (let i = 0; i < uploads.length; i++) {
         const u = uploads[i];
-        const file = pageFiles[i];
+        const p = prepared[i];
         setUploadProgress(`กำลังอัปโหลดหน้า ${i + 1}/${uploads.length}...`);
-
-        let width = 0, height = 0;
-        try {
-          const bmp = await createImageBitmap(file);
-          width = bmp.width; height = bmp.height; bmp.close();
-        } catch {}
 
         const putRes = await fetch(u.uploadUrl, {
           method: "PUT",
           headers: { "Content-Type": u.contentType },
-          body: file,
+          body: p.blob,
         });
         if (!putRes.ok) {
           setChapterError(`สร้างตอนแล้ว แต่อัปโหลดหน้า ${i + 1} ล้มเหลว (อัปสำเร็จ ${i} หน้า — เพิ่มที่เหลือได้ที่จัดการตอน)`);
           return;
         }
-        registered.push({ pageNum: u.pageNum, key: u.key, width, height });
+        registered.push({ pageNum: u.pageNum, key: u.key, width: p.width, height: p.height });
       }
 
       setUploadProgress("กำลังบันทึก...");
