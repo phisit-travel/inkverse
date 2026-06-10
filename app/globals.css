@@ -143,6 +143,40 @@
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
   }
+
+  /* Couture micro-label with a leading hairline rule. */
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.35em;
+    font-size: 0.625rem;
+    line-height: 1;
+    color: var(--text-muted);
+  }
+  .eyebrow::before {
+    content: "";
+    width: 1.5rem;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.6;
+  }
+
+  /* Editorial section heading: uppercase, airy tracking, hairline underline. */
+  .lux-title {
+    font-family: "Bebas Neue", "Arial Narrow", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
 }
 
 /* Balenciaga.com-style hover invert */
@@ -152,6 +186,7 @@
     background-color: var(--text-primary);
     color: var(--bg-primary);
     border: 1px solid var(--text-primary);
+    letter-spacing: 0.08em;
     transition: background-color 0.18s ease, color 0.18s ease;
   }
   .bal-btn:hover {

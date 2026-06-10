@@ -13,6 +13,7 @@ import {
   Check,
   BookOpen,
   MessageSquare,
+  BadgeCheck,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -46,6 +47,11 @@ function typeIcon(type: string) {
       return <BookOpen className="w-4 h-4 text-[var(--text-primary)] flex-shrink-0" />;
     case "CONTACT_MESSAGE":
       return <MessageSquare className="w-4 h-4 text-[var(--text-primary)] flex-shrink-0" />;
+    case "VERIFY_REQUEST":
+    case "VERIFY_APPROVED":
+      return <BadgeCheck className="w-4 h-4 text-[var(--text-primary)] flex-shrink-0" />;
+    case "VERIFY_REJECTED":
+      return <XCircle className="w-4 h-4 text-[var(--text-primary)] flex-shrink-0" />;
     default:
       return <Bell className="w-4 h-4 text-[var(--text-secondary)] flex-shrink-0" />;
   }

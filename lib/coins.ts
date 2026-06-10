@@ -590,3 +590,93 @@ export async function tipTranslator(
   if (!result) return { success: false, error: "INSUFFICIENT_COINS" };
   return { success: true, coinsLeft: result.coins, amountThb };
 }
+
+// ── Translator identity verification (paid + admin-approved) ─────────────────
+export const VERIFY_FEE_COINS = 500;
+
+export type VerifyRequestResult =
+  | { success: true }
+  | { success: false; error: "NOT_TRANSLATOR" | "ALREADY_VERIFIED" | "PENDING_EXISTS" | "INSUFFICIENT_COINS" };
+
+/**
+ * Submit a verification request. Charges VERIFY_FEE_COINS up front (refunded on
+ * rejection). Translator-only, one active request at a time; a previously
+ * rejected request can be re-submitted.
+ */
+export async function requestVerification(userId: string): Promise<VerifyRequestResult> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { coins: true, verifiedAt: true, translator: { select: { id: true } } },
+  });
+  if (!user || !user.translator) return { success: false, error: "NOT_TRANSLATOR" };
+  if (user.verifiedAt) return { success: false, error: "ALREADY_VERIFIED" };
+
+  const existing = await prisma.verificationRequest.findUnique({ where: { userId } });
+  if (existing && existing.status === "PENDING") return { success: false, error: "PENDING_EXISTS" };
+
+  const ok = await prisma.$transaction(async (tx) => {
+    const dec = await tx.user.updateMany({
+      where: { id: userId, coins: { gte: VERIFY_FEE_COINS } },
+      data: { coins: { decrement: VERIFY_FEE_COINS } },
+    });
+    if (dec.count === 0) return false;
+    await tx.coinTransaction.create({
+      data: {
+        userId,
+        amount: -VERIFY_FEE_COINS,
+        type: "SPEND",
+        description: "ค่าธรรมเนียมยืนยันตัวตน",
+        refId: `verify:${userId}`,
+      },
+    });
+    await tx.verificationRequest.upsert({
+      where: { userId },
+      create: { userId, status: "PENDING", coinsPaid: VERIFY_FEE_COINS },
+      update: { status: "PENDING", coinsPaid: VERIFY_FEE_COINS, adminNote: null, reviewedAt: null, createdAt: new Date() },
+    });
+    return true;
+  });
+  if (!ok) return { success: false, error: "INSUFFICIENT_COINS" };
+  return { success: true };
+}
+
+/**
+ * Admin decision on a verification request. Approve → set user.verifiedAt.
+ * Reject → refund the fee. Returns the affected userId, or null if not pending.
+ */
+export async function reviewVerification(
+  requestId: string,
+  approve: boolean,
+  note?: string
+): Promise<string | null> {
+  const reqRow = await prisma.verificationRequest.findUnique({ where: { id: requestId } });
+  if (!reqRow || reqRow.status !== "PENDING") return null;
+
+  if (approve) {
+    await prisma.$transaction([
+      prisma.verificationRequest.update({
+        where: { id: requestId },
+        data: { status: "APPROVED", reviewedAt: new Date(), adminNote: note ?? null },
+      }),
+      prisma.user.update({ where: { id: reqRow.userId }, data: { verifiedAt: new Date() } }),
+    ]);
+  } else {
+    await prisma.$transaction([
+      prisma.verificationRequest.update({
+        where: { id: requestId },
+        data: { status: "REJECTED", reviewedAt: new Date(), adminNote: note ?? null },
+      }),
+      prisma.user.update({ where: { id: reqRow.userId }, data: { coins: { increment: reqRow.coinsPaid } } }),
+      prisma.coinTransaction.create({
+        data: {
+          userId: reqRow.userId,
+          amount: reqRow.coinsPaid,
+          type: "REFUND",
+          description: "คืนค่าธรรมเนียมยืนยันตัวตน (ไม่ผ่าน)",
+          refId: `verify-refund:${reqRow.userId}`,
+        },
+      }),
+    ]);
+  }
+  return reqRow.userId;
+}

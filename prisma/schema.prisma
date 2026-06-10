@@ -15,6 +15,7 @@ model User {
   avatarUrl        String?
   coverUrl         String?           // profile banner image (R2 URL)
   bio              String?           // short profile bio (readers; translators use Translator.bio)
+  verifiedAt       DateTime?         // identity-verified translator (paid + admin-approved)
   coins            Int               @default(0)
   vipExpiresAt     DateTime?         // active VIP while in the future (coin stipend + unlock discount)
   createdAt        DateTime          @default(now())
@@ -38,6 +39,20 @@ model User {
   referralsGiven          Referral[]        @relation("Referrer")
   referralReceived        Referral?         @relation("Referee")
   contactMessages         ContactMessage[]
+  verificationRequest     VerificationRequest?
+}
+
+model VerificationRequest {
+  id         String    @id @default(cuid())
+  userId     String    @unique
+  status     String    @default("PENDING") // PENDING | APPROVED | REJECTED
+  coinsPaid  Int
+  adminNote  String?
+  createdAt  DateTime  @default(now())
+  reviewedAt DateTime?
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
 }
 
 model ContactMessage {

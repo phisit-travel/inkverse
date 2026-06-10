@@ -152,13 +152,13 @@ export default async function HomePage() {
           {/* Latest Updates */}
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-wider flex items-center gap-2">
-                <span className="w-1 h-6 bg-[var(--accent)] rounded-full" />
+              <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-[0.18em] uppercase flex items-center gap-3">
+                <span className="w-6 h-px bg-[var(--text-primary)]" />
                 อัปเดตล่าสุด
               </h2>
               <Link
                 href="/manga"
-                className="text-sm text-[var(--text-primary)] hover:text-[var(--text-primary)] flex items-center gap-0.5 transition-colors"
+                className="text-[11px] uppercase tracking-[0.2em] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1 transition-colors"
               >
                 ดูทั้งหมด <ChevronRight className="w-4 h-4" />
               </Link>
@@ -183,13 +183,13 @@ export default async function HomePage() {
           {/* Top This Week */}
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-wider flex items-center gap-2">
-                <span className="w-1 h-6 bg-[var(--accent)] rounded-full" />
+              <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-[0.18em] uppercase flex items-center gap-3">
+                <span className="w-6 h-px bg-[var(--text-primary)]" />
                 ยอดนิยมสัปดาห์นี้
               </h2>
               <Link
                 href="/manga"
-                className="text-sm text-[var(--text-primary)] hover:text-[var(--text-primary)] flex items-center gap-0.5 transition-colors"
+                className="text-[11px] uppercase tracking-[0.2em] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1 transition-colors"
               >
                 ดูทั้งหมด <ChevronRight className="w-4 h-4" />
               </Link>

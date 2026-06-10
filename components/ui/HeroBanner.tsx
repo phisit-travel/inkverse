@@ -22,7 +22,7 @@ export default function HeroBanner({
   latestChapter,
 }: HeroBannerProps) {
   return (
-    <section className="relative mb-10 rounded-3xl overflow-hidden h-72 sm:h-96 lg:h-[480px] border border-[var(--border)]">
+    <section className="relative mb-12 overflow-hidden h-80 sm:h-96 lg:h-[480px] border border-[var(--border)]">
       {/* Background */}
       {coverUrl ? (
         <Image
@@ -30,58 +30,50 @@ export default function HeroBanner({
           alt={title}
           fill
           unoptimized
-          className="object-cover opacity-40"
+          className="object-cover opacity-40 grayscale"
           priority
           sizes="100vw"
         />
       ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-[var(--accent)]/20 via-[var(--bg-card)] to-[var(--accent)]/10" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[var(--bg-card)] via-[var(--bg-surface)] to-[var(--bg-card)]" />
       )}
 
-      {/* Animated gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-[var(--bg-primary)] via-[var(--bg-primary)]/80 to-transparent" />
+      {/* Clean editorial scrims (no glow — pure ink) */}
+      <div className="absolute inset-0 bg-gradient-to-r from-[var(--bg-primary)] via-[var(--bg-primary)]/85 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-primary)] via-transparent to-transparent" />
 
-      {/* Animated accent blobs */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-[var(--text-primary)]/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
-      <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-[var(--text-primary)]/10 rounded-full blur-3xl translate-y-1/2" />
+      {/* Couture inset frame */}
+      <div className="absolute inset-4 sm:inset-6 border border-[var(--text-primary)]/15 pointer-events-none" />
 
       {/* Content */}
-      <div className="relative h-full flex items-end pb-8 px-6 sm:px-10 lg:px-14 max-w-3xl">
+      <div className="relative h-full flex items-end pb-10 px-8 sm:px-12 lg:px-16 max-w-3xl">
         <div>
-          {/* Genres */}
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {genres.slice(0, 4).map((g) => (
-              <span
-                key={g}
-                className="text-xs px-2 py-0.5 rounded-full bg-[var(--text-primary)]/80 text-[var(--bg-primary)] font-medium"
-              >
-                {g}
-              </span>
-            ))}
-          </div>
+          {/* Eyebrow + genres */}
+          <p className="eyebrow mb-4">
+            FEATURED{genres.length ? ` · ${genres.slice(0, 3).join(" · ")}` : ""}
+          </p>
 
           {/* Title */}
-          <h1 className="font-bebas text-4xl sm:text-5xl lg:text-6xl text-[var(--text-primary)] tracking-wider leading-none mb-2">
+          <h1 className="font-bebas text-5xl sm:text-6xl lg:text-7xl text-[var(--text-primary)] tracking-[0.04em] leading-[0.9] mb-3 uppercase">
             {title}
           </h1>
 
           {/* Description */}
-          <p className="text-sm sm:text-base text-[var(--text-primary)] line-clamp-2 mb-4 max-w-lg">
+          <p className="text-sm sm:text-base text-[var(--text-secondary)] line-clamp-2 mb-5 max-w-lg leading-relaxed">
             {description}
           </p>
 
           {/* Stats */}
-          <div className="flex items-center gap-4 mb-5 text-sm text-[var(--text-secondary)]">
+          <div className="flex items-center gap-5 mb-6 text-xs text-[var(--text-secondary)] uppercase tracking-[0.15em]">
             {rating !== undefined && rating > 0 && (
-              <span className="flex items-center gap-1">
-                <Star className="w-4 h-4 fill-[var(--text-primary)] text-[var(--text-primary)]" />
+              <span className="flex items-center gap-1.5">
+                <Star className="w-3.5 h-3.5 fill-[var(--text-primary)] text-[var(--text-primary)]" />
                 {rating.toFixed(1)}
               </span>
             )}
             {latestChapter !== undefined && (
-              <span className="flex items-center gap-1">
-                <BookOpen className="w-4 h-4 text-[var(--text-primary)]" />
+              <span className="flex items-center gap-1.5">
+                <BookOpen className="w-3.5 h-3.5 text-[var(--text-primary)]" />
                 {latestChapter} ตอน
               </span>
             )}
@@ -91,14 +83,14 @@ export default function HeroBanner({
           <div className="flex items-center gap-3">
             <Link
               href={`/content/${slug}`}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bal-btn font-semibold text-sm hover:opacity-90 transition-colors  "
+              className="flex items-center gap-2 px-7 py-3 bal-btn font-semibold text-xs uppercase tracking-[0.2em] hover:opacity-90"
             >
-              <Play className="w-4 h-4 fill-white" />
+              <Play className="w-4 h-4 fill-current" />
               อ่านเลย
             </Link>
             <Link
               href={`/content/${slug}`}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white/10 backdrop-blur text-[var(--text-primary)] font-semibold text-sm hover:bg-white/20 transition-all border border-[var(--border)]"
+              className="flex items-center gap-2 px-7 py-3 text-[var(--text-primary)] font-semibold text-xs uppercase tracking-[0.2em] border border-[var(--text-primary)] hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] transition-colors"
             >
               รายละเอียด
             </Link>

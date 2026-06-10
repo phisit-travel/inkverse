@@ -16,6 +16,7 @@ import {
   Globe,
   Tag,
   User,
+  BadgeCheck,
 } from "lucide-react";
 import type { Metadata } from "next";
 import { MangaJsonLd, BreadcrumbJsonLd } from "@/components/seo/JsonLd";
@@ -78,7 +79,7 @@ export default async function MangaProfilePage({ params }: Props) {
       bookmarks: userId
         ? { where: { userId }, take: 1 }
         : false,
-      translator: { include: { user: { select: { username: true } } } },
+      translator: { include: { user: { select: { username: true, verifiedAt: true } } } },
     },
   });
 
@@ -305,6 +306,9 @@ export default async function MangaProfilePage({ params }: Props) {
                 >
                   <User className="w-4 h-4 text-[var(--text-primary)]" />
                   ลงโดย <span className="text-[var(--text-primary)] font-medium">{manga.translator.penName}</span>
+                  {manga.translator.user.verifiedAt && (
+                    <BadgeCheck className="w-4 h-4 text-[var(--text-primary)]" />
+                  )}
                 </Link>
                 <TipButton
                   translatorId={manga.translator.id}

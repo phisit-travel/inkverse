@@ -42,12 +42,12 @@ export default function Navbar({ user, userCoins = 0 }: NavbarProps) {
         <Logo size="md" />
 
         {/* Desktop nav */}
-        <div className="hidden lg:flex items-center gap-6">
+        <div className="hidden lg:flex items-center gap-7">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors hover:text-[var(--text-primary)]"
+              className="text-[11px] uppercase tracking-[0.18em] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
             >
               {link.label}
             </Link>

@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import MangaCard from "@/components/ui/MangaCard";
 import ProfileImageButton from "@/components/ui/ProfileImageButton";
+import VerificationCard from "@/components/ui/VerificationCard";
+import { VERIFY_FEE_COINS } from "@/lib/coins";
 import {
   BookMarked, History, Star, Calendar, Eye, Layers,
   Shield, PenTool, User as UserIcon, BookOpen, Coins, Heart,
@@ -62,6 +64,7 @@ export default async function ProfilePage({ params }: Props) {
         },
       },
       _count: { select: { bookmarks: true, ratings: true, readHistory: true } },
+      verificationRequest: { select: { status: true } },
       translator: {
         include: {
           mangas: {
@@ -82,6 +85,10 @@ export default async function ProfilePage({ params }: Props) {
   const isOwner = !!session?.user && (session.user as { id?: string }).id === user.id;
   const role = ROLES[user.role as keyof typeof ROLES] ?? ROLES.READER;
   const RoleIcon = role.icon;
+  // Paid identity verification (admins are inherently official).
+  const isVerified = !!user.verifiedAt || user.role === "ADMIN";
+  // Translators only earn the "VERIFIED" eyebrow once actually verified.
+  const eyebrow = user.role === "TRANSLATOR" && !isVerified ? "CREATOR" : role.eyebrow;
 
   const works = user.translator?.mangas ?? [];
   const isCreator = !!user.translator;
@@ -161,7 +168,7 @@ export default async function ProfilePage({ params }: Props) {
       <div className="flex flex-col sm:flex-row sm:items-end gap-5 px-1 sm:px-4 -mt-14 sm:-mt-16 relative">
         {/* Square avatar — double-framed for a couture, gallery feel */}
         <div className="relative shrink-0">
-          <div className={`relative w-28 h-28 sm:w-32 sm:h-32 border-4 border-[var(--bg-primary)] bg-[var(--bg-card)] overflow-hidden ${role.verified ? "outline outline-1 outline-offset-[3px] outline-[var(--text-primary)]/40" : ""}`}>
+          <div className={`relative w-28 h-28 sm:w-32 sm:h-32 border-4 border-[var(--bg-primary)] bg-[var(--bg-card)] overflow-hidden ${isVerified ? "outline outline-1 outline-offset-[3px] outline-[var(--text-primary)]/40" : ""}`}>
             {user.avatarUrl ? (
               <Image src={user.avatarUrl} alt={user.username} fill unoptimized className="object-cover" />
             ) : (
@@ -176,7 +183,7 @@ export default async function ProfilePage({ params }: Props) {
             )}
           </div>
           {/* Verified seal */}
-          {role.verified && !isOwner && (
+          {isVerified && !isOwner && (
             <span className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-[var(--text-primary)] text-[var(--bg-primary)] flex items-center justify-center">
               <BadgeCheck className="w-3.5 h-3.5" />
             </span>
@@ -187,13 +194,13 @@ export default async function ProfilePage({ params }: Props) {
           {/* Eyebrow — couture micro-label */}
           <p className="flex items-center gap-2 text-[10px] text-[var(--text-muted)] uppercase tracking-[0.35em] mb-1.5">
             <span className="w-5 h-px bg-[var(--text-muted)]" />
-            {role.eyebrow}
+            {eyebrow}
           </p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <h1 className="font-bebas text-4xl sm:text-5xl text-[var(--text-primary)] tracking-[0.06em] leading-[0.9] uppercase">
               {displayName}
             </h1>
-            {role.verified && (
+            {isVerified && (
               <BadgeCheck className="w-5 h-5 text-[var(--text-primary)] shrink-0" />
             )}
             <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] ${role.chip}`}>
@@ -217,6 +224,22 @@ export default async function ProfilePage({ params }: Props) {
           </div>
         ))}
       </div>
+
+      {/* ── Get verified (own translator, not yet verified) ────────── */}
+      {isOwner && !!user.translator && !isVerified && (
+        <div className="mb-10">
+          <VerificationCard
+            status={
+              user.verificationRequest?.status === "PENDING"
+                ? "PENDING"
+                : user.verificationRequest?.status === "REJECTED"
+                ? "REJECTED"
+                : "NONE"
+            }
+            fee={VERIFY_FEE_COINS}
+          />
+        </div>
+      )}
 
       {/* ── Creator tools (own translator/admin profile only) ──────── */}
       {isOwner && isCreator && (

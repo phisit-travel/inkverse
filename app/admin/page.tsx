@@ -14,7 +14,7 @@ export default async function AdminPage() {
     redirect("/");
   }
 
-  const [userCount, mangaCount, chapterCount, commentCount, pendingApps, openContacts, recentMangas] =
+  const [userCount, mangaCount, chapterCount, commentCount, pendingApps, openContacts, pendingVerifs, recentMangas] =
     await Promise.all([
       prisma.user.count(),
       prisma.manga.count(),
@@ -22,6 +22,7 @@ export default async function AdminPage() {
       prisma.comment.count(),
       prisma.translatorApplication.count({ where: { status: "PENDING" } }),
       prisma.contactMessage.count({ where: { status: "OPEN" } }),
+      prisma.verificationRequest.count({ where: { status: "PENDING" } }),
       prisma.manga.findMany({
         take: 10,
         orderBy: { createdAt: "desc" },
@@ -106,6 +107,17 @@ export default async function AdminPage() {
           {openContacts > 0 && (
             <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1.5 rounded-full bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-bold flex items-center justify-center ">
               {openContacts}
+            </span>
+          )}
+        </Link>
+        <Link
+          href="/admin/verifications"
+          className="relative py-3 px-5 rounded-xl bg-gradient-to-r from-[var(--bg-card)] to-[var(--bg-surface)] text-[var(--text-primary)] text-sm font-medium text-center hover:opacity-90 transition-colors"
+        >
+          คำขอยืนยันตัวตน
+          {pendingVerifs > 0 && (
+            <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1.5 rounded-full bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-bold flex items-center justify-center ">
+              {pendingVerifs}
             </span>
           )}
         </Link>
