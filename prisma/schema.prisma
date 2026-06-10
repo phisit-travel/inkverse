@@ -40,6 +40,19 @@ model User {
   referralReceived        Referral?         @relation("Referee")
   contactMessages         ContactMessage[]
   verificationRequest     VerificationRequest?
+  passwordResetTokens     PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique // random, emailed to the user
+  userId    String
+  expires   DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model VerificationRequest {

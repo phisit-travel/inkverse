@@ -28,8 +28,11 @@ interface MangaOption { id: string; title: string; slug: string; latestChapter?:
 async function compressImage(
   file: File
 ): Promise<{ blob: Blob; contentType: string; width: number; height: number }> {
-  const MAX_WIDTH = 2000;
-  const QUALITY = 0.9;
+  // Keep pages well under the serverless request-body limit (~4.5MB) so the
+  // through-server fallback works even when direct-to-R2 is unavailable, and to
+  // cut R2 storage. 1600px wide is plenty for reading.
+  const MAX_WIDTH = 1600;
+  const QUALITY = 0.82;
   const original = { blob: file, contentType: file.type || "image/jpeg", width: 0, height: 0 };
   try {
     const bitmap = await createImageBitmap(file);
@@ -47,7 +50,9 @@ async function compressImage(
     ctx.drawImage(bitmap, 0, 0, width, height);
     bitmap.close();
     const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/webp", QUALITY));
-    if (!blob || blob.size >= file.size) return { ...original, width, height };
+    // Prefer the re-encoded WebP whenever we produced one (normalises format and
+    // size); only keep the original if encoding failed entirely.
+    if (!blob) return { ...original, width, height };
     return { blob, contentType: "image/webp", width, height };
   } catch {
     return original;
@@ -252,7 +257,11 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
           fd.append("files", new File([p.blob], `${u.pageNum}.webp`, { type: p.contentType }));
           const fb = await fetch("/api/upload/pages", { method: "POST", body: fd });
           if (!fb.ok) {
-            const msg = fb.status === 413 ? `หน้า ${i + 1} ไฟล์ใหญ่เกินไป` : `อัปโหลดหน้า ${i + 1} ล้มเหลว`;
+            const data = await fb.json().catch(() => ({} as { error?: string }));
+            const msg =
+              fb.status === 413
+                ? `หน้า ${i + 1} ไฟล์ใหญ่เกินไป`
+                : data?.error || `อัปโหลดหน้า ${i + 1} ล้มเหลว (${fb.status})`;
             setChapterError(`สร้างตอนแล้ว แต่${msg} (สำเร็จ ${i} หน้า — เพิ่มที่เหลือได้ที่จัดการตอน)`);
             return;
           }

@@ -251,39 +251,6 @@ export async function unlockChaptersBulk(
   };
 }
 
-export async function topupCoins(
-  userId: string,
-  packageId: string
-): Promise<{ success: true; coinsAdded: number; coinsTotal: number } | { success: false; error: string }> {
-  const pkg = await prisma.coinPackage.findUnique({
-    where: { id: packageId },
-  });
-  if (!pkg || !pkg.isActive) return { success: false, error: "PACKAGE_NOT_FOUND" };
-
-  const total = pkg.coins + pkg.bonus;
-
-  const updatedUser = await prisma.$transaction(async (tx) => {
-    const firstBonus = await applyFirstTopupBonus(tx, userId, pkg.coins);
-    await tx.coinTransaction.create({
-      data: {
-        userId,
-        amount: total,
-        type: "TOPUP",
-        description: `ซื้อแพ็กเกจ ${pkg.name} (${pkg.coins}+${pkg.bonus} เหรียญ)`,
-        refId: packageId,
-      },
-    });
-    if (pkg.vipDays > 0) await extendVipDays(tx, userId, pkg.vipDays);
-    if (firstBonus > 0) await rewardReferralOnFirstTopup(tx, userId);
-    return tx.user.update({
-      where: { id: userId },
-      data: { coins: { increment: total + firstBonus } },
-    });
-  });
-
-  return { success: true, coinsAdded: total, coinsTotal: updatedUser.coins };
-}
-
 /**
  * Grant the one-time signup bonus. Idempotent: a marker CoinTransaction keyed by
  * `signup:<userId>` guarantees a user can never receive it twice (re-runs, retries,

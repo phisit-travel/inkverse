@@ -118,6 +118,12 @@ export default function SignInPage() {
               <p className="text-sm text-[var(--text-primary)] text-center">{error}</p>
             )}
 
+            <div className="text-right">
+              <Link href="/auth/forgot" className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+                ลืมรหัสผ่าน?
+              </Link>
+            </div>
+
             <button
               type="submit"
               disabled={loading}

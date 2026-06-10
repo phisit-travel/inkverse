@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { applyFirstTopupBonus, extendVipDays, rewardReferralOnFirstTopup } from "@/lib/coins";
+import { sendEmail, topupReceiptEmail, withdrawalEmail } from "@/lib/email";
 
 // Omise does not sign webhooks, so the POST body cannot be trusted: anyone who
 // knows this URL could forge a `charge.complete` event and mint coins. We treat
@@ -99,6 +100,10 @@ export async function POST(req: NextRequest) {
           : `คุณได้รับ ${totalCoins} เหรียญ (฿${order.price.toFixed(0)}) เรียบร้อยแล้ว`,
         link: "/topup",
       });
+      // Email receipt (best-effort; no-op without RESEND_API_KEY).
+      const buyer = await prisma.user.findUnique({ where: { id: order.userId }, select: { email: true } });
+      if (buyer?.email)
+        await sendEmail({ to: buyer.email, subject: "ใบเสร็จเติมเหรียญ INKVERSE", html: topupReceiptEmail(granted, order.price) });
     }
     return NextResponse.json({ ok: true });
   }
@@ -131,6 +136,9 @@ export async function POST(req: NextRequest) {
         body: `ยอดเงิน ฿${withdrawal.amount.toFixed(2)} ถูกโอนเข้าบัญชีของคุณเรียบร้อยแล้ว`,
         link: "/dashboard",
       });
+      const payee = await prisma.user.findUnique({ where: { id: withdrawal.translator.userId }, select: { email: true } });
+      if (payee?.email)
+        await sendEmail({ to: payee.email, subject: "โอนเงินสำเร็จ INKVERSE", html: withdrawalEmail({ amount: withdrawal.amount, status: "paid" }) });
     }
     return NextResponse.json({ ok: true });
   }

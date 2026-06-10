@@ -2,16 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Wallet, AlertCircle, Loader2,
-  CreditCard, Smartphone, Zap, Clock, Info,
-} from "lucide-react";
+import { Wallet, AlertCircle, Loader2, Zap, Clock, Info, CreditCard } from "lucide-react";
 import clsx from "clsx";
 import { BANK_OPTIONS } from "@/lib/omise-payout";
 
-const PLATFORM_CUT = 0.20;
-const NET_RATE = 0.80;
-const MIN_GROSS = 125; // net ≥ ฿100 → gross ≥ ฿125
+// Earnings are already net of the 20% platform fee (taken at unlock). Withdrawals
+// pay out the full balance — the translator receives exactly the amount requested.
+const MIN_WITHDRAW = 100;
 
 const STATUS_STYLE: Record<string, { label: string; cls: string }> = {
   PENDING:    { label: "รอดำเนินการ",  cls: "bg-[var(--bg-card)] text-[var(--text-primary)]" },
@@ -19,7 +16,6 @@ const STATUS_STYLE: Record<string, { label: string; cls: string }> = {
   PAID:       { label: "โอนแล้ว",      cls: "bg-[var(--bg-card)] text-[var(--text-primary)]" },
   FAILED:     { label: "ไม่สำเร็จ",    cls: "bg-[var(--bg-card)] text-[var(--text-primary)]" },
   REJECTED:   { label: "ถูกปฏิเสธ",    cls: "bg-[var(--bg-card)] text-[var(--text-primary)]" },
-  APPROVED:   { label: "อนุมัติแล้ว",  cls: "bg-[var(--bg-card)] text-[var(--text-secondary)]" },
 };
 
 interface WithdrawClientProps {
@@ -34,24 +30,20 @@ interface WithdrawClientProps {
 
 export default function WithdrawClient({ availableBalance, history }: WithdrawClientProps) {
   const router = useRouter();
-  const [method, setMethod] = useState<"BANK_TRANSFER" | "PROMPTPAY">("BANK_TRANSFER");
   const [amount, setAmount] = useState("");
   const [accountName, setAccountName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [bankCode, setBankCode] = useState<string>(BANK_OPTIONS[0].code);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [submitted, setSubmitted] = useState<{
-    auto: boolean; netAmount: number; platformFee: number;
-  } | null>(null);
+  const [submitted, setSubmitted] = useState<{ auto: boolean; amount: number } | null>(null);
 
   const amountNum = parseFloat(amount) || 0;
-  const netAmount = Math.round(amountNum * NET_RATE * 100) / 100;
-  const platformFee = Math.round(amountNum * PLATFORM_CUT * 100) / 100;
-
   const canSubmit =
-    amountNum >= MIN_GROSS && amountNum <= availableBalance + 0.001 &&
-    accountName.trim() && accountNumber.trim();
+    amountNum >= MIN_WITHDRAW &&
+    amountNum <= availableBalance + 0.001 &&
+    accountName.trim().length > 0 &&
+    /^\d{5,20}$/.test(accountNumber.trim());
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -65,22 +57,15 @@ export default function WithdrawClient({ availableBalance, history }: WithdrawCl
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: amountNum,
-          paymentMethod: method,
           accountName: accountName.trim(),
           accountNumber: accountNumber.trim(),
-          bankCode: method === "BANK_TRANSFER" ? bankCode : undefined,
-          bankName: method === "BANK_TRANSFER" ? (bank?.name ?? undefined) : undefined,
+          bankCode,
+          bankName: bank?.name,
         }),
       });
-      const data = await res.json() as {
-        ok?: boolean; error?: string; auto?: boolean; netAmount?: number; platformFee?: number;
-      };
+      const data = (await res.json()) as { ok?: boolean; error?: string; auto?: boolean; amount?: number };
       if (!res.ok) { setError(data.error ?? "เกิดข้อผิดพลาด"); return; }
-      setSubmitted({
-        auto: data.auto ?? false,
-        netAmount: data.netAmount ?? netAmount,
-        platformFee: data.platformFee ?? platformFee,
-      });
+      setSubmitted({ auto: data.auto ?? false, amount: data.amount ?? amountNum });
       router.refresh();
     } catch {
       setError("เกิดข้อผิดพลาด กรุณาลองใหม่");
@@ -92,35 +77,30 @@ export default function WithdrawClient({ availableBalance, history }: WithdrawCl
   return (
     <div className="max-w-xl mx-auto space-y-6">
       {/* Balance */}
-      <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border)] p-5">
         <p className="text-xs text-[var(--text-secondary)] uppercase tracking-widest mb-1">ยอดที่ถอนได้</p>
         <p className="font-bebas text-5xl text-[var(--text-primary)] tracking-wider">฿{availableBalance.toFixed(2)}</p>
-        <p className="text-xs text-[var(--text-muted)] mt-1">ถอนขั้นต่ำ ฿{MIN_GROSS} · หักค่าแพลตฟอร์ม 20% → รับจริง ฿{(MIN_GROSS * NET_RATE).toFixed(0)}</p>
+        <p className="text-xs text-[var(--text-muted)] mt-1">ถอนขั้นต่ำ ฿{MIN_WITHDRAW} · โอนเข้าบัญชีธนาคารอัตโนมัติ</p>
       </div>
 
-      {/* Fee info banner */}
-      <div className="flex items-start gap-2.5 px-4 py-3 bg-white/3 border border-white/8 rounded-xl text-xs text-[var(--text-secondary)]">
-        <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-[var(--text-secondary)]" />
+      {/* Info banner */}
+      <div className="flex items-start gap-2.5 px-4 py-3 bg-white/3 border border-[var(--border)] text-xs text-[var(--text-secondary)]">
+        <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
         <span>
-          แพลตฟอร์มหัก <span className="text-[var(--text-primary)] font-medium">20%</span> จากยอดที่ขอถอน
-          &nbsp;·&nbsp; ยอดที่โอนให้จริง = ยอดที่ขอ × 80%
+          ยอดสะสมของคุณหักค่าแพลตฟอร์มแล้วตั้งแต่ตอนปลดล็อก — <span className="text-[var(--text-primary)] font-medium">ถอนได้เต็มจำนวน ไม่หักเพิ่ม</span>
         </span>
       </div>
 
       {submitted ? (
-        <div className={clsx(
-          "bg-[var(--bg-surface)] rounded-2xl border p-6 text-center space-y-4",
-          submitted.auto ? "border-[var(--border)]" : "border-[var(--border)]"
-        )}>
+        <div className="bg-[var(--bg-surface)] border border-[var(--border)] p-6 text-center space-y-4">
           {submitted.auto ? (
             <Zap className="w-10 h-10 text-[var(--text-primary)] mx-auto" />
           ) : (
             <Clock className="w-10 h-10 text-[var(--text-primary)] mx-auto" />
           )}
-
           <div>
-            <p className="text-[var(--text-primary)] font-semibold">
-              {submitted.auto ? "ส่งคำสั่งโอนสำเร็จ!" : "รับคำขอถอนเงินแล้ว"}
+            <p className="text-[var(--text-primary)] font-semibold uppercase tracking-wide">
+              {submitted.auto ? "ส่งคำสั่งโอนสำเร็จ" : "รับคำขอถอนเงินแล้ว"}
             </p>
             <p className="text-sm text-[var(--text-secondary)] mt-1">
               {submitted.auto
@@ -128,237 +108,110 @@ export default function WithdrawClient({ availableBalance, history }: WithdrawCl
                 : "ทีมงานจะดำเนินการโอนภายใน 1–2 วันทำการ"}
             </p>
           </div>
-
-          {/* Breakdown summary */}
-          <div className="bg-black/20 rounded-xl px-4 py-3 text-sm space-y-1.5 text-left">
-            <div className="flex justify-between text-[var(--text-secondary)]">
-              <span>ยอดที่ขอถอน</span>
-              <span className="text-[var(--text-primary)]">฿{(submitted.netAmount / NET_RATE).toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-[var(--text-secondary)] text-xs">
-              <span>ค่าแพลตฟอร์ม 20%</span>
-              <span className="text-[var(--text-primary)]">−฿{submitted.platformFee.toFixed(2)}</span>
-            </div>
-            <div className="h-px bg-white/10" />
-            <div className="flex justify-between font-semibold">
-              <span className="text-[var(--text-primary)]">ยอดที่จะได้รับ</span>
-              <span className="text-[var(--text-primary)]">฿{submitted.netAmount.toFixed(2)}</span>
-            </div>
-          </div>
-
-          <button
-            onClick={() => { setSubmitted(null); setAmount(""); }}
-            className="text-xs text-[var(--text-primary)] hover:underline"
-          >
+          <p className="font-bebas text-4xl text-[var(--text-primary)] tracking-wider">฿{submitted.amount.toFixed(2)}</p>
+          <button onClick={() => { setSubmitted(null); setAmount(""); }} className="text-xs text-[var(--text-primary)] hover:underline uppercase tracking-widest">
             ส่งคำขออีกครั้ง
           </button>
         </div>
-      ) : availableBalance < MIN_GROSS ? (
-        <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-6 text-center space-y-2">
+      ) : availableBalance < MIN_WITHDRAW ? (
+        <div className="bg-[var(--bg-surface)] border border-[var(--border)] p-6 text-center space-y-2">
           <Wallet className="w-10 h-10 text-[var(--text-muted)] mx-auto" />
-          <p className="text-sm text-[var(--text-secondary)]">
-            ยอดเงินต่ำกว่าขั้นต่ำ (฿{MIN_GROSS}) ยังไม่สามารถถอนได้
-          </p>
+          <p className="text-sm text-[var(--text-secondary)]">ยอดเงินต่ำกว่าขั้นต่ำ (฿{MIN_WITHDRAW}) ยังถอนไม่ได้</p>
           <p className="text-xs text-[var(--text-muted)]">ยอดปัจจุบัน: ฿{availableBalance.toFixed(2)}</p>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-[var(--text-primary)]">ขอถอนเงิน</h2>
+        <form onSubmit={handleSubmit} className="bg-[var(--bg-surface)] border border-[var(--border)] p-5 space-y-4">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wide">ขอถอนเงิน</h2>
 
-          {/* Amount + breakdown */}
+          {/* Amount */}
           <div>
-            <label className="text-xs text-[var(--text-secondary)] mb-1.5 block">จำนวนเงินที่ต้องการถอน (บาท)</label>
+            <label className="text-xs text-[var(--text-secondary)] mb-1.5 block uppercase tracking-widest">จำนวนเงิน (บาท)</label>
             <div className="flex gap-2">
               <input
-                type="number" min={MIN_GROSS} max={availableBalance} step={1}
+                type="number" min={MIN_WITHDRAW} max={availableBalance} step={1}
                 value={amount} onChange={(e) => setAmount(e.target.value)}
-                placeholder={`ขั้นต่ำ ฿${MIN_GROSS}`}
-                className="flex-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-gray-600 focus:outline-none focus:border-[var(--text-primary)]/50"
+                placeholder={`ขั้นต่ำ ฿${MIN_WITHDRAW}`}
+                className="flex-1 bg-[var(--bg-card)] border border-[var(--border)] px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--text-primary)]/50"
               />
-              <button
-                type="button" onClick={() => setAmount(String(availableBalance))}
-                className="px-3 py-2.5 text-xs text-[var(--text-primary)] bg-white/5 rounded-xl hover:bg-white/10 transition-colors"
-              >
+              <button type="button" onClick={() => setAmount(String(Math.floor(availableBalance)))}
+                className="px-3 py-2.5 text-xs text-[var(--text-primary)] bg-[var(--bg-card)] border border-[var(--border)] hover:border-[var(--text-primary)]/40 transition-colors uppercase tracking-widest">
                 ทั้งหมด
               </button>
             </div>
-
-            {/* Live fee breakdown */}
-            {amountNum > 0 && (
-              <div className="mt-2 px-3 py-2.5 bg-black/20 rounded-xl text-xs space-y-1.5">
-                <div className="flex justify-between text-[var(--text-secondary)]">
-                  <span>ยอดที่ขอถอน</span>
-                  <span className="text-[var(--text-primary)]">฿{amountNum.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-[var(--text-secondary)]">
-                  <span>ค่าแพลตฟอร์ม 20%</span>
-                  <span className="text-[var(--text-primary)]">−฿{platformFee.toFixed(2)}</span>
-                </div>
-                <div className="h-px bg-white/8" />
-                <div className="flex justify-between font-semibold">
-                  <span className="text-[var(--text-primary)]">ยอดที่จะได้รับ</span>
-                  <span className={amountNum >= MIN_GROSS ? "text-[var(--text-primary)]" : "text-[var(--text-primary)]"}>
-                    ฿{netAmount.toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {amountNum > 0 && amountNum < MIN_GROSS && (
-              <p className="text-xs text-[var(--text-primary)] mt-1.5">
-                ต้องถอนอย่างน้อย ฿{MIN_GROSS} เพื่อรับเงิน ฿{(MIN_GROSS * NET_RATE).toFixed(0)} หลังหัก 20%
-              </p>
+            {amountNum > 0 && amountNum < MIN_WITHDRAW && (
+              <p className="text-xs text-[var(--text-primary)] mt-1.5">ต้องถอนอย่างน้อย ฿{MIN_WITHDRAW}</p>
             )}
           </div>
 
-          {/* Payment method */}
+          {/* Bank */}
           <div>
-            <label className="text-xs text-[var(--text-secondary)] mb-1.5 block">ช่องทางรับเงิน</label>
-            <div className="grid grid-cols-2 gap-2">
-              {([
-                { id: "BANK_TRANSFER", label: "โอนธนาคาร", icon: CreditCard, badge: "อัตโนมัติ" },
-                { id: "PROMPTPAY",     label: "PromptPay",  icon: Smartphone, badge: "1–2 วัน" },
-              ] as const).map((m) => (
-                <button
-                  key={m.id} type="button" onClick={() => setMethod(m.id)}
-                  className={clsx(
-                    "flex flex-col items-start gap-1 px-3 py-3 rounded-xl border text-sm transition-all",
-                    method === m.id
-                      ? "bg-[var(--text-primary)]/10 border-[var(--text-primary)]/50 text-[var(--text-primary)]"
-                      : "bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-white/20"
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    <m.icon className="w-4 h-4" />
-                    {m.label}
-                  </div>
-                  <span className={clsx(
-                    "text-xs px-1.5 py-0.5 rounded-full",
-                    m.id === "BANK_TRANSFER"
-                      ? "bg-[var(--bg-card)] text-[var(--text-primary)]"
-                      : "bg-[var(--bg-card)] text-[var(--text-primary)]"
-                  )}>
-                    {m.badge}
-                  </span>
-                </button>
-              ))}
-            </div>
+            <label className="text-xs text-[var(--text-secondary)] mb-1.5 block uppercase tracking-widest">ธนาคาร</label>
+            <select value={bankCode} onChange={(e) => setBankCode(e.target.value)}
+              className="w-full bg-[var(--bg-card)] border border-[var(--border)] px-4 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--text-primary)]/50">
+              {BANK_OPTIONS.map((b) => <option key={b.code} value={b.code}>{b.name}</option>)}
+            </select>
           </div>
-
-          {/* Bank selector */}
-          {method === "BANK_TRANSFER" && (
-            <div>
-              <label className="text-xs text-[var(--text-secondary)] mb-1.5 block">ธนาคาร</label>
-              <select
-                value={bankCode} onChange={(e) => setBankCode(e.target.value)}
-                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--text-primary)]/50"
-              >
-                {BANK_OPTIONS.map((b) => (
-                  <option key={b.code} value={b.code}>{b.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
 
           {/* Account number */}
           <div>
-            <label className="text-xs text-[var(--text-secondary)] mb-1.5 block">
-              {method === "PROMPTPAY" ? "เบอร์มือถือ / เลขบัตรประชาชน" : "เลขบัญชี"}
-            </label>
+            <label className="text-xs text-[var(--text-secondary)] mb-1.5 block uppercase tracking-widest">เลขบัญชี</label>
             <input
-              type="text" value={accountNumber}
-              onChange={(e) => setAccountNumber(e.target.value)}
-              placeholder={method === "PROMPTPAY" ? "0XX-XXX-XXXX" : "XXX-X-XXXXX-X"}
-              className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-gray-600 focus:outline-none focus:border-[var(--text-primary)]/50 font-mono"
+              type="text" inputMode="numeric" value={accountNumber}
+              onChange={(e) => setAccountNumber(e.target.value.replace(/[^\d]/g, ""))}
+              placeholder="เลขบัญชี (ตัวเลขเท่านั้น)"
+              className="w-full bg-[var(--bg-card)] border border-[var(--border)] px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--text-primary)]/50 font-mono"
             />
           </div>
 
           {/* Account name */}
           <div>
-            <label className="text-xs text-[var(--text-secondary)] mb-1.5 block">ชื่อเจ้าของบัญชี</label>
+            <label className="text-xs text-[var(--text-secondary)] mb-1.5 block uppercase tracking-widest">ชื่อเจ้าของบัญชี</label>
             <input
-              type="text" value={accountName}
-              onChange={(e) => setAccountName(e.target.value)}
-              placeholder="ชื่อ-นามสกุล (ภาษาไทยหรืออังกฤษ)"
-              className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-gray-600 focus:outline-none focus:border-[var(--text-primary)]/50"
+              type="text" value={accountName} onChange={(e) => setAccountName(e.target.value)}
+              placeholder="ชื่อ-นามสกุล ตรงกับบัญชีธนาคาร"
+              className="w-full bg-[var(--bg-card)] border border-[var(--border)] px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--text-primary)]/50"
             />
           </div>
 
-          {method === "BANK_TRANSFER" && (
-            <div className="flex items-start gap-2 px-3 py-2.5 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl text-xs text-[var(--text-primary)]">
-              <Zap className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-              ระบบจะโอนเงินอัตโนมัติผ่าน Omise ภายใน 1–3 วันทำการ ไม่ต้องรอ admin อนุมัติ
-            </div>
-          )}
+          <div className="flex items-start gap-2 px-3 py-2.5 bg-[var(--bg-card)] border border-[var(--border)] text-xs text-[var(--text-primary)]">
+            <Zap className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+            ระบบโอนอัตโนมัติผ่าน Omise ภายใน 1–3 วันทำการ ไม่ต้องรอแอดมินอนุมัติ
+          </div>
 
           {error && (
-            <div className="flex items-center gap-2 px-3 py-2.5 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl text-[var(--text-primary)] text-sm">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              {error}
+            <div className="flex items-center gap-2 px-3 py-2.5 bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] text-sm">
+              <AlertCircle className="w-4 h-4 shrink-0" /> {error}
             </div>
           )}
 
-          <button
-            type="submit" disabled={loading || !canSubmit}
-            className="w-full flex flex-col items-center gap-0.5 py-3 rounded-xl bal-btn font-semibold text-sm hover:opacity-90 transition-colors disabled:opacity-40"
-          >
-            <div className="flex items-center gap-2">
-              {loading
-                ? <Loader2 className="w-4 h-4 animate-spin" />
-                : method === "BANK_TRANSFER" ? <Zap className="w-4 h-4" /> : <Wallet className="w-4 h-4" />}
-              {loading
-                ? "กำลังดำเนินการ..."
-                : method === "BANK_TRANSFER"
-                ? "โอนอัตโนมัติ"
-                : "ขอถอนเงิน"}
-            </div>
-            {!loading && amountNum >= MIN_GROSS && (
-              <span className="text-xs font-normal opacity-80">
-                ได้รับจริง ฿{netAmount.toFixed(2)} (หลังหัก ฿{platformFee.toFixed(2)})
-              </span>
-            )}
+          <button type="submit" disabled={loading || !canSubmit}
+            className="w-full flex items-center justify-center gap-2 py-3 bal-btn font-semibold text-sm uppercase tracking-widest hover:opacity-90 disabled:opacity-40">
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+            {loading ? "กำลังดำเนินการ..." : `ถอน ฿${amountNum >= MIN_WITHDRAW ? amountNum.toFixed(0) : ""}`}
           </button>
         </form>
       )}
 
       {/* History */}
       {history.length > 0 && (
-        <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5">
-          <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-4">ประวัติคำขอถอนเงิน</h2>
+        <div className="bg-[var(--bg-surface)] border border-[var(--border)] p-5">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-4 uppercase tracking-wide">ประวัติคำขอถอนเงิน</h2>
           <div className="divide-y divide-white/5">
             {history.map((w) => {
               const s = STATUS_STYLE[w.status] ?? STATUS_STYLE.PENDING;
-              const net = Math.round(w.amount * NET_RATE * 100) / 100;
-              const fee = Math.round(w.amount * PLATFORM_CUT * 100) / 100;
               return (
                 <div key={w.id} className="py-3 space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-sm font-medium text-[var(--text-primary)]">
-                        ขอถอน ฿{w.amount.toFixed(2)}
-                      </span>
-                      <span className="text-xs text-[var(--text-muted)] ml-1.5">
-                        → รับจริง <span className="text-[var(--text-primary)]">฿{net.toFixed(2)}</span>
-                        <span className="text-gray-700 ml-1">(หัก ฿{fee.toFixed(2)})</span>
-                      </span>
-                    </div>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${s.cls}`}>{s.label}</span>
+                    <span className="text-sm font-medium text-[var(--text-primary)]">฿{w.amount.toFixed(2)}</span>
+                    <span className={`text-xs px-2 py-0.5 ${s.cls}`}>{s.label}</span>
                   </div>
-                  <p className="text-xs text-[var(--text-secondary)]">
-                    {w.paymentMethod === "PROMPTPAY"
-                      ? `PromptPay · ${w.accountNumber}`
-                      : `${w.bankName ?? "ธนาคาร"} · ${w.accountNumber}`}
-                  </p>
+                  <p className="text-xs text-[var(--text-secondary)]">{w.bankName ?? "ธนาคาร"} · {w.accountNumber}</p>
                   <p className="text-xs text-[var(--text-muted)]">
-                    {new Date(w.requestedAt).toLocaleDateString("th-TH", {
-                      day: "numeric", month: "short", year: "numeric",
-                    })}
+                    {new Date(w.requestedAt).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" })}
                     {w.processedAt && ` · โอนแล้ว ${new Date(w.processedAt).toLocaleDateString("th-TH", { day: "numeric", month: "short" })}`}
                   </p>
                   {w.adminNote && (
-                    <p className="text-xs text-[var(--text-primary)] bg-[var(--bg-card)] px-2 py-1 rounded-lg">
-                      {w.adminNote}
-                    </p>
+                    <p className="text-xs text-[var(--text-primary)] bg-[var(--bg-card)] px-2 py-1">{w.adminNote}</p>
                   )}
                 </div>
               );

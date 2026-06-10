@@ -7,6 +7,19 @@ import sharp from "sharp";
 
 const MAX_SIZE = 8 * 1024 * 1024; // 8 MB
 
+// Verify real image bytes (don't trust the filename / Content-Type).
+function looksLikeImage(b: Buffer): boolean {
+  if (b.length < 12) return false;
+  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return true; // JPEG
+  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return true; // PNG
+  if (b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46) return true; // GIF
+  if (
+    b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 &&
+    b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50
+  ) return true; // WEBP (RIFF....WEBP)
+  return false;
+}
+
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user)
@@ -41,15 +54,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "ยังไม่ได้ตั้งค่าที่เก็บไฟล์ (R2)" }, { status: 503 });
 
   const buffer = Buffer.from(await file.arrayBuffer());
+  if (!looksLikeImage(buffer))
+    return NextResponse.json({ error: "ไฟล์ไม่ใช่รูปภาพที่รองรับ" }, { status: 400 });
 
   let processed: Buffer;
   let key: string;
-  if (type === "avatar") {
-    processed = await sharp(buffer).resize(400, 400, { fit: "cover" }).webp({ quality: 85 }).toBuffer();
-    key = `avatars/${userId}.webp`;
-  } else {
-    processed = await sharp(buffer).resize(1600, 500, { fit: "cover" }).webp({ quality: 82 }).toBuffer();
-    key = `profile-covers/${userId}.webp`;
+  try {
+    if (type === "avatar") {
+      processed = await sharp(buffer).resize(400, 400, { fit: "cover" }).webp({ quality: 85 }).toBuffer();
+      key = `avatars/${userId}.webp`;
+    } else {
+      processed = await sharp(buffer).resize(1600, 500, { fit: "cover" }).webp({ quality: 82 }).toBuffer();
+      key = `profile-covers/${userId}.webp`;
+    }
+  } catch {
+    return NextResponse.json({ error: "ประมวลผลรูปไม่สำเร็จ" }, { status: 400 });
   }
 
   const base = await uploadToR2(key, processed, "image/webp");

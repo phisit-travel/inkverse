@@ -29,8 +29,19 @@ export async function POST(
   if (order.status !== "PENDING")
     return NextResponse.json({ error: "Order already processed" }, { status: 409 });
 
-  // ── Real Omise card charge ────────────────────────────────────
-  if (omise && method === "CARD") {
+  // This endpoint handles CARD charges ONLY. Other channels (PromptPay slip,
+  // mobile banking, e-wallet) credit via their own verified routes / the webhook.
+  // Never accept a non-CARD method here — that previously let callers skip the
+  // charge and mint coins for free.
+  if (method !== "CARD")
+    return NextResponse.json({ error: "ช่องทางชำระเงินไม่ถูกต้อง" }, { status: 400 });
+
+  // Sandbox (no real charge) is allowed ONLY when explicitly enabled — never by
+  // default, and never in production.
+  const sandbox = process.env.ALLOW_SANDBOX_PAYMENTS === "true";
+
+  // ── Real Omise card charge — must succeed before any coins are credited ──
+  if (omise) {
     if (!omiseToken)
       return NextResponse.json({ error: "omiseToken required" }, { status: 400 });
 
@@ -61,9 +72,15 @@ export async function POST(
         { status: 402 }
       );
     }
+  } else if (!sandbox) {
+    // No payment processor configured and sandbox not explicitly enabled → refuse.
+    return NextResponse.json(
+      { error: "ระบบชำระเงินยังไม่พร้อมใช้งาน" },
+      { status: 503 }
+    );
   }
 
-  // ── Sandbox: allow without real charge when OMISE_SECRET_KEY not set ──
+  // Reaching here means: a successful Omise charge, or explicit sandbox mode.
   const totalCoins = order.coins + order.bonus;
 
   const firstTopupBonus = await prisma.$transaction(async (tx) => {

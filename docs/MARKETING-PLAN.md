@@ -62,3 +62,38 @@
 - เมื่อ funnel นิ่ง (activation rate ดี) ค่อยเติมงบ TikTok/Meta ads ไปยังหน้า landing ที่ convert ดีที่สุด
 - ติด UTM ทุกลิงก์ → วัดว่าช่องไหนพาคนมาเติมเงินจริง (ดูจาก `CoinOrder` ที่ PAID)
 - ตัวเลขเหนือสุดที่ต้องดู: **CAC (ต้นทุน/ผู้จ่ายใหม่)** เทียบ **LTV** — คุ้มเมื่อ LTV > 3×CAC
+
+---
+
+# 🚀 Launch Playbook (เปิดตัวจริง)
+
+## Pre-launch (ก่อนเปิด)
+- ✅ ปิดช่องโหว่การเงิน (ดู SECURITY.md) + ตั้ง Omise live + R2 CORS (ดู GO-LIVE.md)
+- เตรียม **คอนเทนต์ตั้งต้น**: เรื่องเด่น 10–20 เรื่อง, ตอนต้นฟรี, ตั้ง "ตอนเบ็ดเกี่ยว" ล็อกช่วงพีค
+- ดึง **นักแปล 5–10 คน** พร้อมลงผลงาน (พวกเขาคือ growth engine)
+- หน้า legal ครบ (terms/privacy/dmca/about)
+
+## Soft launch (สัปดาห์ 1–2)
+- เปิดให้นักแปล + แฟนคลับของพวกเขาเข้าก่อน (referral seeding: ทั้งคู่รับ 50 เหรียญ)
+- ตั้ง **Discord** ชุมชน + แจ้งตอนใหม่
+- TikTok/X: คลิปพรีวิว 15–30 วิ ตัดช่วงพีค → "อ่านต่อที่ INKVERSE"
+
+## Growth loop (สัปดาห์ 3+)
+```
+โซเชียล → สมัคร (+20 เหรียญ) → ติดตอนเบ็ดเกี่ยว → เติมครั้งแรก 2x
+   → เช็คอินรายวัน + แจ้งเตือนตอนใหม่ (retention) → referral ชวนเพื่อน (viral)
+```
+- เปิด **VIP** + **verified นักแปล** (เก็บเงินได้) เป็น upsell
+
+## Paid ads (เมื่อ funnel นิ่ง)
+- เริ่ม organic + นักแปล influencer (งบ ~0) ก่อน
+- ยิงแอด TikTok/Meta ไปหน้า landing ที่ convert ดีสุด **เมื่อ LTV > 3×CAC** เท่านั้น
+- ติด UTM ทุกลิงก์ → วัดช่องที่พาคนมาเติมเงินจริง (`CoinOrder` PAID)
+
+## Timeline 30/60/90
+- **30 วัน**: soft launch, นักแปล+คอนเทนต์พร้อม, วัด activation (สมัคร→เติมแรก)
+- **60 วัน**: เปิด referral/VIP เต็มตัว, เริ่มแอดทดสอบงบเล็ก, ปรับ funnel ตาม KPI
+- **90 วัน**: สเกลแอดช่องที่คุ้ม, ระบบ retention ครบ, เริ่มทำ SEO content evergreen
+
+## KPI ที่ต้องดูทุกสัปดาห์
+Activation (สมัคร→เติมแรก) · ARPPU · repeat-topup % · coin breakage % · DAU เช็คอิน · CAC vs LTV

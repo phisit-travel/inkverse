@@ -172,7 +172,7 @@ export default function TopupClient({
       </div>
 
       <p className="text-xs text-[var(--text-muted)] text-center mt-6">
-        * นี่คือระบบทดสอบ การชำระเงินจริงยังไม่เปิดใช้งาน
+        ชำระเงินปลอดภัยผ่าน Omise · บัตรเครดิต/เดบิต · PromptPay · Mobile Banking · TrueMoney/ShopeePay
       </p>
     </div>
   );
