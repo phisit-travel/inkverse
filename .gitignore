@@ -52,3 +52,5 @@ test-*.mjs
 /*.jpg
 /*.jpeg
 *.log
+
+.vercel

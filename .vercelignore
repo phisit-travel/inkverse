@@ -1,0 +1,10 @@
+# Never upload local env files to Vercel builds — use Vercel's env vars instead.
+.env
+.env.*
+
+# Local test artifacts / screenshots / logs
+*.log
+/*.png
+/*.jpg
+/*.jpeg
+test-*.mjs
