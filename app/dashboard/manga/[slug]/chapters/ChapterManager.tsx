@@ -125,7 +125,7 @@ function ChapterRow({
             </span>
             <button
               onClick={() => setEditingTitle(true)}
-              className="opacity-0 group-hover:opacity-100 p-0.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-opacity"
+              className="opacity-0 group-hover:opacity-100 p-0.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
             >
               <Edit3 className="w-3 h-3" />
             </button>

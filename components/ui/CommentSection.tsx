@@ -83,7 +83,7 @@ function ReplyForm({
           <button
             type="submit"
             disabled={!content.trim() || submitting}
-            className="px-3 py-1 rounded-lg text-xs text-[var(--text-primary)] font-medium bg-[var(--accent)] disabled:opacity-50 hover:opacity-90 transition-opacity"
+            className="px-3 py-1 rounded-lg text-xs text-[var(--text-primary)] font-medium bg-[var(--accent)] disabled:opacity-50 hover:opacity-90 transition-colors"
           >
             {submitting ? "กำลังส่ง..." : "ตอบกลับ"}
           </button>
@@ -342,7 +342,7 @@ export default function CommentSection({
                 <button
                   type="submit"
                   disabled={!content.trim() || submitting}
-                  className="px-5 py-1.5 rounded-xl bg-[var(--text-primary)] text-[var(--bg-primary)] text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
+                  className="px-5 py-1.5 rounded-xl bal-btn text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-colors"
                 >
                   {submitting ? "กำลังส่ง..." : "ส่ง"}
                 </button>

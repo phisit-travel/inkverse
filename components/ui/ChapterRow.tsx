@@ -53,7 +53,7 @@ export default function ChapterRow({
       <Link
         href={href}
         onClick={handleClick}
-        className="flex items-center justify-between px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] hover:border-[var(--text-primary)]/30 hover:bg-[var(--bg-card)] transition-all group"
+        className="flex items-center justify-between px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] bal-invert group"
       >
         <div className="flex items-center gap-3">
           {isPremium ? (

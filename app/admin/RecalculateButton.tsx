@@ -28,7 +28,7 @@ export default function RecalculateButton() {
     <button
       onClick={handleClick}
       disabled={state === "loading"}
-      className="py-3 px-5 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 text-[var(--text-primary)] text-sm font-medium text-center hover:opacity-90 transition-opacity disabled:opacity-50"
+      className="py-3 px-5 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 text-[var(--text-primary)] text-sm font-medium text-center hover:opacity-90 transition-colors disabled:opacity-50"
     >
       {labels[state]}
     </button>

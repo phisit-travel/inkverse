@@ -39,9 +39,9 @@ export default function MangaCard({
     <Link
       href={`/content/${slug}`}
       className={clsx(
-        "group relative flex flex-col rounded-xl overflow-hidden",
+        "group relative flex flex-col rounded-xl overflow-hidden bal-invert",
         "bg-[var(--bg-card)] border border-[var(--border)]",
-        "transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-[var(--text-primary)]/10 hover:border-[var(--text-primary)]/30",
+        "transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl",
         isLarge ? "h-80" : isCompact ? "h-36 flex-row" : "h-auto",
         className
       )}

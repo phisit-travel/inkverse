@@ -33,7 +33,7 @@ export default function UpdateRow({
   return (
     <Link
       href={`/content/${slug}/${chapterNum}`}
-      className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-colors group"
+      className="flex items-center gap-3 p-2 rounded-xl bal-invert group"
     >
       <div className="relative w-12 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-[var(--bg-card)]">
         {coverUrl ? (

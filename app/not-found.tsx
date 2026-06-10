@@ -14,7 +14,7 @@ export default function NotFound() {
       <div className="flex flex-wrap justify-center gap-3 mt-7">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--text-primary)] text-[var(--bg-primary)] text-sm font-semibold hover:opacity-90 transition-opacity"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bal-btn text-sm font-semibold hover:opacity-90 transition-colors"
         >
           <Home className="w-4 h-4" /> หน้าแรก
         </Link>

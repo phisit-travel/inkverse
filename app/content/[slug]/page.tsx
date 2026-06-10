@@ -191,7 +191,7 @@ export default async function MangaProfilePage({ params }: Props) {
               {firstChapter && (
                 <Link
                   href={`/content/${slug}/${firstChapter.chapterNum}`}
-                  className="w-full py-3 rounded-xl bg-[var(--text-primary)] text-[var(--bg-primary)] text-sm font-semibold text-center hover:opacity-90 transition-opacity"
+                  className="w-full py-3 rounded-xl bal-btn text-sm font-semibold text-center hover:opacity-90 transition-colors"
                 >
                   อ่านตั้งแต่ต้น
                 </Link>

@@ -25,7 +25,7 @@ export default function TranslatorRanking({ entries }: { entries: TranslatorRank
           <Link
             key={t.username}
             href={`/profile/${t.username}`}
-            className="flex items-center gap-3 bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] p-3 hover:border-[var(--text-primary)]/40 transition-colors"
+            className="bal-invert flex items-center gap-3 bg-[var(--bg-surface)] border border-[var(--border)] p-3"
           >
             <span className={`font-bebas text-2xl w-7 text-center shrink-0 ${MEDAL[i] ?? "text-[var(--text-secondary)]"}`}>
               {i + 1}

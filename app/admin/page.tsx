@@ -70,13 +70,13 @@ export default async function AdminPage() {
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-10">
         <Link
           href="/upload"
-          className="py-3 px-5 rounded-xl bg-[var(--text-primary)] text-[var(--bg-primary)] text-sm font-medium text-center hover:opacity-90 transition-opacity"
+          className="py-3 px-5 rounded-xl bal-btn text-sm font-medium text-center hover:opacity-90 transition-colors"
         >
           อัปโหลดมังงะใหม่
         </Link>
         <Link
           href="/admin/applications"
-          className="relative py-3 px-5 rounded-xl bg-gradient-to-r from-yellow-500 to-orange-500 text-[var(--text-primary)] text-sm font-medium text-center hover:opacity-90 transition-opacity"
+          className="relative py-3 px-5 rounded-xl bg-gradient-to-r from-yellow-500 to-orange-500 text-[var(--text-primary)] text-sm font-medium text-center hover:opacity-90 transition-colors"
         >
           ใบสมัครนักแปล
           {pendingApps > 0 && (
@@ -87,7 +87,7 @@ export default async function AdminPage() {
         </Link>
         <Link
           href="/admin/withdrawals"
-          className="py-3 px-5 rounded-xl bg-gradient-to-r from-green-500 to-teal-500 text-[var(--text-primary)] text-sm font-medium text-center hover:opacity-90 transition-opacity"
+          className="py-3 px-5 rounded-xl bg-gradient-to-r from-green-500 to-teal-500 text-[var(--text-primary)] text-sm font-medium text-center hover:opacity-90 transition-colors"
         >
           คำขอถอนเงิน
         </Link>

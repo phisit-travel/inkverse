@@ -59,7 +59,7 @@ export default function RankingPanel({
               className={clsx(
                 "flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition-all",
                 activeTab === key
-                  ? "bg-[var(--text-primary)] text-[var(--bg-primary)]"
+                  ? "bal-btn"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5"
               )}
             >
@@ -80,7 +80,7 @@ export default function RankingPanel({
             <Link
               key={item.mangaId}
               href={`/content/${item.manga.slug}`}
-              className="flex items-center gap-3 p-3 hover:bg-white/5 transition-colors"
+              className="flex items-center gap-3 p-3 bal-invert"
             >
               <span
                 className={clsx(

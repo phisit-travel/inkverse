@@ -144,3 +144,31 @@
     animation: shimmer 1.5s infinite;
   }
 }
+
+/* Balenciaga.com-style hover invert */
+@layer components {
+  /* Primary buttons: solid ink → outline on hover */
+  .bal-btn {
+    background-color: var(--text-primary);
+    color: var(--bg-primary);
+    border: 1px solid var(--text-primary);
+    transition: background-color 0.18s ease, color 0.18s ease;
+  }
+  .bal-btn:hover {
+    background-color: transparent;
+    color: var(--text-primary);
+  }
+
+  /* Cards/chips: invert to ink block on hover */
+  .bal-invert {
+    transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+  }
+  .bal-invert:hover {
+    background-color: var(--text-primary);
+    border-color: var(--text-primary);
+  }
+  .bal-invert:hover,
+  .bal-invert:hover * {
+    color: var(--bg-primary) !important;
+  }
+}
