@@ -20,6 +20,9 @@ export async function POST(req: NextRequest) {
   const formData = await req.formData();
   const chapterId = formData.get("chapterId") as string;
   const files = formData.getAll("files") as File[];
+  // Pages are uploaded one (or a few) at a time to stay under the serverless
+  // request-body limit; startPage tells us where this batch begins.
+  const startPage = Number(formData.get("startPage")) || 1;
 
   if (!chapterId || files.length === 0) {
     return NextResponse.json(
@@ -44,7 +47,7 @@ export async function POST(req: NextRequest) {
   if (!isR2Ready) {
     const placeholders = [];
     for (let i = 0; i < files.length; i++) {
-      const pageNum = i + 1;
+      const pageNum = startPage + i;
       const url = `https://picsum.photos/seed/${chapterId}-${pageNum}/800/1200`;
       await prisma.page.upsert({
         where: { chapterId_pageNum: { chapterId, pageNum } },
@@ -60,35 +63,44 @@ export async function POST(req: NextRequest) {
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
-    if (file.size > MAX_SIZE) continue;
+    const pageNum = startPage + i;
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json({ error: `หน้า ${pageNum} ใหญ่เกิน 10MB` }, { status: 413 });
+    }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const image = sharp(buffer);
-    const meta = await image.metadata();
-    const webpBuffer = await image.webp({ quality: 85 }).toBuffer();
+    try {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const image = sharp(buffer);
+      const meta = await image.metadata();
+      const webpBuffer = await image.webp({ quality: 85 }).toBuffer();
 
-    const pageNum = i + 1;
-    const key = `pages/${chapterId}/${pageNum}.webp`;
-    const url = await uploadToR2(key, webpBuffer, "image/webp");
+      const key = `pages/${chapterId}/${pageNum}.webp`;
+      const url = await uploadToR2(key, webpBuffer, "image/webp");
 
-    await prisma.page.upsert({
-      where: { chapterId_pageNum: { chapterId, pageNum } },
-      create: {
-        chapterId,
+      await prisma.page.upsert({
+        where: { chapterId_pageNum: { chapterId, pageNum } },
+        create: {
+          chapterId,
+          pageNum,
+          imageUrl: url,
+          width: meta.width ?? null,
+          height: meta.height ?? null,
+        },
+        update: { imageUrl: url, width: meta.width ?? null, height: meta.height ?? null },
+      });
+
+      results.push({
         pageNum,
         imageUrl: url,
-        width: meta.width ?? null,
-        height: meta.height ?? null,
-      },
-      update: { imageUrl: url, width: meta.width ?? null, height: meta.height ?? null },
-    });
-
-    results.push({
-      pageNum,
-      imageUrl: url,
-      width: meta.width ?? 0,
-      height: meta.height ?? 0,
-    });
+        width: meta.width ?? 0,
+        height: meta.height ?? 0,
+      });
+    } catch {
+      return NextResponse.json(
+        { error: `ประมวลผลหน้า ${pageNum} ไม่สำเร็จ (ไฟล์อาจเสียหรือไม่ใช่รูปภาพ)` },
+        { status: 422 }
+      );
+    }
   }
 
   return NextResponse.json({ pages: results, count: results.length });

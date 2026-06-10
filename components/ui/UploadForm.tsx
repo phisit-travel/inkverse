@@ -149,14 +149,25 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
       }
       const chapter = await createRes.json();
 
-      setUploadProgress(`กำลังอัปโหลด ${pageFiles.length} หน้า...`);
-      const fd = new FormData();
-      fd.append("chapterId", chapter.id);
-      pageFiles.forEach(f => fd.append("files", f));
-      const uploadRes = await fetch("/api/upload/pages", { method: "POST", body: fd });
-      if (!uploadRes.ok) {
-        setChapterError("สร้างตอนสำเร็จ แต่อัปโหลดหน้าล้มเหลว");
-        return;
+      // Upload one page per request to stay under the serverless body limit
+      // (uploading all pages at once can exceed ~4.5MB and fail with 413).
+      for (let i = 0; i < pageFiles.length; i++) {
+        setUploadProgress(`กำลังอัปโหลดหน้า ${i + 1}/${pageFiles.length}...`);
+        const fd = new FormData();
+        fd.append("chapterId", chapter.id);
+        fd.append("startPage", String(i + 1));
+        fd.append("files", pageFiles[i]);
+        const uploadRes = await fetch("/api/upload/pages", { method: "POST", body: fd });
+        if (!uploadRes.ok) {
+          let msg = `อัปโหลดหน้า ${i + 1} ล้มเหลว`;
+          if (uploadRes.status === 413) {
+            msg = `หน้า ${i + 1} ไฟล์ใหญ่เกินไป — ลดขนาดรูปแล้วลองใหม่`;
+          } else {
+            try { const j = await uploadRes.json(); if (j.error) msg = j.error; } catch {}
+          }
+          setChapterError(`สร้างตอนแล้ว แต่${msg} (อัปสำเร็จ ${i} หน้า — เพิ่มหน้าที่เหลือได้ที่จัดการตอน)`);
+          return;
+        }
       }
 
       setChapterSuccess({ mangaSlug: selectedSlug, chapterNum: parseFloat(chapterNum) });
