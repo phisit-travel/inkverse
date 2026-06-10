@@ -28,8 +28,9 @@ function MonogramMark({ size = 36 }: { size?: number }) {
         borderRadius: size * 0.28,
         background: "linear-gradient(135deg,#ff2d55,#ff6b2b)",
         fontSize: size * 0.54,
-        letterSpacing: -size * 0.03,
+        letterSpacing: size * 0.08,
         paddingTop: size * 0.04,
+        paddingLeft: size * 0.08, // offset trailing letter-spacing → stays centered
         boxShadow: "0 2px 12px rgba(255,45,85,0.35)",
       }}
     >
