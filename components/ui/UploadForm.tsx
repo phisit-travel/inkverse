@@ -79,6 +79,7 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
   const [chapterError, setChapterError] = useState("");
   const [chapterSuccess, setChapterSuccess] = useState<{ mangaSlug: string; chapterNum: number } | null>(null);
   const [uploadProgress, setUploadProgress] = useState("");
+  const [preselect, setPreselect] = useState<string | null>(null);
 
   const { register, handleSubmit, formState: { errors }, setValue, reset } = useForm<MangaForm>({
     resolver: zodResolver(mangaSchema),
@@ -93,6 +94,23 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
         .catch(() => setMangasFetched(true));
     }
   }, [tab, mangasFetched]);
+
+  // Arriving from "อัปโหลดตอนเพิ่ม" (?manga=slug): open the chapter tab and
+  // preselect that manga once the list has loaded.
+  useEffect(() => {
+    const slug = new URLSearchParams(window.location.search).get("manga");
+    if (slug) { setPreselect(slug); setTab("chapter"); }
+  }, []);
+
+  useEffect(() => {
+    if (!preselect || myMangas.length === 0) return;
+    const m = myMangas.find((x) => x.slug === preselect);
+    if (m) {
+      setSelectedSlug(m.slug);
+      setChapterNum(String((m.latestChapter ?? 0) + 1));
+    }
+    setPreselect(null);
+  }, [preselect, myMangas]);
 
   const toggleGenre = (id: string) =>
     setSelectedGenreIds(prev => prev.includes(id) ? prev.filter(g => g !== id) : [...prev, id]);

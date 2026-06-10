@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { ArrowLeft, BookOpen } from "lucide-react";
+import { ArrowLeft, BookOpen, Plus } from "lucide-react";
 import ChapterManager from "./ChapterManager";
 import MangaSettings from "./MangaSettings";
 import type { Metadata } from "next";
@@ -64,14 +64,22 @@ export default async function MangaChaptersPage({ params }: Props) {
         >
           <ArrowLeft className="w-3.5 h-3.5" /> Dashboard
         </Link>
-        <div className="flex items-start gap-3">
-          <BookOpen className="w-6 h-6 text-[#ff6b2b] mt-1 shrink-0" />
-          <div>
-            <p className="text-xs text-[var(--text-secondary)] uppercase tracking-widest mb-0.5">จัดการตอน</p>
-            <h1 className="font-bebas text-3xl text-[var(--text-primary)] tracking-wider leading-none">
-              {manga.title}
-            </h1>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <BookOpen className="w-6 h-6 text-[#ff6b2b] mt-1 shrink-0" />
+            <div>
+              <p className="text-xs text-[var(--text-secondary)] uppercase tracking-widest mb-0.5">จัดการตอน</p>
+              <h1 className="font-bebas text-3xl text-[var(--text-primary)] tracking-wider leading-none">
+                {manga.title}
+              </h1>
+            </div>
           </div>
+          <Link
+            href={`/upload?manga=${slug}`}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white text-sm font-semibold hover:opacity-90 transition-opacity shrink-0"
+          >
+            <Plus className="w-4 h-4" /> อัปโหลดตอนเพิ่ม
+          </Link>
         </div>
       </div>
 
