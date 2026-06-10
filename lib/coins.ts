@@ -88,6 +88,88 @@ export async function unlockChapter(
   return { success: true, coinsLeft: updatedUser.coins };
 }
 
+export type BulkUnlockResult =
+  | { success: true; unlockedCount: number; coinsSpent: number; coinsLeft: number }
+  | { success: false; error: "NOTHING_TO_UNLOCK" | "INSUFFICIENT_COINS" };
+
+/**
+ * Unlock several premium chapters at once. Skips chapters that aren't premium
+ * or are already unlocked, charges the combined cost atomically, and credits
+ * each chapter's translator their share.
+ */
+export async function unlockChaptersBulk(
+  userId: string,
+  chapterIds: string[]
+): Promise<BulkUnlockResult> {
+  const ids = [...new Set(chapterIds)].slice(0, 500);
+  if (ids.length === 0) return { success: false, error: "NOTHING_TO_UNLOCK" };
+
+  const chapters = await prisma.chapter.findMany({
+    where: { id: { in: ids }, isPremium: true },
+    select: {
+      id: true, coinCost: true, mangaId: true,
+      manga: { select: { translatorId: true } },
+    },
+  });
+  if (chapters.length === 0) return { success: false, error: "NOTHING_TO_UNLOCK" };
+
+  // Drop ones the user already owns.
+  const owned = await prisma.unlockedChapter.findMany({
+    where: { userId, chapterId: { in: chapters.map((c) => c.id) } },
+    select: { chapterId: true },
+  });
+  const ownedSet = new Set(owned.map((o) => o.chapterId));
+  const toUnlock = chapters.filter((c) => !ownedSet.has(c.id));
+  if (toUnlock.length === 0) return { success: false, error: "NOTHING_TO_UNLOCK" };
+
+  const totalCost = toUnlock.reduce((sum, c) => sum + c.coinCost, 0);
+
+  const result = await prisma.$transaction(async (tx) => {
+    // Conditional decrement guards against double-spend / negative balance.
+    const dec = await tx.user.updateMany({
+      where: { id: userId, coins: { gte: totalCost } },
+      data: { coins: { decrement: totalCost } },
+    });
+    if (dec.count === 0) return null;
+
+    await tx.unlockedChapter.createMany({
+      data: toUnlock.map((c) => ({ userId, chapterId: c.id, coinSpent: c.coinCost })),
+      skipDuplicates: true,
+    });
+    await tx.coinTransaction.create({
+      data: {
+        userId,
+        amount: -totalCost,
+        type: "SPEND",
+        description: `ปลดล็อก ${toUnlock.length} ตอน`,
+        refId: toUnlock[0].mangaId,
+      },
+    });
+    const earnings = toUnlock
+      .filter((c) => c.manga?.translatorId)
+      .map((c) => ({
+        translatorId: c.manga!.translatorId!,
+        chapterId: c.id,
+        mangaId: c.mangaId,
+        userId,
+        coinsSpent: c.coinCost,
+        amount: parseFloat((c.coinCost * TRANSLATOR_SHARE).toFixed(2)),
+      }));
+    if (earnings.length) await tx.translatorEarning.createMany({ data: earnings });
+
+    const u = await tx.user.findUnique({ where: { id: userId }, select: { coins: true } });
+    return u;
+  });
+
+  if (!result) return { success: false, error: "INSUFFICIENT_COINS" };
+  return {
+    success: true,
+    unlockedCount: toUnlock.length,
+    coinsSpent: totalCost,
+    coinsLeft: result.coins,
+  };
+}
+
 export async function topupCoins(
   userId: string,
   packageId: string

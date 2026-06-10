@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import type { Metadata } from "next";
 import { MangaJsonLd, BreadcrumbJsonLd } from "@/components/seo/JsonLd";
+import BulkUnlock from "@/components/ui/BulkUnlock";
 
 const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inkverse.com";
 
@@ -118,6 +119,11 @@ export default async function MangaProfilePage({ params }: Props) {
 
   const latestChapter = manga.chapters[manga.chapters.length - 1];
   const firstChapter = manga.chapters[0];
+
+  // Premium chapters the user hasn't unlocked yet (ascending) — for bulk unlock.
+  const lockedPremium = manga.chapters
+    .filter((ch) => ch.isPremium && !unlockedSet.has(ch.id))
+    .map((ch) => ({ id: ch.id, chapterNum: ch.chapterNum, coinCost: ch.coinCost }));
 
   const statusLabel: Record<string, string> = {
     ONGOING: "กำลังดำเนินเรื่อง",
@@ -319,6 +325,16 @@ export default async function MangaProfilePage({ params }: Props) {
               <span className="w-1 h-6 bg-gradient-to-b from-[#ff2d55] to-[#ff6b2b] rounded-full" />
               รายการตอน ({manga.chapters.length})
             </h2>
+
+            {lockedPremium.length > 0 && (
+              <div className="mb-4">
+                <BulkUnlock
+                  chapters={lockedPremium}
+                  userCoins={userCoins}
+                  isLoggedIn={!!userId}
+                />
+              </div>
+            )}
 
             <div className="space-y-1 max-h-[600px] overflow-y-auto pr-1">
               {[...manga.chapters].reverse().map((ch) => (
