@@ -7,6 +7,8 @@ import PremiumGate from "@/components/ui/PremiumGate";
 import { getUserCoins, hasUnlockedChapter } from "@/lib/coins";
 import type { Metadata } from "next";
 
+const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inkverse.com";
+
 interface Props {
   params: Promise<{ slug: string; chapter: string }>;
 }
@@ -15,9 +17,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, chapter } = await params;
   const manga = await prisma.manga.findUnique({
     where: { slug },
-    select: { title: true },
+    select: { title: true, coverUrl: true },
   });
-  return { title: manga ? `${manga.title} ตอนที่ ${chapter}` : "อ่านมังงะ" };
+  if (!manga) return { title: "ไม่พบมังงะ" };
+
+  const chapterNum = parseFloat(chapter);
+  const chapterTitle = `ตอนที่ ${chapterNum}`;
+
+  return {
+    title: `${manga.title} ${chapterTitle} — อ่านที่ INKVERSE`,
+    description: `อ่าน ${manga.title} ${chapterTitle} แปลไทย ออนไลน์ฟรีที่ INKVERSE`,
+    openGraph: {
+      title: `${manga.title} ${chapterTitle} | INKVERSE`,
+      ...(manga.coverUrl ? { images: [{ url: manga.coverUrl, alt: manga.title }] } : {}),
+    },
+    alternates: { canonical: `${BASE_URL}/content/${slug}/${chapterNum}` },
+    // Index the chapter, but don't crawl outward from the reader.
+    robots: { index: true, follow: false },
+  };
 }
 
 export default async function ReaderPage({ params }: Props) {

@@ -46,14 +46,40 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "i.imgur.com" },
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
     ],
+    formats: ["image/avif", "image/webp"],
+    deviceSizes: [640, 750, 828, 1080, 1200],
+    imageSizes: [16, 32, 64, 96, 128, 256, 300],
+    minimumCacheTTL: 2592000, // 30 days
   },
+  compress: true,
   experimental: {
     serverActions: {
       bodySizeLimit: "10mb",
     },
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      {
+        // APIs must never be cached by shared caches.
+        source: "/api/(.*)",
+        headers: [{ key: "Cache-Control", value: "no-store, max-age=0" }],
+      },
+      {
+        // Hashed build assets are immutable.
+        source: "/_next/static/(.*)",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
+      {
+        source: "/sitemap.xml",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=43200" },
+        ],
+      },
+    ];
+  },
+  async redirects() {
+    return [{ source: "/home", destination: "/", permanent: true }];
   },
 };
 

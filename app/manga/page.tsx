@@ -1,9 +1,20 @@
 import { prisma } from "@/lib/prisma";
 import MangaCard from "@/components/ui/MangaCard";
 import { Suspense } from "react";
+import type { Metadata } from "next";
 
-export const metadata = {
-  title: "เรื่องทั้งหมด",
+const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inkverse.com";
+
+export const metadata: Metadata = {
+  title: "ค้นหามังงะ",
+  description:
+    "ค้นหามังงะ มังฮวา มันฮวาแปลไทยครบทุกแนว กรองตามหมวดหมู่ ประเทศ สถานะ และคะแนน อ่านฟรีที่ INKVERSE",
+  openGraph: {
+    title: "ค้นหามังงะ | INKVERSE",
+    description: "ค้นหามังงะแปลไทยครบทุกแนว อ่านฟรี",
+    url: `${BASE_URL}/manga`,
+  },
+  alternates: { canonical: `${BASE_URL}/manga` },
 };
 
 interface SearchParams {

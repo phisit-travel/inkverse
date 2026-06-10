@@ -5,6 +5,9 @@ import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/layout/Footer";
 import { auth } from "@/lib/auth";
 import { getUserCoins } from "@/lib/coins";
+import { WebsiteJsonLd } from "@/components/seo/JsonLd";
+
+const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inkverse.com";
 
 const bebasNeue = Bebas_Neue({
   weight: "400",
@@ -20,17 +23,51 @@ const notoSansThai = Noto_Sans_Thai({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(BASE_URL),
   title: {
-    default: "INKVERSE — อ่านมังงะออนไลน์",
+    default: "INKVERSE — อ่านมังงะออนไลน์ฟรี มังฮวา มันฮวา แปลไทย",
     template: "%s | INKVERSE",
   },
   description:
-    "แพลตฟอร์มอ่านการ์ตูนออนไลน์ มังงะ มันฮวา มานฮวา ที่ใหญ่ที่สุดในไทย",
-  keywords: ["มังงะ", "manhwa", "manhua", "webtoon", "อ่านการ์ตูน"],
+    "ศูนย์รวมมังงะ มังฮวา มันฮวา แปลไทยครบทุกแนว อ่านฟรีไม่มีโฆษณา ระบบ Coin สำหรับตอน Premium อัปเดตทุกวัน",
+  keywords: ["มังงะ", "อ่านมังงะ", "มังฮวา", "มันฮวา", "แปลไทย", "อ่านฟรี", "manga thai", "manhwa", "webtoon"],
+  authors: [{ name: "INKVERSE" }],
+  creator: "INKVERSE",
+  publisher: "INKVERSE",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   openGraph: {
-    siteName: "INKVERSE",
     type: "website",
     locale: "th_TH",
+    url: BASE_URL,
+    siteName: "INKVERSE",
+    title: "INKVERSE — อ่านมังงะออนไลน์ฟรี",
+    description:
+      "ศูนย์รวมมังงะ มังฮวา แปลไทยครบทุกแนว อ่านฟรี อัปเดตทุกวัน",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "INKVERSE — อ่านมังงะออนไลน์ฟรี",
+    description: "ศูนย์รวมมังงะ มังฮวา แปลไทยครบทุกแนว",
+  },
+  alternates: {
+    canonical: BASE_URL,
+    languages: {
+      "th-TH": BASE_URL,
+      "x-default": BASE_URL,
+    },
+  },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
   },
 };
 
@@ -49,6 +86,7 @@ export default async function RootLayout({
       className={`${bebasNeue.variable} ${notoSansThai.variable}`}
     >
       <body className="min-h-screen flex flex-col bg-[#080a10] text-white font-[family-name:var(--font-noto)]">
+        <WebsiteJsonLd />
         <Navbar user={session?.user} userCoins={userCoins} />
         <main className="flex-1">{children}</main>
         <Footer />

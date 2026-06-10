@@ -18,6 +18,9 @@ import {
   User,
 } from "lucide-react";
 import type { Metadata } from "next";
+import { MangaJsonLd, BreadcrumbJsonLd } from "@/components/seo/JsonLd";
+
+const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inkverse.com";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -27,12 +30,34 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const manga = await prisma.manga.findUnique({
     where: { slug },
-    select: { title: true, description: true },
+    include: { genres: { include: { genre: true } } },
   });
-  if (!manga) return { title: "Not Found" };
+  if (!manga) return { title: "ไม่พบมังงะ", description: "ไม่พบมังงะที่ต้องการ" };
+
+  const genreNames = manga.genres.map((g) => g.genre.name).join(", ");
+  const description = `อ่าน ${manga.title} แปลไทย ออนไลน์ฟรี — ${manga.description.slice(0, 120)}`;
+
   return {
-    title: manga.title,
-    description: manga.description.slice(0, 160),
+    title: `${manga.title} — อ่านออนไลน์ฟรีที่ INKVERSE`,
+    description,
+    keywords: [manga.title, "อ่านออนไลน์", "แปลไทย", genreNames, "มังงะฟรี"],
+    openGraph: {
+      type: "book",
+      title: `${manga.title} | INKVERSE`,
+      description,
+      url: `${BASE_URL}/content/${manga.slug}`,
+      siteName: "INKVERSE",
+      ...(manga.coverUrl
+        ? { images: [{ url: manga.coverUrl, width: 300, height: 400, alt: manga.title }] }
+        : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${manga.title} | INKVERSE`,
+      description,
+      ...(manga.coverUrl ? { images: [manga.coverUrl] } : {}),
+    },
+    alternates: { canonical: `${BASE_URL}/content/${manga.slug}` },
   };
 }
 
@@ -108,6 +133,28 @@ export default async function MangaProfilePage({ params }: Props) {
   };
 
   return (
+    <>
+      <MangaJsonLd
+        manga={{
+          title: manga.title,
+          slug: manga.slug,
+          description: manga.description,
+          coverUrl: manga.coverUrl,
+          status: manga.status,
+          updatedAt: manga.updatedAt,
+          genres: manga.genres,
+          avgRating,
+          ratingCount: manga.ratings.length,
+          chapters: manga.chapters,
+        }}
+      />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "หน้าแรก", url: BASE_URL },
+          { name: "มังงะ", url: `${BASE_URL}/manga` },
+          { name: manga.title, url: `${BASE_URL}/content/${manga.slug}` },
+        ]}
+      />
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
       <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] lg:grid-cols-4 gap-6 lg:gap-8">
         {/* Left — Cover + Info */}
@@ -295,5 +342,6 @@ export default async function MangaProfilePage({ params }: Props) {
         </div>
       </div>
     </div>
+    </>
   );
 }
