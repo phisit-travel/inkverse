@@ -194,14 +194,14 @@ const mangas = [
   },
 ];
 
+// 1 coin = 1 บาท. base = price; bonus kept modest so every tier stays
+// profitable at the 80% translator share (see SECURITY/economics notes).
 const coinPackages = [
-  { name: "Starter", coins: 29,  price: 29,  bonus: 0,  isPopular: false },
-  { name: "Value",   coins: 79,  price: 79,  bonus: 5,  isPopular: false },
-  { name: "Popular", coins: 149, price: 149, bonus: 20, isPopular: true  },
-  { name: "Mega",     coins: 249,  price: 249,  bonus: 50,  isPopular: false },
-  { name: "Gold",     coins: 499,  price: 499,  bonus: 100, isPopular: false },
-  { name: "Diamond",  coins: 999,  price: 999,  bonus: 250, isPopular: false },
-  { name: "Ultimate", coins: 1999, price: 1999, bonus: 600, isPopular: false },
+  { name: "Starter",  coins: 50,   price: 50,   bonus: 0,   isPopular: false },
+  { name: "Standard", coins: 100,  price: 100,  bonus: 8,   isPopular: false },
+  { name: "Popular",  coins: 300,  price: 300,  bonus: 30,  isPopular: true  },
+  { name: "Pro",      coins: 500,  price: 500,  bonus: 60,  isPopular: false },
+  { name: "Mega",     coins: 1000, price: 1000, bonus: 130, isPopular: false },
 ];
 
 async function main() {
