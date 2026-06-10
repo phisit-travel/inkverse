@@ -37,10 +37,13 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
-  const { penName, experience, sampleWork, socialLink, preferredGenres, motivation } = body ?? {};
+  const { penName, experience, sampleWork, socialLink, preferredGenres, motivation, acceptedTerms } = body ?? {};
 
   if (!penName?.trim() || !experience?.trim() || !sampleWork?.trim() || !motivation?.trim()) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+  if (acceptedTerms !== true) {
+    return NextResponse.json({ error: "กรุณายอมรับเงื่อนไขก่อนส่งใบสมัคร" }, { status: 400 });
   }
 
   // Upsert (allow re-apply after rejection)
@@ -55,6 +58,8 @@ export async function POST(req: NextRequest) {
           socialLink: socialLink?.trim() || null,
           preferredGenres: JSON.stringify(preferredGenres ?? []),
           motivation: motivation.trim(),
+          acceptedTerms: true,
+          termsAcceptedAt: new Date(),
           adminNote: null,
         },
       })
@@ -67,6 +72,8 @@ export async function POST(req: NextRequest) {
           socialLink: socialLink?.trim() || null,
           preferredGenres: JSON.stringify(preferredGenres ?? []),
           motivation: motivation.trim(),
+          acceptedTerms: true,
+          termsAcceptedAt: new Date(),
         },
       });
 

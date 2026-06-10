@@ -22,7 +22,7 @@ export type UnlockResult =
   | { success: true; coinsLeft: number }
   | { success: false; error: "NOT_PREMIUM" | "ALREADY_UNLOCKED" | "INSUFFICIENT_COINS" | "NOT_FOUND" };
 
-const TRANSLATOR_SHARE = 0.70; // 70% to translator, 30% platform fee
+const TRANSLATOR_SHARE = 0.80; // 80% to translator, 20% platform fee
 
 export async function unlockChapter(
   userId: string,

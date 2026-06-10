@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { PenTool, BookOpen, Heart, ChevronRight, ChevronLeft, Check, AlertCircle } from "lucide-react";
+import { PenTool, BookOpen, Heart, ChevronRight, ChevronLeft, Check, AlertCircle, Percent, FileText } from "lucide-react";
 import clsx from "clsx";
 
 interface Genre { id: string; name: string; slug: string }
@@ -41,6 +41,8 @@ export default function ApplyClient({ genres, prevApplication }: {
     motivation: "",
   });
 
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+
   const set = (k: keyof typeof form, v: string | string[]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
@@ -66,7 +68,7 @@ export default function ApplyClient({ genres, prevApplication }: {
       const res = await fetch("/api/apply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, acceptedTerms }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "เกิดข้อผิดพลาด");
@@ -270,6 +272,66 @@ export default function ApplyClient({ genres, prevApplication }: {
               <SummaryRow label="หมวดหมู่ที่ถนัด" value={form.preferredGenres.join(", ") || "—"} />
             </div>
 
+            {/* ── เงื่อนไข & ส่วนแบ่งรายได้ ── */}
+            <div className="rounded-xl border border-white/10 overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-3 bg-[#1a1e2a] border-b border-white/10">
+                <FileText className="w-4 h-4 text-[#ff6b2b]" />
+                <span className="text-sm font-semibold text-white">เงื่อนไขสำหรับนักแปล</span>
+              </div>
+
+              {/* ส่วนแบ่งรายได้ — เน้น 20% */}
+              <div className="m-4 flex items-center gap-3 rounded-xl bg-gradient-to-r from-[#ff2d55]/15 to-[#ff6b2b]/15 border border-[#ff2d55]/30 px-4 py-3">
+                <div className="w-10 h-10 rounded-lg bg-[#ff2d55]/20 flex items-center justify-center shrink-0">
+                  <Percent className="w-5 h-5 text-[#ff6b2b]" />
+                </div>
+                <div className="text-sm">
+                  <p className="text-white font-semibold">ส่วนแบ่งรายได้ 80 / 20</p>
+                  <p className="text-gray-400 text-xs mt-0.5">
+                    เมื่อผู้อ่านใช้เหรียญปลดล็อกตอนของคุณ คุณได้รับ{" "}
+                    <span className="text-green-400 font-semibold">80%</span> ของมูลค่า และแพลตฟอร์มหัก{" "}
+                    <span className="text-[#ff6b2b] font-semibold">20%</span> เป็นค่าบริการ (ระบบ เซิร์ฟเวอร์ และการชำระเงิน)
+                  </p>
+                </div>
+              </div>
+
+              <ul className="px-4 pb-4 space-y-2 text-xs text-gray-400 leading-relaxed">
+                {[
+                  "การถอนเงิน: ถอนรายได้สะสมผ่านระบบเมื่อถึงยอดขั้นต่ำตามที่แพลตฟอร์มกำหนด",
+                  "ลิขสิทธิ์: คุณยืนยันว่ามีสิทธิ์ในการแปล/เผยแพร่ผลงานที่อัปโหลด และรับผิดชอบเองหากเกิดการละเมิดลิขสิทธิ์ของผู้อื่น",
+                  "คุณภาพ: รักษามาตรฐานการแปลและอัปเดตอย่างสม่ำเสมอ ทีมงานมีสิทธิ์ตรวจสอบและลบเนื้อหาที่ไม่ได้มาตรฐาน",
+                  "เนื้อหาต้องห้าม: ห้ามเนื้อหาผิดกฎหมาย ลามกอนาจารผู้เยาว์ หรือเนื้อหาที่สร้างความเกลียดชัง",
+                  "การระงับสิทธิ์: หากฝ่าฝืนเงื่อนไข แพลตฟอร์มมีสิทธิ์ระงับสถานะนักแปลและรายได้ที่เกี่ยวข้อง",
+                  "เงื่อนไขอาจมีการปรับปรุงได้ โดยจะแจ้งให้ทราบล่วงหน้า",
+                ].map((t, i) => (
+                  <li key={i} className="flex gap-2">
+                    <span className="text-[#ff2d55] mt-0.5">•</span>
+                    <span>{t}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Checkbox ยอมรับ */}
+              <label className="flex items-start gap-3 px-4 py-3.5 bg-[#1a1e2a] border-t border-white/10 cursor-pointer">
+                <span
+                  className={clsx(
+                    "mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all",
+                    acceptedTerms ? "bg-[#ff2d55] border-[#ff2d55]" : "border-white/25 bg-transparent"
+                  )}
+                >
+                  {acceptedTerms && <Check className="w-3.5 h-3.5 text-white" />}
+                </span>
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="sr-only"
+                />
+                <span className="text-sm text-gray-300">
+                  ฉันได้อ่านและ<span className="text-white font-medium">ยอมรับเงื่อนไขทั้งหมด</span> รวมถึงส่วนแบ่งรายได้ 80/20 (แพลตฟอร์มหัก 20%)
+                </span>
+              </label>
+            </div>
+
             {error && (
               <div className="flex gap-2 bg-red-500/10 border border-red-500/30 rounded-xl p-3">
                 <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
@@ -303,7 +365,7 @@ export default function ApplyClient({ genres, prevApplication }: {
         ) : (
           <button
             onClick={handleSubmit}
-            disabled={loading || !form.motivation.trim()}
+            disabled={loading || !form.motivation.trim() || !acceptedTerms}
             className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {loading ? "กำลังส่ง..." : "ส่งใบสมัคร"}
