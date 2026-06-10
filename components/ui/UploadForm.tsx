@@ -28,8 +28,8 @@ interface MangaOption { id: string; title: string; slug: string; latestChapter?:
 async function compressImage(
   file: File
 ): Promise<{ blob: Blob; contentType: string; width: number; height: number }> {
-  const MAX_WIDTH = 1600;
-  const QUALITY = 0.85;
+  const MAX_WIDTH = 2000;
+  const QUALITY = 0.9;
   const original = { blob: file, contentType: file.type || "image/jpeg", width: 0, height: 0 };
   try {
     const bitmap = await createImageBitmap(file);
