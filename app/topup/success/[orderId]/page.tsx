@@ -42,17 +42,17 @@ export default async function TopupSuccessPage({
 
         {/* Title */}
         <div>
-          <h1 className="font-bebas text-4xl text-white tracking-wider mb-2">
+          <h1 className="font-bebas text-4xl text-[var(--text-primary)] tracking-wider mb-2">
             เติมเหรียญสำเร็จ!
           </h1>
-          <p className="text-gray-400 text-sm">
+          <p className="text-[var(--text-secondary)] text-sm">
             รายการ #{orderId.slice(-8).toUpperCase()} ได้รับการยืนยันแล้ว
           </p>
         </div>
 
         {/* Coins received */}
-        <div className="bg-[#141720] rounded-2xl border border-white/5 p-6">
-          <p className="text-xs text-gray-500 uppercase tracking-widest mb-3">
+        <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-6">
+          <p className="text-xs text-[var(--text-secondary)] uppercase tracking-widest mb-3">
             {pkg?.name ?? "แพ็กเกจเหรียญ"}
           </p>
           <div className="flex items-center justify-center gap-3 mb-3">
@@ -66,9 +66,9 @@ export default async function TopupSuccessPage({
               รวมโบนัส {order.bonus.toLocaleString()} เหรียญ
             </p>
           )}
-          <div className="border-t border-white/5 pt-3 flex items-center justify-between text-sm">
-            <span className="text-gray-500">ยอดเหรียญปัจจุบัน</span>
-            <span className="flex items-center gap-1.5 text-white font-semibold">
+          <div className="border-t border-[var(--border)] pt-3 flex items-center justify-between text-sm">
+            <span className="text-[var(--text-secondary)]">ยอดเหรียญปัจจุบัน</span>
+            <span className="flex items-center gap-1.5 text-[var(--text-primary)] font-semibold">
               <Coins className="w-4 h-4 text-yellow-400" />
               {order.user.coins.toLocaleString()} เหรียญ
             </span>
@@ -79,14 +79,14 @@ export default async function TopupSuccessPage({
         <div className="flex flex-col sm:flex-row gap-3">
           <Link
             href="/"
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white font-semibold text-sm hover:opacity-90 transition-opacity"
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)] font-semibold text-sm hover:opacity-90 transition-opacity"
           >
             <Home className="w-4 h-4" />
             กลับสู่หน้าหลัก
           </Link>
           <Link
             href="/topup"
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-[#141720] border border-white/10 text-white font-semibold text-sm hover:border-white/25 transition-all"
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] text-[var(--text-primary)] font-semibold text-sm hover:border-white/25 transition-all"
           >
             <History className="w-4 h-4" />
             ดูประวัติเหรียญ

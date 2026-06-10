@@ -36,10 +36,10 @@ export default async function GenrePage({ params }: Props) {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
       <div className="mb-8">
         <p className="text-sm text-[#ff6b2b] font-medium mb-1">หมวดหมู่</p>
-        <h1 className="font-bebas text-5xl text-white tracking-wider">
+        <h1 className="font-bebas text-5xl text-[var(--text-primary)] tracking-wider">
           {genreRecord.name}
         </h1>
-        <p className="text-gray-500 mt-1">{mangas.length} เรื่อง</p>
+        <p className="text-[var(--text-secondary)] mt-1">{mangas.length} เรื่อง</p>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -67,7 +67,7 @@ export default async function GenrePage({ params }: Props) {
       </div>
 
       {mangas.length === 0 && (
-        <div className="text-center py-20 text-gray-500">
+        <div className="text-center py-20 text-[var(--text-secondary)]">
           ยังไม่มีมังงะในหมวดหมู่นี้
         </div>
       )}

@@ -23,7 +23,7 @@ export default function AgeGate({ title, coverUrl }: AgeGateProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#080a10]/95 backdrop-blur-md px-4">
+    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[var(--bg-primary)]/95 backdrop-blur-md px-4">
       {/* Blurred cover background */}
       {coverUrl && (
         <div className="absolute inset-0 -z-10 overflow-hidden">
@@ -48,20 +48,20 @@ export default function AgeGate({ title, coverUrl }: AgeGateProps) {
           <div className="inline-block px-3 py-1 bg-red-500/20 border border-red-500/30 rounded-full text-red-400 text-xs font-bold tracking-widest uppercase mb-3">
             เนื้อหาสำหรับผู้ใหญ่
           </div>
-          <h1 className="font-bebas text-3xl text-white tracking-wider mb-2">
+          <h1 className="font-bebas text-3xl text-[var(--text-primary)] tracking-wider mb-2">
             {title}
           </h1>
-          <p className="text-gray-400 text-sm leading-relaxed">
+          <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
             เนื้อหานี้มีภาพหรือเนื้อเรื่องที่ไม่เหมาะสมสำหรับผู้ที่มีอายุต่ำกว่า 18 ปี
           </p>
         </div>
 
         {/* Age confirmation */}
-        <div className="bg-[#141720] rounded-2xl border border-white/10 p-5 space-y-3 text-left">
-          <p className="text-sm text-gray-300 font-medium text-center">
+        <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5 space-y-3 text-left">
+          <p className="text-sm text-[var(--text-primary)] font-medium text-center">
             กรุณายืนยันว่าคุณมีอายุ 18 ปีขึ้นไป
           </p>
-          <p className="text-xs text-gray-500 text-center">
+          <p className="text-xs text-[var(--text-secondary)] text-center">
             การยืนยันนี้จะถูกบันทึกไว้ในอุปกรณ์ของคุณ
           </p>
         </div>
@@ -70,19 +70,19 @@ export default function AgeGate({ title, coverUrl }: AgeGateProps) {
         <div className="flex flex-col gap-3">
           <button
             onClick={confirm}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white font-semibold text-sm hover:opacity-90 transition-opacity"
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)] font-semibold text-sm hover:opacity-90 transition-opacity"
           >
             ฉันมีอายุ 18 ปีขึ้นไป — เข้าชมเนื้อหา
           </button>
           <button
             onClick={leave}
-            className="w-full py-3.5 rounded-xl bg-white/5 border border-white/10 text-gray-400 font-medium text-sm hover:bg-white/10 hover:text-white transition-all"
+            className="w-full py-3.5 rounded-xl bg-white/5 border border-[var(--border)] text-[var(--text-secondary)] font-medium text-sm hover:bg-white/10 hover:text-[var(--text-primary)] transition-all"
           >
             ออกไป
           </button>
         </div>
 
-        <p className="text-xs text-gray-600">
+        <p className="text-xs text-[var(--text-muted)]">
           INKVERSE ต่อต้านการเผยแพร่เนื้อหาสำหรับผู้ใหญ่แก่ผู้เยาว์
         </p>
       </div>

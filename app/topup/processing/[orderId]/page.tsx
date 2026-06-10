@@ -63,13 +63,13 @@ export default function ProcessingPage({
               <XCircle className="w-8 h-8 text-red-400" />
             </div>
           </div>
-          <h2 className="text-xl font-bold text-white">การชำระเงินไม่สำเร็จ</h2>
-          <p className="text-sm text-gray-400">
+          <h2 className="text-xl font-bold text-[var(--text-primary)]">การชำระเงินไม่สำเร็จ</h2>
+          <p className="text-sm text-[var(--text-secondary)]">
             ไม่พบการยืนยันการชำระเงิน กรุณาลองใหม่อีกครั้ง
           </p>
           <button
             onClick={() => router.push(orderId ? `/topup/checkout/${orderId}` : "/topup")}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white font-semibold text-sm hover:opacity-90 transition-opacity"
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)] font-semibold text-sm hover:opacity-90 transition-opacity"
           >
             ลองใหม่
           </button>
@@ -86,11 +86,11 @@ export default function ProcessingPage({
             <Loader2 className="w-8 h-8 text-[#ff2d55] animate-spin" />
           </div>
         </div>
-        <h2 className="text-xl font-bold text-white">กำลังตรวจสอบการชำระเงิน</h2>
-        <p className="text-sm text-gray-400">
+        <h2 className="text-xl font-bold text-[var(--text-primary)]">กำลังตรวจสอบการชำระเงิน</h2>
+        <p className="text-sm text-[var(--text-secondary)]">
           หน้านี้จะอัปเดตอัตโนมัติ กรุณาอย่าปิดหน้าต่าง
         </p>
-        <div className="flex items-center justify-center gap-2 text-xs text-gray-600">
+        <div className="flex items-center justify-center gap-2 text-xs text-[var(--text-muted)]">
           <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
           <span>ระบบกำลังรอการยืนยันจากธนาคาร / wallet</span>
         </div>

@@ -1,7 +1,9 @@
 @import "tailwindcss";
 
 @layer base {
-  :root {
+  /* Dark theme (default) */
+  :root,
+  [data-theme="dark"] {
     --bg-primary: #080a10;
     --bg-surface: #141720;
     --bg-card: #1a1e2a;
@@ -9,7 +11,21 @@
     --accent-to: #ff6b2b;
     --text-primary: #ffffff;
     --text-secondary: #9ca3af;
-    --border: rgba(255, 255, 255, 0.05);
+    --text-muted: #6b7280;
+    --border: rgba(255, 255, 255, 0.08);
+  }
+
+  /* Light theme */
+  [data-theme="light"] {
+    --bg-primary: #f6f7fb;
+    --bg-surface: #ffffff;
+    --bg-card: #eceef3;
+    --accent-from: #ff2d55;
+    --accent-to: #ff6b2b;
+    --text-primary: #14161d;
+    --text-secondary: #4b5160;
+    --text-muted: #707684;
+    --border: rgba(0, 0, 0, 0.10);
   }
 
   * {
@@ -26,6 +42,7 @@
     font-family: "Noto Sans Thai", "Noto Sans", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 
   ::-webkit-scrollbar {

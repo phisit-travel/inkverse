@@ -69,21 +69,21 @@ function ReplyForm({
         onChange={(e) => setContent(e.target.value)}
         placeholder="ตอบกลับ..."
         rows={2}
-        className="w-full bg-[#1a1e2a] border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 resize-none focus:outline-none focus:border-[#ff2d55]/50 transition-colors"
+        className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder-gray-500 resize-none focus:outline-none focus:border-[#ff2d55]/50 transition-colors"
       />
       <div className="flex items-center justify-between mt-1.5">
-        <label className="flex items-center gap-1.5 text-xs text-gray-400 cursor-pointer">
+        <label className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] cursor-pointer">
           <input type="checkbox" checked={isSpoiler} onChange={(e) => setIsSpoiler(e.target.checked)} className="accent-[#ff2d55]" />
           มีสปอยล์
         </label>
         <div className="flex gap-2">
-          <button type="button" onClick={onCancel} className="px-3 py-1 rounded-lg text-xs text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors">
+          <button type="button" onClick={onCancel} className="px-3 py-1 rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-white/5 hover:bg-white/10 transition-colors">
             ยกเลิก
           </button>
           <button
             type="submit"
             disabled={!content.trim() || submitting}
-            className="px-3 py-1 rounded-lg text-xs text-white font-medium bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] disabled:opacity-50 hover:opacity-90 transition-opacity"
+            className="px-3 py-1 rounded-lg text-xs text-[var(--text-primary)] font-medium bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] disabled:opacity-50 hover:opacity-90 transition-opacity"
           >
             {submitting ? "กำลังส่ง..." : "ตอบกลับ"}
           </button>
@@ -139,11 +139,11 @@ function CommentItem({
   return (
     <div className={clsx("flex gap-3", depth > 0 && "ml-8 mt-3")}>
       {/* Avatar */}
-      <div className="relative w-8 h-8 flex-shrink-0 rounded-full overflow-hidden bg-[#1a1e2a]">
+      <div className="relative w-8 h-8 flex-shrink-0 rounded-full overflow-hidden bg-[var(--bg-card)]">
         {comment.user.avatarUrl ? (
           <Image src={comment.user.avatarUrl} alt={comment.user.username} fill className="object-cover" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-xs font-bold text-white bg-gradient-to-br from-[#ff2d55]/40 to-[#ff6b2b]/40">
+          <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[var(--text-primary)] bg-gradient-to-br from-[#ff2d55]/40 to-[#ff6b2b]/40">
             {comment.user.username[0]?.toUpperCase()}
           </div>
         )}
@@ -152,8 +152,8 @@ function CommentItem({
       <div className="flex-1 min-w-0">
         {/* Header */}
         <div className="flex items-center gap-2 mb-1 flex-wrap">
-          <span className="text-sm font-semibold text-white">{comment.user.username}</span>
-          <span className="text-xs text-gray-500">
+          <span className="text-sm font-semibold text-[var(--text-primary)]">{comment.user.username}</span>
+          <span className="text-xs text-[var(--text-secondary)]">
             {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: th })}
           </span>
           {comment.isSpoiler && (
@@ -165,11 +165,11 @@ function CommentItem({
 
         {/* Content */}
         {comment.isSpoiler && !spoilerVisible ? (
-          <button onClick={() => setSpoilerVisible(true)} className="text-sm text-gray-500 italic hover:text-gray-300 transition-colors">
+          <button onClick={() => setSpoilerVisible(true)} className="text-sm text-[var(--text-secondary)] italic hover:text-[var(--text-primary)] transition-colors">
             คลิกเพื่อดูความคิดเห็นที่มีสปอยล์
           </button>
         ) : (
-          <p className="text-sm text-gray-300 leading-relaxed break-words">{comment.content}</p>
+          <p className="text-sm text-[var(--text-primary)] leading-relaxed break-words">{comment.content}</p>
         )}
 
         {/* Actions */}
@@ -179,7 +179,7 @@ function CommentItem({
             disabled={!currentUserId || liked}
             className={clsx(
               "flex items-center gap-1 text-xs transition-colors",
-              liked ? "text-[#ff2d55]" : "text-gray-500 hover:text-[#ff2d55]",
+              liked ? "text-[#ff2d55]" : "text-[var(--text-secondary)] hover:text-[#ff2d55]",
               !currentUserId && "cursor-default"
             )}
           >
@@ -190,7 +190,7 @@ function CommentItem({
           {depth === 0 && currentUserId && (
             <button
               onClick={() => setShowReplyForm((v) => !v)}
-              className="flex items-center gap-1 text-xs text-gray-500 hover:text-white transition-colors"
+              className="flex items-center gap-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
             >
               <CornerDownRight className="w-3.5 h-3.5" />
               ตอบกลับ
@@ -201,7 +201,7 @@ function CommentItem({
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="flex items-center gap-1 text-xs text-gray-600 hover:text-red-400 transition-colors ml-auto"
+              className="flex items-center gap-1 text-xs text-[var(--text-muted)] hover:text-red-400 transition-colors ml-auto"
             >
               <Trash2 className="w-3 h-3" />
             </button>
@@ -311,18 +311,18 @@ export default function CommentSection({
   }
 
   return (
-    <section className="mt-10 border-t border-white/5 pt-8">
-      <h3 className="flex items-center gap-2 font-bebas text-2xl text-white tracking-wider mb-6">
+    <section className="mt-10 border-t border-[var(--border)] pt-8">
+      <h3 className="flex items-center gap-2 font-bebas text-2xl text-[var(--text-primary)] tracking-wider mb-6">
         <MessageCircle className="w-5 h-5 text-[#ff2d55]" />
         ความคิดเห็น
-        <span className="text-base text-gray-500 font-normal ml-1">({comments.length})</span>
+        <span className="text-base text-[var(--text-secondary)] font-normal ml-1">({comments.length})</span>
       </h3>
 
       {/* New comment form */}
       {currentUserId ? (
-        <form onSubmit={handleSubmit} className="mb-8 bg-[#141720] rounded-2xl border border-white/5 p-4">
+        <form onSubmit={handleSubmit} className="mb-8 bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-4">
           <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white bg-gradient-to-br from-[#ff2d55]/40 to-[#ff6b2b]/40">
+            <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-[var(--text-primary)] bg-gradient-to-br from-[#ff2d55]/40 to-[#ff6b2b]/40">
               {currentUsername?.[0]?.toUpperCase() ?? "?"}
             </div>
             <div className="flex-1">
@@ -331,18 +331,18 @@ export default function CommentSection({
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="แสดงความคิดเห็น..."
                 rows={3}
-                className="w-full bg-[#1a1e2a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 resize-none focus:outline-none focus:border-[#ff2d55]/50 transition-colors"
+                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] placeholder-gray-500 resize-none focus:outline-none focus:border-[#ff2d55]/50 transition-colors"
               />
               {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
               <div className="flex items-center justify-between mt-2">
-                <label className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer select-none">
+                <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)] cursor-pointer select-none">
                   <input type="checkbox" checked={isSpoiler} onChange={(e) => setIsSpoiler(e.target.checked)} className="accent-[#ff2d55]" />
                   มีสปอยล์
                 </label>
                 <button
                   type="submit"
                   disabled={!content.trim() || submitting}
-                  className="px-5 py-1.5 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
+                  className="px-5 py-1.5 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)] text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
                 >
                   {submitting ? "กำลังส่ง..." : "ส่ง"}
                 </button>
@@ -351,7 +351,7 @@ export default function CommentSection({
           </div>
         </form>
       ) : (
-        <div className="mb-8 py-4 text-center text-sm text-gray-500 bg-[#141720] rounded-2xl border border-white/5">
+        <div className="mb-8 py-4 text-center text-sm text-[var(--text-secondary)] bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)]">
           <a href="/auth/signin" className="text-[#ff6b2b] hover:text-[#ff2d55] transition-colors">เข้าสู่ระบบ</a>
           {" "}เพื่อแสดงความคิดเห็น
         </div>
@@ -360,7 +360,7 @@ export default function CommentSection({
       {/* Comment list */}
       <div className="space-y-5">
         {comments.length === 0 ? (
-          <p className="text-sm text-gray-500 text-center py-10">
+          <p className="text-sm text-[var(--text-secondary)] text-center py-10">
             ยังไม่มีความคิดเห็น — เป็นคนแรกที่แสดงความคิดเห็น!
           </p>
         ) : (

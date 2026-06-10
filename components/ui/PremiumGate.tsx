@@ -60,30 +60,30 @@ export default function PremiumGate({
         {/* Back link */}
         <Link
           href={`/content/${mangaSlug}`}
-          className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-white transition-colors mb-8"
+          className="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
           {mangaTitle}
         </Link>
 
-        <div className="bg-[#141720] border border-white/10 rounded-3xl overflow-hidden">
+        <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-3xl overflow-hidden">
           {/* Icon banner */}
-          <div className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-b border-white/5 p-8 text-center">
+          <div className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-b border-[var(--border)] p-8 text-center">
             <div className="w-20 h-20 rounded-full bg-yellow-500/20 border-2 border-yellow-500/40 flex items-center justify-center mx-auto mb-4">
               <Lock className="w-9 h-9 text-yellow-400" />
             </div>
-            <h1 className="font-bebas text-3xl text-white tracking-wider">
+            <h1 className="font-bebas text-3xl text-[var(--text-primary)] tracking-wider">
               ตอน Premium
             </h1>
-            <p className="text-gray-400 text-sm mt-1">
+            <p className="text-[var(--text-secondary)] text-sm mt-1">
               ตอนที่ {chapterNum} ต้องใช้เหรียญเพื่อปลดล็อก
             </p>
           </div>
 
           <div className="p-6 space-y-4">
             {/* Cost row */}
-            <div className="flex items-center justify-between bg-[#1a1e2a] rounded-xl px-4 py-3">
-              <div className="flex items-center gap-2 text-gray-400">
+            <div className="flex items-center justify-between bg-[var(--bg-card)] rounded-xl px-4 py-3">
+              <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                 <Zap className="w-4 h-4 text-yellow-400" />
                 <span className="text-sm">ราคา</span>
               </div>
@@ -94,8 +94,8 @@ export default function PremiumGate({
             </div>
 
             {/* Balance row */}
-            <div className="flex items-center justify-between bg-[#1a1e2a] rounded-xl px-4 py-3">
-              <span className="text-sm text-gray-400">เหรียญของคุณ</span>
+            <div className="flex items-center justify-between bg-[var(--bg-card)] rounded-xl px-4 py-3">
+              <span className="text-sm text-[var(--text-secondary)]">เหรียญของคุณ</span>
               <div
                 className={`flex items-center gap-1.5 font-semibold ${
                   canAfford ? "text-green-400" : "text-red-400"
@@ -124,7 +124,7 @@ export default function PremiumGate({
                 <button
                   onClick={handleUnlock}
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)] font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
                   {loading ? "กำลังปลดล็อก..." : `ปลดล็อกด้วย ${coinCost} เหรียญ`}
                 </button>
@@ -138,7 +138,7 @@ export default function PremiumGate({
               )}
               <Link
                 href={`/content/${mangaSlug}`}
-                className="w-full py-3 rounded-xl bg-[#1a1e2a] border border-white/10 text-gray-300 text-sm text-center hover:border-white/30 transition-colors"
+                className="w-full py-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] text-sm text-center hover:border-white/30 transition-colors"
               >
                 กลับไปหน้าเรื่อง
               </Link>

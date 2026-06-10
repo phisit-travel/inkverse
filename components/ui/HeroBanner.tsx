@@ -22,7 +22,7 @@ export default function HeroBanner({
   latestChapter,
 }: HeroBannerProps) {
   return (
-    <section className="relative mb-10 rounded-3xl overflow-hidden h-72 sm:h-96 lg:h-[480px] border border-white/5">
+    <section className="relative mb-10 rounded-3xl overflow-hidden h-72 sm:h-96 lg:h-[480px] border border-[var(--border)]">
       {/* Background */}
       {coverUrl ? (
         <Image
@@ -35,12 +35,12 @@ export default function HeroBanner({
           sizes="100vw"
         />
       ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-[#ff2d55]/20 via-[#1a1e2a] to-[#ff6b2b]/10" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#ff2d55]/20 via-[var(--bg-card)] to-[#ff6b2b]/10" />
       )}
 
       {/* Animated gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-[#080a10] via-[#080a10]/80 to-transparent" />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#080a10] via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[var(--bg-primary)] via-[var(--bg-primary)]/80 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-primary)] via-transparent to-transparent" />
 
       {/* Animated accent blobs */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-[#ff2d55]/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
@@ -54,7 +54,7 @@ export default function HeroBanner({
             {genres.slice(0, 4).map((g) => (
               <span
                 key={g}
-                className="text-xs px-2 py-0.5 rounded-full bg-[#ff2d55]/80 text-white font-medium"
+                className="text-xs px-2 py-0.5 rounded-full bg-[#ff2d55]/80 text-[var(--text-primary)] font-medium"
               >
                 {g}
               </span>
@@ -62,17 +62,17 @@ export default function HeroBanner({
           </div>
 
           {/* Title */}
-          <h1 className="font-bebas text-4xl sm:text-5xl lg:text-6xl text-white tracking-wider leading-none mb-2">
+          <h1 className="font-bebas text-4xl sm:text-5xl lg:text-6xl text-[var(--text-primary)] tracking-wider leading-none mb-2">
             {title}
           </h1>
 
           {/* Description */}
-          <p className="text-sm sm:text-base text-gray-300 line-clamp-2 mb-4 max-w-lg">
+          <p className="text-sm sm:text-base text-[var(--text-primary)] line-clamp-2 mb-4 max-w-lg">
             {description}
           </p>
 
           {/* Stats */}
-          <div className="flex items-center gap-4 mb-5 text-sm text-gray-400">
+          <div className="flex items-center gap-4 mb-5 text-sm text-[var(--text-secondary)]">
             {rating !== undefined && rating > 0 && (
               <span className="flex items-center gap-1">
                 <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
@@ -91,14 +91,14 @@ export default function HeroBanner({
           <div className="flex items-center gap-3">
             <Link
               href={`/content/${slug}`}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white font-semibold text-sm hover:opacity-90 transition-opacity shadow-lg shadow-[#ff2d55]/25"
+              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)] font-semibold text-sm hover:opacity-90 transition-opacity shadow-lg shadow-[#ff2d55]/25"
             >
               <Play className="w-4 h-4 fill-white" />
               อ่านเลย
             </Link>
             <Link
               href={`/content/${slug}`}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white/10 backdrop-blur text-white font-semibold text-sm hover:bg-white/20 transition-all border border-white/10"
+              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white/10 backdrop-blur text-[var(--text-primary)] font-semibold text-sm hover:bg-white/20 transition-all border border-[var(--border)]"
             >
               รายละเอียด
             </Link>

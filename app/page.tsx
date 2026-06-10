@@ -115,7 +115,7 @@ export default async function HomePage() {
           {/* Latest Updates */}
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bebas text-2xl text-white tracking-wider flex items-center gap-2">
+              <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-wider flex items-center gap-2">
                 <span className="w-1 h-6 bg-gradient-to-b from-[#ff2d55] to-[#ff6b2b] rounded-full" />
                 อัปเดตล่าสุด
               </h2>
@@ -146,7 +146,7 @@ export default async function HomePage() {
           {/* Top This Week */}
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bebas text-2xl text-white tracking-wider flex items-center gap-2">
+              <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-wider flex items-center gap-2">
                 <span className="w-1 h-6 bg-gradient-to-b from-[#ff2d55] to-[#ff6b2b] rounded-full" />
                 ยอดนิยมสัปดาห์นี้
               </h2>

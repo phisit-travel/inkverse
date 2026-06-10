@@ -45,7 +45,7 @@ export default async function AdminPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-      <h1 className="font-bebas text-4xl text-white tracking-wider mb-8">
+      <h1 className="font-bebas text-4xl text-[var(--text-primary)] tracking-wider mb-8">
         แผงผู้ดูแลระบบ
       </h1>
 
@@ -54,13 +54,13 @@ export default async function AdminPage() {
         {stats.map(({ label, value, icon: Icon, color }) => (
           <div
             key={label}
-            className="bg-[#141720] rounded-2xl border border-white/5 p-5"
+            className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5"
           >
             <Icon className={`w-6 h-6 ${color} mb-3`} />
-            <p className="text-3xl font-bold text-white mb-0.5">
+            <p className="text-3xl font-bold text-[var(--text-primary)] mb-0.5">
               {value.toLocaleString()}
             </p>
-            <p className="text-sm text-gray-500">{label}</p>
+            <p className="text-sm text-[var(--text-secondary)]">{label}</p>
           </div>
         ))}
       </div>
@@ -69,19 +69,19 @@ export default async function AdminPage() {
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-10">
         <Link
           href="/upload"
-          className="py-3 px-5 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white text-sm font-medium text-center hover:opacity-90 transition-opacity"
+          className="py-3 px-5 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)] text-sm font-medium text-center hover:opacity-90 transition-opacity"
         >
           อัปโหลดมังงะใหม่
         </Link>
         <Link
           href="/admin/applications"
-          className="py-3 px-5 rounded-xl bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-sm font-medium text-center hover:opacity-90 transition-opacity"
+          className="py-3 px-5 rounded-xl bg-gradient-to-r from-yellow-500 to-orange-500 text-[var(--text-primary)] text-sm font-medium text-center hover:opacity-90 transition-opacity"
         >
           ใบสมัครนักแปล
         </Link>
         <Link
           href="/admin/withdrawals"
-          className="py-3 px-5 rounded-xl bg-gradient-to-r from-green-500 to-teal-500 text-white text-sm font-medium text-center hover:opacity-90 transition-opacity"
+          className="py-3 px-5 rounded-xl bg-gradient-to-r from-green-500 to-teal-500 text-[var(--text-primary)] text-sm font-medium text-center hover:opacity-90 transition-opacity"
         >
           คำขอถอนเงิน
         </Link>
@@ -89,14 +89,14 @@ export default async function AdminPage() {
       </div>
 
       {/* Recent manga table */}
-      <div className="bg-[#141720] rounded-2xl border border-white/5 overflow-hidden">
-        <div className="p-4 border-b border-white/5">
-          <h2 className="font-semibold text-white">มังงะล่าสุด</h2>
+      <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] overflow-hidden">
+        <div className="p-4 border-b border-[var(--border)]">
+          <h2 className="font-semibold text-[var(--text-primary)]">มังงะล่าสุด</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-xs text-gray-500 border-b border-white/5">
+              <tr className="text-xs text-[var(--text-secondary)] border-b border-[var(--border)]">
                 <th className="text-left px-4 py-3 font-medium">ชื่อ</th>
                 <th className="text-left px-4 py-3 font-medium">ประเภท</th>
                 <th className="text-left px-4 py-3 font-medium">สถานะ</th>
@@ -111,12 +111,12 @@ export default async function AdminPage() {
                   <td className="px-4 py-3">
                     <Link
                       href={`/content/${manga.slug}`}
-                      className="text-white hover:text-[#ff6b2b] transition-colors font-medium"
+                      className="text-[var(--text-primary)] hover:text-[#ff6b2b] transition-colors font-medium"
                     >
                       {manga.title}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-gray-400">{manga.type}</td>
+                  <td className="px-4 py-3 text-[var(--text-secondary)]">{manga.type}</td>
                   <td className="px-4 py-3">
                     <span
                       className={`text-xs px-2 py-0.5 rounded-full font-medium ${
@@ -130,13 +130,13 @@ export default async function AdminPage() {
                       {manga.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-gray-400">
+                  <td className="px-4 py-3 text-[var(--text-secondary)]">
                     {manga._count.chapters}
                   </td>
-                  <td className="px-4 py-3 text-gray-400">
+                  <td className="px-4 py-3 text-[var(--text-secondary)]">
                     {manga.totalViews.toLocaleString()}
                   </td>
-                  <td className="px-4 py-3 text-gray-500">
+                  <td className="px-4 py-3 text-[var(--text-secondary)]">
                     {new Date(manga.createdAt).toLocaleDateString("th-TH")}
                   </td>
                 </tr>

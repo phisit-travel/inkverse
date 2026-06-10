@@ -120,7 +120,7 @@ export default function PageReorderClient({
   return (
     <div className="space-y-5">
       {/* Sticky action bar */}
-      <div className="sticky top-16 z-20 bg-[#080a10]/90 backdrop-blur-md border-b border-white/5 py-3 -mx-4 px-4 sm:-mx-6 sm:px-6 flex items-center justify-between gap-3">
+      <div className="sticky top-16 z-20 bg-[var(--bg-primary)]/90 backdrop-blur-md border-b border-[var(--border)] py-3 -mx-4 px-4 sm:-mx-6 sm:px-6 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm">
           {saved ? (
             <span className="flex items-center gap-1.5 text-green-400">
@@ -133,7 +133,7 @@ export default function PageReorderClient({
               มีการเปลี่ยนแปลง — กด "บันทึก" เพื่อยืนยัน
             </span>
           ) : (
-            <span className="text-gray-600 text-xs">ลากเพื่อเปลี่ยนลำดับหน้า</span>
+            <span className="text-[var(--text-muted)] text-xs">ลากเพื่อเปลี่ยนลำดับหน้า</span>
           )}
         </div>
 
@@ -141,7 +141,7 @@ export default function PageReorderClient({
           {hasChanges && !saving && (
             <button
               onClick={reset}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-gray-400 text-xs hover:text-white transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 border border-[var(--border)] text-[var(--text-secondary)] text-xs hover:text-[var(--text-primary)] transition-colors"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               รีเซ็ต
@@ -150,7 +150,7 @@ export default function PageReorderClient({
           <button
             onClick={save}
             disabled={saving || !hasChanges}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-40"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)] text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-40"
           >
             {saving
               ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -169,7 +169,7 @@ export default function PageReorderClient({
 
       {/* Page grid */}
       {pages.length === 0 ? (
-        <div className="text-center py-20 text-gray-600 text-sm">
+        <div className="text-center py-20 text-[var(--text-muted)] text-sm">
           ตอนนี้ยังไม่มีหน้า
         </div>
       ) : (
@@ -188,7 +188,7 @@ export default function PageReorderClient({
                   ? "opacity-40 border-[#ff2d55]/60 scale-95"
                   : overIndex === index && dragIndex !== null
                   ? "border-[#ff2d55] shadow-lg shadow-[#ff2d55]/20 scale-[1.03]"
-                  : "border-white/10 hover:border-white/30"
+                  : "border-[var(--border)] hover:border-white/30"
               )}
               style={{ aspectRatio: "3/4" }}
             >
@@ -211,12 +211,12 @@ export default function PageReorderClient({
 
               {/* Page number badge */}
               <div className="absolute top-1.5 left-1.5 w-6 h-6 rounded-full bg-black/80 backdrop-blur-sm flex items-center justify-center">
-                <span className="text-[10px] font-bold text-white">{index + 1}</span>
+                <span className="text-[10px] font-bold text-[var(--text-primary)]">{index + 1}</span>
               </div>
 
               {/* Drag handle */}
               <div className="absolute top-1.5 right-1.5 p-0.5 rounded bg-black/60 opacity-60">
-                <GripVertical className="w-3 h-3 text-white" />
+                <GripVertical className="w-3 h-3 text-[var(--text-primary)]" />
               </div>
 
               {/* Changed indicator */}

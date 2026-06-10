@@ -168,7 +168,7 @@ export default async function MangaProfilePage({ params }: Props) {
         <div className="md:col-span-1 lg:col-span-1">
           <div className="md:sticky md:top-20 space-y-4">
             {/* Cover */}
-            <div className="relative aspect-[3/4] w-full max-w-[180px] mx-auto md:max-w-none rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+            <div className="relative aspect-[3/4] w-full max-w-[180px] mx-auto md:max-w-none rounded-2xl overflow-hidden border border-[var(--border)] shadow-2xl">
               {manga.coverUrl ? (
                 <Image
                   src={manga.coverUrl}
@@ -180,7 +180,7 @@ export default async function MangaProfilePage({ params }: Props) {
                   sizes="(max-width: 1024px) 40vw, 25vw"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-[#1a1e2a] text-6xl opacity-20">
+                <div className="w-full h-full flex items-center justify-center bg-[var(--bg-card)] text-6xl opacity-20">
                   📖
                 </div>
               )}
@@ -191,7 +191,7 @@ export default async function MangaProfilePage({ params }: Props) {
               {firstChapter && (
                 <Link
                   href={`/content/${slug}/${firstChapter.chapterNum}`}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white text-sm font-semibold text-center hover:opacity-90 transition-opacity"
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)] text-sm font-semibold text-center hover:opacity-90 transition-opacity"
                 >
                   อ่านตั้งแต่ต้น
                 </Link>
@@ -199,7 +199,7 @@ export default async function MangaProfilePage({ params }: Props) {
               {latestChapter && latestChapter.id !== firstChapter?.id && (
                 <Link
                   href={`/content/${slug}/${latestChapter.chapterNum}`}
-                  className="w-full py-3 rounded-xl bg-[#1a1e2a] border border-white/10 text-white text-sm font-semibold text-center hover:border-white/30 transition-all"
+                  className="w-full py-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] text-sm font-semibold text-center hover:border-white/30 transition-all"
                 >
                   อ่านตอนล่าสุด
                 </Link>
@@ -213,31 +213,31 @@ export default async function MangaProfilePage({ params }: Props) {
             </div>
 
             {/* Stats */}
-            <div className="bg-[#141720] rounded-xl p-4 space-y-2.5 text-sm border border-white/5">
-              <div className="flex items-center gap-2 text-gray-400">
+            <div className="bg-[var(--bg-surface)] rounded-xl p-4 space-y-2.5 text-sm border border-[var(--border)]">
+              <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                 <Eye className="w-4 h-4 text-[#ff6b2b]" />
-                <span className="text-white">
+                <span className="text-[var(--text-primary)]">
                   {manga.totalViews.toLocaleString()}
                 </span>
                 <span>ครั้ง</span>
               </div>
-              <div className="flex items-center gap-2 text-gray-400">
+              <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                 <BookOpen className="w-4 h-4 text-[#ff6b2b]" />
-                <span className="text-white">{manga.chapters.length}</span>
+                <span className="text-[var(--text-primary)]">{manga.chapters.length}</span>
                 <span>ตอน</span>
               </div>
-              <div className="flex items-center gap-2 text-gray-400">
+              <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                 <Globe className="w-4 h-4 text-[#ff6b2b]" />
                 <span>{countryLabel[manga.originCountry] ?? manga.originCountry}</span>
               </div>
-              <div className="flex items-center gap-2 text-gray-400">
+              <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                 <Calendar className="w-4 h-4 text-[#ff6b2b]" />
                 <span>
                   {new Date(manga.createdAt).toLocaleDateString("th-TH")}
                 </span>
               </div>
               {manga.translator && (
-                <div className="flex items-center gap-2 text-gray-400">
+                <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                   <User className="w-4 h-4 text-[#ff6b2b]" />
                   <span>{manga.translator.penName}</span>
                 </div>
@@ -245,15 +245,15 @@ export default async function MangaProfilePage({ params }: Props) {
             </div>
 
             {/* Rating */}
-            <div className="bg-[#141720] rounded-xl p-4 border border-white/5">
+            <div className="bg-[var(--bg-surface)] rounded-xl p-4 border border-[var(--border)]">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-400">คะแนน</span>
-                <span className="text-xl font-bold text-white">
+                <span className="text-sm text-[var(--text-secondary)]">คะแนน</span>
+                <span className="text-xl font-bold text-[var(--text-primary)]">
                   {avgRating.toFixed(1)}
                 </span>
               </div>
               <StarRating value={avgRating} readOnly />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-[var(--text-secondary)] mt-1">
                 จาก {manga.ratings.length} คนให้คะแนน
               </p>
             </div>
@@ -291,7 +291,7 @@ export default async function MangaProfilePage({ params }: Props) {
               )}
             </div>
 
-            <h1 className="font-bebas text-4xl sm:text-5xl text-white tracking-wider leading-none mb-4">
+            <h1 className="font-bebas text-4xl sm:text-5xl text-[var(--text-primary)] tracking-wider leading-none mb-4">
               {manga.title}
             </h1>
 
@@ -301,7 +301,7 @@ export default async function MangaProfilePage({ params }: Props) {
                 <Link
                   key={genre.id}
                   href={`/manga/${genre.slug}`}
-                  className="flex items-center gap-1 text-xs px-3 py-1 rounded-full bg-[#1a1e2a] text-gray-400 border border-white/10 hover:border-[#ff2d55]/40 hover:text-white transition-all"
+                  className="flex items-center gap-1 text-xs px-3 py-1 rounded-full bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border)] hover:border-[#ff2d55]/40 hover:text-[var(--text-primary)] transition-all"
                 >
                   <Tag className="w-3 h-3" />
                   {genre.name}
@@ -310,22 +310,22 @@ export default async function MangaProfilePage({ params }: Props) {
             </div>
 
             {/* Description */}
-            <div className="bg-[#141720] rounded-xl p-4 border border-white/5">
-              <h3 className="text-sm font-semibold text-gray-300 mb-2">
+            <div className="bg-[var(--bg-surface)] rounded-xl p-4 border border-[var(--border)]">
+              <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-2">
                 เรื่องย่อ
               </h3>
-              <p className="text-sm text-gray-400 leading-relaxed whitespace-pre-line">
+              <p className="text-sm text-[var(--text-secondary)] leading-relaxed whitespace-pre-line">
                 {manga.description}
               </p>
             </div>
 
             {/* Attribution for openly-licensed works (CC-BY etc.) */}
             {manga.license && (
-              <div className="bg-[#141720] rounded-xl p-3 border border-white/5 text-xs text-gray-400">
-                <span className="text-gray-500">ลิขสิทธิ์: </span>
+              <div className="bg-[var(--bg-surface)] rounded-xl p-3 border border-[var(--border)] text-xs text-[var(--text-secondary)]">
+                <span className="text-[var(--text-secondary)]">ลิขสิทธิ์: </span>
                 {manga.author && (
                   <>
-                    โดย <span className="text-gray-300">{manga.author}</span> ·{" "}
+                    โดย <span className="text-[var(--text-primary)]">{manga.author}</span> ·{" "}
                   </>
                 )}
                 เผยแพร่ภายใต้ <span className="text-[#ff6b2b]">{manga.license}</span>
@@ -348,7 +348,7 @@ export default async function MangaProfilePage({ params }: Props) {
 
           {/* Chapter list */}
           <div>
-            <h2 className="font-bebas text-2xl text-white tracking-wider mb-4 flex items-center gap-2">
+            <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-wider mb-4 flex items-center gap-2">
               <span className="w-1 h-6 bg-gradient-to-b from-[#ff2d55] to-[#ff6b2b] rounded-full" />
               รายการตอน ({manga.chapters.length})
             </h2>

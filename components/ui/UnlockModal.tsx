@@ -57,16 +57,16 @@ export default function UnlockModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="bg-[#141720] border border-white/10 rounded-2xl w-full max-w-sm shadow-2xl">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl w-full max-w-sm shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-white/5">
+        <div className="flex items-center justify-between p-5 border-b border-[var(--border)]">
           <div className="flex items-center gap-2">
             <Lock className="w-5 h-5 text-yellow-400" />
-            <h2 className="text-white font-semibold">ปลดล็อกตอน</h2>
+            <h2 className="text-[var(--text-primary)] font-semibold">ปลดล็อกตอน</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-white/10 text-gray-500 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg hover:bg-white/10 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -74,14 +74,14 @@ export default function UnlockModal({
 
         {/* Body */}
         <div className="p-5 space-y-4">
-          <p className="text-gray-300 text-sm">
-            ตอนที่ <span className="text-white font-semibold">{chapterNum}</span>{" "}
+          <p className="text-[var(--text-primary)] text-sm">
+            ตอนที่ <span className="text-[var(--text-primary)] font-semibold">{chapterNum}</span>{" "}
             เป็นตอน Premium ต้องใช้เหรียญเพื่อปลดล็อก
           </p>
 
           {/* Cost */}
-          <div className="flex items-center justify-between bg-[#1a1e2a] rounded-xl px-4 py-3">
-            <span className="text-sm text-gray-400">ราคา</span>
+          <div className="flex items-center justify-between bg-[var(--bg-card)] rounded-xl px-4 py-3">
+            <span className="text-sm text-[var(--text-secondary)]">ราคา</span>
             <div className="flex items-center gap-1.5 text-yellow-400 font-semibold">
               <Coins className="w-4 h-4" />
               <span>{coinCost} เหรียญ</span>
@@ -89,8 +89,8 @@ export default function UnlockModal({
           </div>
 
           {/* User balance */}
-          <div className="flex items-center justify-between bg-[#1a1e2a] rounded-xl px-4 py-3">
-            <span className="text-sm text-gray-400">เหรียญของคุณ</span>
+          <div className="flex items-center justify-between bg-[var(--bg-card)] rounded-xl px-4 py-3">
+            <span className="text-sm text-[var(--text-secondary)]">เหรียญของคุณ</span>
             <div
               className={`flex items-center gap-1.5 font-semibold ${
                 canAfford ? "text-green-400" : "text-red-400"
@@ -103,7 +103,7 @@ export default function UnlockModal({
 
           {/* After unlock balance */}
           {canAfford && (
-            <p className="text-xs text-gray-500 text-center">
+            <p className="text-xs text-[var(--text-secondary)] text-center">
               หลังปลดล็อก: {userCoins - coinCost} เหรียญ
             </p>
           )}
@@ -121,7 +121,7 @@ export default function UnlockModal({
             <button
               onClick={handleUnlock}
               disabled={loading}
-              className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)] font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               {loading ? "กำลังปลดล็อก..." : `ปลดล็อก ${coinCost} เหรียญ`}
             </button>
@@ -135,7 +135,7 @@ export default function UnlockModal({
           )}
           <button
             onClick={onClose}
-            className="px-4 py-3 rounded-xl bg-[#1a1e2a] border border-white/10 text-gray-300 text-sm hover:border-white/30 transition-colors"
+            className="px-4 py-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] text-sm hover:border-white/30 transition-colors"
           >
             ยกเลิก
           </button>

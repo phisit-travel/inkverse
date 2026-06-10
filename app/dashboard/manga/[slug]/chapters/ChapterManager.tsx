@@ -75,13 +75,13 @@ function ChapterRow({
       "flex items-center gap-3 px-4 py-3 rounded-xl border transition-all",
       chapter.isPremium
         ? "bg-yellow-500/5 border-yellow-500/20 hover:border-yellow-500/40"
-        : "bg-[#1a1e2a] border-white/5 hover:border-white/10"
+        : "bg-[var(--bg-card)] border-[var(--border)] hover:border-[var(--border)]"
     )}>
       {/* Drag handle hint */}
       <GripVertical className="w-4 h-4 text-gray-700 shrink-0" />
 
       {/* Chapter num */}
-      <span className="text-sm font-mono text-gray-500 w-8 shrink-0">
+      <span className="text-sm font-mono text-[var(--text-secondary)] w-8 shrink-0">
         {chapter.chapterNum}
       </span>
 
@@ -94,30 +94,30 @@ function ChapterRow({
               value={titleInput}
               onChange={(e) => setTitleInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") saveTitle(); if (e.key === "Escape") setEditingTitle(false); }}
-              className="flex-1 bg-[#141720] border border-white/20 rounded-lg px-2 py-1 text-sm text-white focus:outline-none focus:border-[#ff2d55]/50"
+              className="flex-1 bg-[var(--bg-surface)] border border-white/20 rounded-lg px-2 py-1 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#ff2d55]/50"
               placeholder="ชื่อตอน..."
             />
             <button onClick={saveTitle} disabled={loading} className="p-1 text-green-400 hover:text-green-300">
               {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
             </button>
-            <button onClick={() => setEditingTitle(false)} className="p-1 text-gray-500 hover:text-white">
+            <button onClick={() => setEditingTitle(false)} className="p-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
         ) : (
           <div className="flex items-center gap-1.5 group">
-            <span className="text-sm text-white truncate">
-              {chapter.title || <span className="text-gray-600 italic">ไม่มีชื่อตอน</span>}
+            <span className="text-sm text-[var(--text-primary)] truncate">
+              {chapter.title || <span className="text-[var(--text-muted)] italic">ไม่มีชื่อตอน</span>}
             </span>
             <button
               onClick={() => setEditingTitle(true)}
-              className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-600 hover:text-white transition-opacity"
+              className="opacity-0 group-hover:opacity-100 p-0.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-opacity"
             >
               <Edit3 className="w-3 h-3" />
             </button>
           </div>
         )}
-        <div className="flex items-center gap-3 text-xs text-gray-600 mt-0.5">
+        <div className="flex items-center gap-3 text-xs text-[var(--text-muted)] mt-0.5">
           <span>{chapter.pageCount} หน้า</span>
           <span>{chapter.viewCount.toLocaleString()} ชม</span>
         </div>
@@ -137,12 +137,12 @@ function ChapterRow({
                   value={priceInput}
                   onChange={(e) => setPriceInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") savePrice(); if (e.key === "Escape") setEditingPrice(false); }}
-                  className="w-16 bg-[#141720] border border-yellow-500/30 rounded-lg px-2 py-1 text-sm text-yellow-400 text-center focus:outline-none"
+                  className="w-16 bg-[var(--bg-surface)] border border-yellow-500/30 rounded-lg px-2 py-1 text-sm text-yellow-400 text-center focus:outline-none"
                 />
                 <button onClick={savePrice} disabled={loading} className="p-1 text-green-400">
                   {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                 </button>
-                <button onClick={() => setEditingPrice(false)} className="p-1 text-gray-500">
+                <button onClick={() => setEditingPrice(false)} className="p-1 text-[var(--text-secondary)]">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -168,7 +168,7 @@ function ChapterRow({
             "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all border",
             chapter.isPremium
               ? "bg-yellow-500/20 border-yellow-500/30 text-yellow-400 hover:bg-red-500/20 hover:border-red-500/30 hover:text-red-400"
-              : "bg-white/5 border-white/10 text-gray-500 hover:bg-green-500/10 hover:border-green-500/30 hover:text-green-400"
+              : "bg-white/5 border-[var(--border)] text-[var(--text-secondary)] hover:bg-green-500/10 hover:border-green-500/30 hover:text-green-400"
           )}
         >
           {loading
@@ -183,7 +183,7 @@ function ChapterRow({
         <Link
           href={`/dashboard/chapters/${chapter.id}/reorder`}
           title="จัดเรียงหน้า"
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs text-gray-500 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white transition-all"
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs text-[var(--text-secondary)] bg-white/5 border border-[var(--border)] hover:bg-white/10 hover:text-[var(--text-primary)] transition-all"
         >
           <ArrowUpDown className="w-3.5 h-3.5" />
           หน้า
@@ -212,21 +212,21 @@ export default function ChapterManager({
     <div className="space-y-5">
       {/* Summary */}
       <div className="flex gap-3 flex-wrap">
-        <div className="bg-[#141720] rounded-xl border border-white/5 px-4 py-2.5 flex items-center gap-2">
+        <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] px-4 py-2.5 flex items-center gap-2">
           <Unlock className="w-3.5 h-3.5 text-green-400" />
-          <span className="text-sm text-white font-medium">{freeCount}</span>
-          <span className="text-xs text-gray-500">ตอนฟรี</span>
+          <span className="text-sm text-[var(--text-primary)] font-medium">{freeCount}</span>
+          <span className="text-xs text-[var(--text-secondary)]">ตอนฟรี</span>
         </div>
-        <div className="bg-[#141720] rounded-xl border border-yellow-500/20 px-4 py-2.5 flex items-center gap-2">
+        <div className="bg-[var(--bg-surface)] rounded-xl border border-yellow-500/20 px-4 py-2.5 flex items-center gap-2">
           <Lock className="w-3.5 h-3.5 text-yellow-400" />
-          <span className="text-sm text-white font-medium">{premiumCount}</span>
-          <span className="text-xs text-gray-500">ตอนล็อค</span>
+          <span className="text-sm text-[var(--text-primary)] font-medium">{premiumCount}</span>
+          <span className="text-xs text-[var(--text-secondary)]">ตอนล็อค</span>
         </div>
       </div>
 
       {/* Chapter list */}
       {chapters.length === 0 ? (
-        <div className="text-center py-16 text-gray-600 text-sm">
+        <div className="text-center py-16 text-[var(--text-muted)] text-sm">
           ยังไม่มีตอน — <Link href="/upload" className="text-[#ff6b2b] hover:underline">อัปโหลดตอนแรก</Link>
         </div>
       ) : (
@@ -243,7 +243,7 @@ export default function ChapterManager({
         </div>
       )}
 
-      <p className="text-xs text-gray-600 text-center">
+      <p className="text-xs text-[var(--text-muted)] text-center">
         คลิก "ล็อค/ฟรี" เพื่อสลับสถานะ · คลิกราคาเพื่อแก้ไข · "หน้า" เพื่อจัดเรียงหน้า
       </p>
     </div>

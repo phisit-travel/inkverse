@@ -111,17 +111,17 @@ export default function HelpChatbot() {
       <button
         onClick={() => setOpen((o) => !o)}
         aria-label="ช่วยเหลือ"
-        className="fixed bottom-5 right-5 z-50 w-14 h-14 rounded-full bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white shadow-lg flex items-center justify-center hover:opacity-90 transition-opacity"
+        className="fixed bottom-5 right-5 z-50 w-14 h-14 rounded-full bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)] shadow-lg flex items-center justify-center hover:opacity-90 transition-opacity"
       >
         {open ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
       </button>
 
       {/* Panel */}
       {open && (
-        <div className="fixed bottom-24 right-5 z-50 w-[min(92vw,360px)] h-[min(70vh,520px)] flex flex-col rounded-2xl bg-[#141720] border border-white/10 shadow-2xl overflow-hidden">
+        <div className="fixed bottom-24 right-5 z-50 w-[min(92vw,360px)] h-[min(70vh,520px)] flex flex-col rounded-2xl bg-[var(--bg-surface)] border border-[var(--border)] shadow-2xl overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b]">
-            <Bot className="w-5 h-5 text-white" />
-            <span className="text-white font-semibold text-sm">ผู้ช่วย INKVERSE</span>
+            <Bot className="w-5 h-5 text-[var(--text-primary)]" />
+            <span className="text-[var(--text-primary)] font-semibold text-sm">ผู้ช่วย INKVERSE</span>
           </div>
 
           <div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-none">
@@ -130,8 +130,8 @@ export default function HelpChatbot() {
                 <div
                   className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${
                     m.from === "user"
-                      ? "bg-[#ff2d55] text-white rounded-br-sm"
-                      : "bg-[#1a1e2a] text-gray-200 rounded-bl-sm"
+                      ? "bg-[#ff2d55] text-[var(--text-primary)] rounded-br-sm"
+                      : "bg-[var(--bg-card)] text-gray-200 rounded-bl-sm"
                   }`}
                 >
                   {m.text}
@@ -151,7 +151,7 @@ export default function HelpChatbot() {
                   <button
                     key={f.topic}
                     onClick={() => ask(f.topic)}
-                    className="text-xs px-2.5 py-1.5 rounded-lg bg-[#1a1e2a] border border-white/10 text-gray-300 hover:border-[#ff2d55]/40 hover:text-white transition-colors"
+                    className="text-xs px-2.5 py-1.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] hover:border-[#ff2d55]/40 hover:text-[var(--text-primary)] transition-colors"
                   >
                     {f.topic}
                   </button>
@@ -163,17 +163,17 @@ export default function HelpChatbot() {
 
           <form
             onSubmit={(e) => { e.preventDefault(); ask(input); }}
-            className="flex items-center gap-2 p-2.5 border-t border-white/10 bg-[#141720]"
+            className="flex items-center gap-2 p-2.5 border-t border-[var(--border)] bg-[var(--bg-surface)]"
           >
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="พิมพ์คำถาม..."
-              className="flex-1 bg-[#1a1e2a] border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#ff2d55]/50"
+              className="flex-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder-gray-500 focus:outline-none focus:border-[#ff2d55]/50"
             />
             <button
               type="submit"
-              className="w-9 h-9 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white flex items-center justify-center shrink-0 hover:opacity-90"
+              className="w-9 h-9 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)] flex items-center justify-center shrink-0 hover:opacity-90"
             >
               <Send className="w-4 h-4" />
             </button>

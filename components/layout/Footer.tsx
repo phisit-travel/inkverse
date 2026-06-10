@@ -24,13 +24,13 @@ const links = {
 
 export default function Footer() {
   return (
-    <footer className="bg-[#080a10] border-t border-white/5 mt-20">
+    <footer className="bg-[var(--bg-primary)] border-t border-[var(--border)] mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Logo size="md" />
-            <p className="text-sm text-gray-500 mt-3 leading-relaxed">
+            <p className="text-sm text-[var(--text-secondary)] mt-3 leading-relaxed">
               แพลตฟอร์มอ่านการ์ตูนออนไลน์ มังงะ มันฮวา มานฮวา
               ที่ใหญ่ที่สุดในไทย
             </p>
@@ -44,7 +44,7 @@ export default function Footer() {
                   key={label}
                   href={href}
                   aria-label={label}
-                  className="p-2 rounded-lg bg-[#1a1e2a] text-gray-500 hover:text-white hover:bg-[#ff2d55]/20 transition-all"
+                  className="p-2 rounded-lg bg-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[#ff2d55]/20 transition-all"
                 >
                   <Icon className="w-4 h-4" />
                 </a>
@@ -55,7 +55,7 @@ export default function Footer() {
           {/* Links */}
           {Object.entries(links).map(([category, items]) => (
             <div key={category}>
-              <h4 className="text-sm font-semibold text-white mb-3">
+              <h4 className="text-sm font-semibold text-[var(--text-primary)] mb-3">
                 {category}
               </h4>
               <ul className="space-y-2">
@@ -63,7 +63,7 @@ export default function Footer() {
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      className="text-sm text-gray-500 hover:text-[#ff6b2b] transition-colors"
+                      className="text-sm text-[var(--text-secondary)] hover:text-[#ff6b2b] transition-colors"
                     >
                       {item.label}
                     </Link>
@@ -74,7 +74,7 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="border-t border-white/5 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-600">
+        <div className="border-t border-[var(--border)] mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-[var(--text-muted)]">
           <p>© {new Date().getFullYear()} INKVERSE. All rights reserved.</p>
           <p>Built with Next.js · PostgreSQL · Cloudflare R2</p>
         </div>

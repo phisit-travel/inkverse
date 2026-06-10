@@ -21,7 +21,7 @@ function MonogramMark({ size = 36 }: { size?: number }) {
   return (
     <span
       aria-hidden
-      className="inline-flex items-center justify-center font-bebas text-white shrink-0 leading-none"
+      className="inline-flex items-center justify-center font-bebas text-[var(--text-primary)] shrink-0 leading-none"
       style={{
         width: size,
         height: size,

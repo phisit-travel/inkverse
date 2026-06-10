@@ -55,17 +55,17 @@ export default async function PageReorderPage({ params }: Props) {
       <div>
         <Link
           href={`/dashboard/manga/${chapter.manga.slug}/chapters`}
-          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-white mb-3 transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] mb-3 transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" /> จัดการตอน
         </Link>
         <div className="flex items-start gap-3">
           <LayoutGrid className="w-6 h-6 text-[#ff6b2b] mt-0.5 shrink-0" />
           <div>
-            <p className="text-xs text-gray-500 mb-0.5">{chapter.manga.title}</p>
-            <h1 className="font-bebas text-3xl text-white tracking-wider leading-none">
+            <p className="text-xs text-[var(--text-secondary)] mb-0.5">{chapter.manga.title}</p>
+            <h1 className="font-bebas text-3xl text-[var(--text-primary)] tracking-wider leading-none">
               จัดเรียงหน้า — ตอนที่ {chapter.chapterNum}
-              {chapter.title && <span className="text-gray-500 text-xl ml-2">{chapter.title}</span>}
+              {chapter.title && <span className="text-[var(--text-secondary)] text-xl ml-2">{chapter.title}</span>}
             </h1>
           </div>
         </div>

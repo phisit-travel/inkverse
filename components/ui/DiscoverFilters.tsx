@@ -39,12 +39,12 @@ export default function DiscoverFilters({ genres, current }: DiscoverFiltersProp
 
   return (
     <div className="flex flex-wrap gap-3 items-center">
-      <SlidersHorizontal className="w-4 h-4 text-gray-500" />
+      <SlidersHorizontal className="w-4 h-4 text-[var(--text-secondary)]" />
 
       <select
         onChange={(e) => navigate("genre", e.target.value)}
         defaultValue={current.genre || ""}
-        className="bg-[#1a1e2a] border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none cursor-pointer"
+        className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none cursor-pointer"
       >
         <option value="">ทุกหมวดหมู่</option>
         {genres.map((g) => (
@@ -57,7 +57,7 @@ export default function DiscoverFilters({ genres, current }: DiscoverFiltersProp
       <select
         onChange={(e) => navigate("status", e.target.value)}
         defaultValue={current.status || ""}
-        className="bg-[#1a1e2a] border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none cursor-pointer"
+        className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none cursor-pointer"
       >
         <option value="">ทุกสถานะ</option>
         <option value="ONGOING">กำลังดำเนินเรื่อง</option>
@@ -68,7 +68,7 @@ export default function DiscoverFilters({ genres, current }: DiscoverFiltersProp
       <select
         onChange={(e) => navigate("type", e.target.value)}
         defaultValue={current.type || ""}
-        className="bg-[#1a1e2a] border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none cursor-pointer"
+        className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none cursor-pointer"
       >
         <option value="">ทุกประเภท</option>
         <option value="MANGA">Manga</option>
@@ -80,7 +80,7 @@ export default function DiscoverFilters({ genres, current }: DiscoverFiltersProp
       <select
         onChange={(e) => navigate("country", e.target.value)}
         defaultValue={current.country || ""}
-        className="bg-[#1a1e2a] border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none cursor-pointer"
+        className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none cursor-pointer"
       >
         <option value="">ทุกประเทศ</option>
         <option value="JP">🇯🇵 ญี่ปุ่น</option>
@@ -92,7 +92,7 @@ export default function DiscoverFilters({ genres, current }: DiscoverFiltersProp
       <select
         onChange={(e) => navigate("sort", e.target.value)}
         defaultValue={current.sort || "views"}
-        className="bg-[#1a1e2a] border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none cursor-pointer"
+        className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none cursor-pointer"
       >
         <option value="views">ยอดชม</option>
         <option value="latest">อัปเดตล่าสุด</option>

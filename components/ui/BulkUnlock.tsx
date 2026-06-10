@@ -79,13 +79,13 @@ export default function BulkUnlock({
   }
 
   return (
-    <div className="bg-[#141720] rounded-2xl border border-white/5 p-4 space-y-3">
+    <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Layers className="w-4 h-4 text-[#ff6b2b]" />
-          <span className="text-sm font-semibold text-white">ปลดล็อกหลายตอน</span>
+          <span className="text-sm font-semibold text-[var(--text-primary)]">ปลดล็อกหลายตอน</span>
         </div>
-        <span className="text-xs text-gray-500">ล็อกอยู่ {total} ตอน</span>
+        <span className="text-xs text-[var(--text-secondary)]">ล็อกอยู่ {total} ตอน</span>
       </div>
 
       {/* Quick picks */}
@@ -98,7 +98,7 @@ export default function BulkUnlock({
               "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border",
               count === n
                 ? "bg-[#ff2d55]/20 text-[#ff2d55] border-[#ff2d55]/40"
-                : "bg-[#1a1e2a] text-gray-400 border-white/10 hover:border-white/30"
+                : "bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border)] hover:border-white/30"
             )}
           >
             {n} ตอน
@@ -110,7 +110,7 @@ export default function BulkUnlock({
             "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border",
             count === total
               ? "bg-[#ff2d55]/20 text-[#ff2d55] border-[#ff2d55]/40"
-              : "bg-[#1a1e2a] text-gray-400 border-white/10 hover:border-white/30"
+              : "bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border)] hover:border-white/30"
           )}
         >
           ทั้งหมด ({total})
@@ -127,25 +127,25 @@ export default function BulkUnlock({
           onChange={(e) => setCount(Number(e.target.value))}
           className="flex-1 accent-[#ff2d55]"
         />
-        <span className="text-sm text-white font-semibold w-16 text-right tabular-nums">
+        <span className="text-sm text-[var(--text-primary)] font-semibold w-16 text-right tabular-nums">
           {count} ตอน
         </span>
       </div>
 
       {/* Cost summary */}
-      <div className="flex items-center justify-between bg-[#1a1e2a] rounded-xl px-4 py-3">
-        <span className="text-sm text-gray-400">ราคารวม</span>
+      <div className="flex items-center justify-between bg-[var(--bg-card)] rounded-xl px-4 py-3">
+        <span className="text-sm text-[var(--text-secondary)]">ราคารวม</span>
         <div className="flex items-center gap-1.5 text-yellow-400 font-semibold">
           <Coins className="w-4 h-4" />
           <span className="tabular-nums">{totalCost.toLocaleString()} เหรียญ</span>
         </div>
       </div>
       <div className="flex items-center justify-between text-xs px-1">
-        <span className="text-gray-500">
-          เหรียญของคุณ: <span className={canAfford ? "text-gray-300" : "text-red-400"}>{userCoins.toLocaleString()}</span>
+        <span className="text-[var(--text-secondary)]">
+          เหรียญของคุณ: <span className={canAfford ? "text-[var(--text-primary)]" : "text-red-400"}>{userCoins.toLocaleString()}</span>
         </span>
         {canAfford && (
-          <span className="text-gray-500">หลังปลดล็อก: {(userCoins - totalCost).toLocaleString()}</span>
+          <span className="text-[var(--text-secondary)]">หลังปลดล็อก: {(userCoins - totalCost).toLocaleString()}</span>
         )}
       </div>
 
@@ -155,14 +155,14 @@ export default function BulkUnlock({
 
       {/* Action */}
       {!isLoggedIn ? (
-        <a href="/auth/signin" className="block w-full py-3 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white font-semibold text-sm text-center hover:opacity-90 transition-opacity">
+        <a href="/auth/signin" className="block w-full py-3 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)] font-semibold text-sm text-center hover:opacity-90 transition-opacity">
           เข้าสู่ระบบเพื่อปลดล็อก
         </a>
       ) : canAfford ? (
         <button
           onClick={unlock}
           disabled={loading || count < 1}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)] font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Unlock className="w-4 h-4" />}
           {loading ? "กำลังปลดล็อก..." : `ปลดล็อก ${count} ตอน · ${totalCost.toLocaleString()} เหรียญ`}

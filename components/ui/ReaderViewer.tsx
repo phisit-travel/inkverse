@@ -77,20 +77,20 @@ export default function ReaderViewer({
   const progress = pages.length > 0 ? ((currentPage + 1) / pages.length) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-[#080a10]">
+    <div className="min-h-screen bg-[var(--bg-primary)]">
       {/* Top bar */}
-      <div className="sticky top-0 z-40 bg-[#080a10]/95 backdrop-blur border-b border-white/5">
+      <div className="sticky top-0 z-40 bg-[var(--bg-primary)]/95 backdrop-blur border-b border-[var(--border)]">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link
             href={`/content/${mangaSlug}`}
-            className="text-gray-400 hover:text-white transition-colors text-sm flex items-center gap-1"
+            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors text-sm flex items-center gap-1"
           >
             <ChevronLeft className="w-4 h-4" />
             กลับ
           </Link>
 
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-400">
+            <span className="text-sm text-[var(--text-secondary)]">
               ตอนที่ {chapterNum}
               {mode === "page" && ` — ${currentPage + 1}/${pages.length}`}
             </span>
@@ -99,7 +99,7 @@ export default function ReaderViewer({
           <div className="flex items-center gap-2">
             <button
               onClick={() => setMode(mode === "webtoon" ? "page" : "webtoon")}
-              className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+              className="p-2 rounded-lg hover:bg-white/10 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
               title={mode === "webtoon" ? "เปลี่ยนเป็นโหมดหน้า" : "เปลี่ยนเป็นโหมด Webtoon"}
             >
               {mode === "webtoon" ? (
@@ -110,7 +110,7 @@ export default function ReaderViewer({
             </button>
             <button
               onClick={() => setShowSettings(!showSettings)}
-              className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+              className="p-2 rounded-lg hover:bg-white/10 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
             >
               <Settings className="w-4 h-4" />
             </button>
@@ -130,11 +130,11 @@ export default function ReaderViewer({
 
       {/* Settings panel */}
       {showSettings && (
-        <div className="fixed top-16 right-2 sm:right-4 z-50 bg-[#141720] border border-white/10 rounded-xl p-4 w-64 max-w-[calc(100vw-1rem)] shadow-2xl">
-          <h4 className="text-sm font-semibold text-white mb-3">ตั้งค่าการอ่าน</h4>
+        <div className="fixed top-16 right-2 sm:right-4 z-50 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-4 w-64 max-w-[calc(100vw-1rem)] shadow-2xl">
+          <h4 className="text-sm font-semibold text-[var(--text-primary)] mb-3">ตั้งค่าการอ่าน</h4>
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-gray-400 block mb-1">
+              <label className="text-xs text-[var(--text-secondary)] block mb-1">
                 ความสว่าง: {brightness}%
               </label>
               <input
@@ -147,7 +147,7 @@ export default function ReaderViewer({
               />
             </div>
             <div>
-              <label className="text-xs text-gray-400 block mb-1">โหมดการอ่าน</label>
+              <label className="text-xs text-[var(--text-secondary)] block mb-1">โหมดการอ่าน</label>
               <div className="flex gap-2">
                 {(["webtoon", "page"] as const).map((m) => (
                   <button
@@ -156,8 +156,8 @@ export default function ReaderViewer({
                     className={clsx(
                       "flex-1 py-1.5 rounded-lg text-xs font-medium transition-all",
                       mode === m
-                        ? "bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white"
-                        : "bg-white/10 text-gray-400 hover:text-white"
+                        ? "bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)]"
+                        : "bg-white/10 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                     )}
                   >
                     {m === "webtoon" ? "เลื่อน" : "หน้า"}
@@ -211,14 +211,14 @@ export default function ReaderViewer({
             <button
               onClick={() => goTo(currentPage - 1)}
               disabled={currentPage === 0}
-              className="absolute left-2 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/60 text-white disabled:opacity-20 hover:bg-black/80 transition-all"
+              className="absolute left-2 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/60 text-[var(--text-primary)] disabled:opacity-20 hover:bg-black/80 transition-all"
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
             <button
               onClick={() => goTo(currentPage + 1)}
               disabled={currentPage === pages.length - 1}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/60 text-white disabled:opacity-20 hover:bg-black/80 transition-all"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/60 text-[var(--text-primary)] disabled:opacity-20 hover:bg-black/80 transition-all"
             >
               <ChevronRight className="w-6 h-6" />
             </button>
@@ -227,12 +227,12 @@ export default function ReaderViewer({
       </div>
 
       {/* Chapter navigation */}
-      <div className="sticky bottom-0 bg-[#080a10]/95 backdrop-blur border-t border-white/5 p-3 sm:p-4">
+      <div className="sticky bottom-0 bg-[var(--bg-primary)]/95 backdrop-blur border-t border-[var(--border)] p-3 sm:p-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
           {prevChapter != null ? (
             <Link
               href={`/content/${mangaSlug}/${prevChapter}`}
-              className="flex items-center gap-1.5 px-3 py-2.5 sm:px-4 rounded-xl bg-[#1a1e2a] border border-white/10 text-sm text-gray-300 hover:text-white hover:border-white/30 transition-all"
+              className="flex items-center gap-1.5 px-3 py-2.5 sm:px-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-sm text-[var(--text-primary)] hover:text-[var(--text-primary)] hover:border-white/30 transition-all"
             >
               <ChevronLeft className="w-4 h-4 shrink-0" />
               <span className="hidden sm:inline">ตอนก่อน</span>
@@ -241,7 +241,7 @@ export default function ReaderViewer({
             <div className="w-10" />
           )}
 
-          <span className="text-xs sm:text-sm text-gray-500 text-center">
+          <span className="text-xs sm:text-sm text-[var(--text-secondary)] text-center">
             {mode === "page"
               ? `${currentPage + 1} / ${pages.length} หน้า`
               : `${pages.length} หน้า`}
@@ -250,7 +250,7 @@ export default function ReaderViewer({
           {nextChapter != null ? (
             <Link
               href={`/content/${mangaSlug}/${nextChapter}`}
-              className="flex items-center gap-1.5 px-3 py-2.5 sm:px-4 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-sm text-white hover:opacity-90 transition-all"
+              className="flex items-center gap-1.5 px-3 py-2.5 sm:px-4 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-sm text-[var(--text-primary)] hover:opacity-90 transition-all"
             >
               <span className="hidden sm:inline">ตอนถัดไป</span>
               <ChevronRight className="w-4 h-4 shrink-0" />

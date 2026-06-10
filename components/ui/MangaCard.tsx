@@ -40,7 +40,7 @@ export default function MangaCard({
       href={`/content/${slug}`}
       className={clsx(
         "group relative flex flex-col rounded-xl overflow-hidden",
-        "bg-[#1a1e2a] border border-white/5",
+        "bg-[var(--bg-card)] border border-[var(--border)]",
         "transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-[#ff2d55]/10 hover:border-[#ff2d55]/30",
         isLarge ? "h-80" : isCompact ? "h-36 flex-row" : "h-auto",
         className
@@ -49,7 +49,7 @@ export default function MangaCard({
       {/* Cover */}
       <div
         className={clsx(
-          "relative overflow-hidden bg-[#141720] flex-shrink-0",
+          "relative overflow-hidden bg-[var(--bg-surface)] flex-shrink-0",
           isLarge ? "h-full w-full absolute inset-0" : isCompact ? "w-24 h-full" : "aspect-[3/4] w-full"
         )}
       >
@@ -66,7 +66,7 @@ export default function MangaCard({
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#1a1e2a] to-[#141720]">
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-surface)]">
             <span className="text-4xl opacity-20">📖</span>
           </div>
         )}
@@ -77,9 +77,9 @@ export default function MangaCard({
             className={clsx(
               "absolute top-2 left-2 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider",
               status === "ONGOING"
-                ? "bg-green-500/90 text-white"
+                ? "bg-green-500/90 text-[var(--text-primary)]"
                 : status === "COMPLETED"
-                ? "bg-blue-500/90 text-white"
+                ? "bg-blue-500/90 text-[var(--text-primary)]"
                 : "bg-yellow-500/90 text-black"
             )}
           >
@@ -89,14 +89,14 @@ export default function MangaCard({
 
         {/* Type badge */}
         {type && !isCompact && contentRating !== "ADULT" && (
-          <span className="absolute top-2 right-2 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-[#ff2d55]/90 text-white">
+          <span className="absolute top-2 right-2 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-[#ff2d55]/90 text-[var(--text-primary)]">
             {type}
           </span>
         )}
 
         {/* 18+ badge */}
         {contentRating === "ADULT" && (
-          <span className="absolute top-2 right-2 text-[10px] font-black px-1.5 py-0.5 rounded bg-red-600 text-white border border-red-400/50 shadow-lg">
+          <span className="absolute top-2 right-2 text-[10px] font-black px-1.5 py-0.5 rounded bg-red-600 text-[var(--text-primary)] border border-red-400/50 shadow-lg">
             18+
           </span>
         )}
@@ -115,7 +115,7 @@ export default function MangaCard({
       >
         <h3
           className={clsx(
-            "font-semibold text-white leading-tight line-clamp-2",
+            "font-semibold text-[var(--text-primary)] leading-tight line-clamp-2",
             isCompact ? "text-sm" : "text-sm",
             isLarge && "text-base"
           )}
@@ -123,7 +123,7 @@ export default function MangaCard({
           {title}
         </h3>
 
-        <div className="flex items-center gap-2 text-xs text-gray-400">
+        <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
           {latestChapter !== undefined && (
             <span className="text-[#ff6b2b] font-medium">
               Ch.{latestChapter}

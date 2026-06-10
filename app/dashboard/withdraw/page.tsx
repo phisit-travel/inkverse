@@ -39,10 +39,10 @@ export default async function WithdrawPage() {
 
   return (
     <div className="max-w-xl mx-auto px-4 sm:px-6 py-8">
-      <Link href="/dashboard/earnings" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-white mb-6 transition-colors">
+      <Link href="/dashboard/earnings" className="inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] mb-6 transition-colors">
         <ArrowLeft className="w-3.5 h-3.5" /> รายได้ของฉัน
       </Link>
-      <h1 className="font-bebas text-4xl text-white tracking-wider mb-6">ถอนเงิน</h1>
+      <h1 className="font-bebas text-4xl text-[var(--text-primary)] tracking-wider mb-6">ถอนเงิน</h1>
       <WithdrawClient
         availableBalance={available}
         history={history.map((w) => ({

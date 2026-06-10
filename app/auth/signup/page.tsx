@@ -41,17 +41,17 @@ export default function SignUpPage() {
   };
 
   const inputCls =
-    "w-full bg-[#1a1e2a] border border-white/10 rounded-xl py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#ff2d55]/60 transition-colors";
+    "w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl py-3 text-sm text-[var(--text-primary)] placeholder-gray-500 focus:outline-none focus:border-[#ff2d55]/60 transition-colors";
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#080a10] px-4">
+    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] px-4">
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8">
           <Logo size="lg" href="/" />
         </div>
 
-        <div className="bg-[#141720] rounded-2xl border border-white/5 p-8">
-          <h1 className="font-bebas text-3xl text-white tracking-wider text-center mb-6">
+        <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-8">
+          <h1 className="font-bebas text-3xl text-[var(--text-primary)] tracking-wider text-center mb-6">
             สมัครสมาชิก
           </h1>
 
@@ -70,13 +70,13 @@ export default function SignUpPage() {
 
           <div className="flex items-center gap-3 mb-6">
             <div className="flex-1 h-px bg-white/10" />
-            <span className="text-xs text-gray-500">หรือ</span>
+            <span className="text-xs text-[var(--text-secondary)]">หรือ</span>
             <div className="flex-1 h-px bg-white/10" />
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
               <input
                 type="text"
                 value={form.username}
@@ -88,7 +88,7 @@ export default function SignUpPage() {
             </div>
 
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
               <input
                 type="email"
                 value={form.email}
@@ -100,7 +100,7 @@ export default function SignUpPage() {
             </div>
 
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
               <input
                 type={showPw ? "text" : "password"}
                 value={form.password}
@@ -113,7 +113,7 @@ export default function SignUpPage() {
               <button
                 type="button"
                 onClick={() => setShowPw(!showPw)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
               >
                 {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -126,13 +126,13 @@ export default function SignUpPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)] font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               {loading ? "กำลังสมัคร..." : "สมัครสมาชิก"}
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
+          <p className="text-center text-sm text-[var(--text-secondary)] mt-6">
             มีบัญชีแล้ว?{" "}
             <Link href="/auth/signin" className="text-[#ff6b2b] hover:text-[#ff2d55] transition-colors">
               เข้าสู่ระบบ

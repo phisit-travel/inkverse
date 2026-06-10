@@ -59,15 +59,15 @@ export default async function MangaChaptersPage({ params }: Props) {
       <div>
         <Link
           href="/dashboard"
-          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-white mb-3 transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] mb-3 transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" /> Dashboard
         </Link>
         <div className="flex items-start gap-3">
           <BookOpen className="w-6 h-6 text-[#ff6b2b] mt-1 shrink-0" />
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-widest mb-0.5">จัดการตอน</p>
-            <h1 className="font-bebas text-3xl text-white tracking-wider leading-none">
+            <p className="text-xs text-[var(--text-secondary)] uppercase tracking-widest mb-0.5">จัดการตอน</p>
+            <h1 className="font-bebas text-3xl text-[var(--text-primary)] tracking-wider leading-none">
               {manga.title}
             </h1>
           </div>

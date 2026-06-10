@@ -20,10 +20,10 @@ export default async function UploadPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-      <h1 className="font-bebas text-4xl text-white tracking-wider mb-2">
+      <h1 className="font-bebas text-4xl text-[var(--text-primary)] tracking-wider mb-2">
         อัปโหลดผลงาน
       </h1>
-      <p className="text-gray-500 mb-8">
+      <p className="text-[var(--text-secondary)] mb-8">
         เพิ่มมังงะใหม่หรืออัปโหลดตอนใหม่ให้กับผลงานที่มีอยู่
       </p>
       <UploadForm genres={genres} />

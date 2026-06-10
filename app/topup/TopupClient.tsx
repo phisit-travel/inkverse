@@ -62,15 +62,15 @@ export default function TopupClient({ packages }: { packages: CoinPackage[] }) {
           return (
             <div
               key={pkg.id}
-              className={`relative bg-[#141720] rounded-2xl border p-5 flex flex-col gap-4 transition-all ${
+              className={`relative bg-[var(--bg-surface)] rounded-2xl border p-5 flex flex-col gap-4 transition-all ${
                 pkg.isPopular
                   ? "border-[#ff2d55]/50 shadow-lg shadow-[#ff2d55]/10"
-                  : "border-white/5 hover:border-white/15"
+                  : "border-[var(--border)] hover:border-white/15"
               }`}
             >
               {/* Popular badge */}
               {pkg.isPopular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] rounded-full text-xs font-semibold text-white flex items-center gap-1">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] rounded-full text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1">
                   <Star className="w-3 h-3 fill-white" />
                   ยอดนิยม
                 </div>
@@ -78,12 +78,12 @@ export default function TopupClient({ packages }: { packages: CoinPackage[] }) {
 
               {/* Package name + coins */}
               <div className="text-center pt-1">
-                <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">
+                <p className="text-xs text-[var(--text-secondary)] uppercase tracking-widest mb-1">
                   {pkg.name}
                 </p>
                 <div className="flex items-center justify-center gap-2">
                   <Coins className="w-8 h-8 text-yellow-400" />
-                  <span className="font-bebas text-4xl text-white tracking-wider">
+                  <span className="font-bebas text-4xl text-[var(--text-primary)] tracking-wider">
                     {total.toLocaleString()}
                   </span>
                 </div>
@@ -99,10 +99,10 @@ export default function TopupClient({ packages }: { packages: CoinPackage[] }) {
 
               {/* Price */}
               <div className="text-center">
-                <p className="text-2xl font-bold text-white">
+                <p className="text-2xl font-bold text-[var(--text-primary)]">
                   ฿{pkg.price.toFixed(0)}
                 </p>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                   ≈ ฿{(pkg.price / total).toFixed(2)} / เหรียญ
                 </p>
               </div>
@@ -113,8 +113,8 @@ export default function TopupClient({ packages }: { packages: CoinPackage[] }) {
                 disabled={!!loading}
                 className={`w-full py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 ${
                   pkg.isPopular
-                    ? "bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white hover:opacity-90"
-                    : "bg-[#1a1e2a] border border-white/10 text-white hover:border-white/30"
+                    ? "bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)] hover:opacity-90"
+                    : "bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] hover:border-white/30"
                 }`}
               >
                 {isLoading ? "กำลังดำเนินการ..." : `ซื้อ ฿${pkg.price.toFixed(0)}`}
@@ -124,7 +124,7 @@ export default function TopupClient({ packages }: { packages: CoinPackage[] }) {
         })}
       </div>
 
-      <p className="text-xs text-gray-600 text-center mt-6">
+      <p className="text-xs text-[var(--text-muted)] text-center mt-6">
         * นี่คือระบบทดสอบ การชำระเงินจริงยังไม่เปิดใช้งาน
       </p>
     </div>

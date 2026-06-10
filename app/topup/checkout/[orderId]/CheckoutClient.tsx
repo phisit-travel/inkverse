@@ -251,9 +251,9 @@ export default function CheckoutClient({
   };
 
   return (
-    <div className="min-h-screen bg-[#080a10] flex items-start justify-center px-4 py-10">
+    <div className="min-h-screen bg-[var(--bg-primary)] flex items-start justify-center px-4 py-10">
       <div className="w-full max-w-lg space-y-4">
-        <Link href="/topup" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-white transition-colors">
+        <Link href="/topup" className="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
           <ArrowLeft className="w-4 h-4" /> กลับ
         </Link>
 
@@ -268,11 +268,11 @@ export default function CheckoutClient({
         )}
 
         {/* Order summary */}
-        <div className="bg-[#141720] rounded-2xl border border-white/5 p-5">
-          <p className="text-xs text-gray-500 uppercase tracking-widest mb-3">สรุปรายการ</p>
+        <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5">
+          <p className="text-xs text-[var(--text-secondary)] uppercase tracking-widest mb-3">สรุปรายการ</p>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-300">{order.packageName}</span>
-            <span className="text-sm text-white font-medium">{order.coins.toLocaleString()} เหรียญ</span>
+            <span className="text-sm text-[var(--text-primary)]">{order.packageName}</span>
+            <span className="text-sm text-[var(--text-primary)] font-medium">{order.coins.toLocaleString()} เหรียญ</span>
           </div>
           {order.bonus > 0 && (
             <div className="flex items-center justify-between mb-2">
@@ -280,29 +280,29 @@ export default function CheckoutClient({
               <span className="text-sm text-green-400">+{order.bonus.toLocaleString()} เหรียญ</span>
             </div>
           )}
-          <div className="border-t border-white/5 mt-3 pt-3 flex items-center justify-between">
-            <span className="text-sm text-gray-400 flex items-center gap-1.5">
+          <div className="border-t border-[var(--border)] mt-3 pt-3 flex items-center justify-between">
+            <span className="text-sm text-[var(--text-secondary)] flex items-center gap-1.5">
               <Coins className="w-4 h-4 text-yellow-400" /> รวมได้รับ
             </span>
             <span className="font-bebas text-2xl text-yellow-400 tracking-wider">{total.toLocaleString()} เหรียญ</span>
           </div>
           <div className="flex items-center justify-between mt-1">
-            <span className="text-xs text-gray-600">ยอดที่ต้องชำระ</span>
-            <span className="text-xl font-bold text-white">฿{order.price.toFixed(0)}</span>
+            <span className="text-xs text-[var(--text-muted)]">ยอดที่ต้องชำระ</span>
+            <span className="text-xl font-bold text-[var(--text-primary)]">฿{order.price.toFixed(0)}</span>
           </div>
         </div>
 
         {/* Payment tabs */}
-        <div className="bg-[#141720] rounded-2xl border border-white/5 overflow-hidden">
+        <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] overflow-hidden">
           {/* Scrollable tab bar — hidden when only one channel is available */}
-          <div className={clsx("flex overflow-x-auto border-b border-white/5 scrollbar-none", availableTabs.length <= 1 && "hidden")}>
+          <div className={clsx("flex overflow-x-auto border-b border-[var(--border)] scrollbar-none", availableTabs.length <= 1 && "hidden")}>
             {availableTabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => { setMethod(tab.id); setError(""); setSelectedBank(""); }}
                 className={clsx(
                   "flex items-center gap-1.5 whitespace-nowrap px-4 py-3.5 text-xs font-medium transition-colors shrink-0",
-                  method === tab.id ? "bg-white/5 text-white border-b-2 border-[#ff2d55]" : "text-gray-500 hover:text-gray-300"
+                  method === tab.id ? "bg-white/5 text-[var(--text-primary)] border-b-2 border-[#ff2d55]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                 )}
               >
                 {tab.icon}
@@ -316,43 +316,43 @@ export default function CheckoutClient({
             {method === "CARD" && (
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs text-gray-500 mb-1.5 block">หมายเลขบัตร</label>
+                  <label className="text-xs text-[var(--text-secondary)] mb-1.5 block">หมายเลขบัตร</label>
                   <div className="relative">
                     <input
                       type="text" inputMode="numeric" placeholder="0000 0000 0000 0000"
                       value={cardNum} onChange={(e) => setCardNum(formatCard(e.target.value))}
                       maxLength={19}
-                      className="w-full bg-[#1a1e2a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#ff2d55]/50 font-mono tracking-widest"
+                      className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] placeholder-gray-600 focus:outline-none focus:border-[#ff2d55]/50 font-mono tracking-widest"
                     />
-                    <CreditCard className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
+                    <CreditCard className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-gray-500 mb-1.5 block">วันหมดอายุ</label>
+                    <label className="text-xs text-[var(--text-secondary)] mb-1.5 block">วันหมดอายุ</label>
                     <input
                       type="text" inputMode="numeric" placeholder="MM/YY"
                       value={expiry} onChange={(e) => setExpiry(formatExpiry(e.target.value))}
                       maxLength={5}
-                      className="w-full bg-[#1a1e2a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#ff2d55]/50 font-mono"
+                      className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] placeholder-gray-600 focus:outline-none focus:border-[#ff2d55]/50 font-mono"
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-500 mb-1.5 block">CVV</label>
+                    <label className="text-xs text-[var(--text-secondary)] mb-1.5 block">CVV</label>
                     <input
                       type="password" inputMode="numeric" placeholder="•••"
                       value={cvv} onChange={(e) => setCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
                       maxLength={4}
-                      className="w-full bg-[#1a1e2a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#ff2d55]/50 font-mono"
+                      className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] placeholder-gray-600 focus:outline-none focus:border-[#ff2d55]/50 font-mono"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 mb-1.5 block">ชื่อบนบัตร</label>
+                  <label className="text-xs text-[var(--text-secondary)] mb-1.5 block">ชื่อบนบัตร</label>
                   <input
                     type="text" placeholder="FIRSTNAME LASTNAME"
                     value={name} onChange={(e) => setName(e.target.value.toUpperCase())}
-                    className="w-full bg-[#1a1e2a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#ff2d55]/50 uppercase tracking-wider"
+                    className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] placeholder-gray-600 focus:outline-none focus:border-[#ff2d55]/50 uppercase tracking-wider"
                   />
                 </div>
               </div>
@@ -369,32 +369,32 @@ export default function CheckoutClient({
                 ) : (
                   <>
                     {/* Step 1 — scan & pay */}
-                    <p className="text-sm text-gray-400 text-center">
-                      <span className="text-white font-medium">1.</span> สแกน QR ด้วยแอปธนาคาร แล้วโอนยอดให้ตรงตามจำนวน
+                    <p className="text-sm text-[var(--text-secondary)] text-center">
+                      <span className="text-[var(--text-primary)] font-medium">1.</span> สแกน QR ด้วยแอปธนาคาร แล้วโอนยอดให้ตรงตามจำนวน
                     </p>
                     <div className="bg-white p-3 rounded-2xl">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={promptpayQrImage} alt="PromptPay QR" width={220} height={220} />
                     </div>
                     {promptpayName && (
-                      <p className="text-xs text-gray-500 text-center -mt-1">{promptpayName}</p>
+                      <p className="text-xs text-[var(--text-secondary)] text-center -mt-1">{promptpayName}</p>
                     )}
                     <div className="text-center">
-                      <p className="text-xs text-gray-600">ยอดที่ต้องโอน</p>
-                      <p className="text-2xl font-bold text-white">฿{order.price.toFixed(0)}</p>
+                      <p className="text-xs text-[var(--text-muted)]">ยอดที่ต้องโอน</p>
+                      <p className="text-2xl font-bold text-[var(--text-primary)]">฿{order.price.toFixed(0)}</p>
                     </div>
 
                     {/* Step 2 — upload slip */}
-                    <div className="w-full border-t border-white/5 pt-4">
-                      <p className="text-sm text-gray-400 text-center mb-3">
-                        <span className="text-white font-medium">2.</span> อัปโหลดสลิปการโอนเพื่อยืนยันอัตโนมัติ
+                    <div className="w-full border-t border-[var(--border)] pt-4">
+                      <p className="text-sm text-[var(--text-secondary)] text-center mb-3">
+                        <span className="text-[var(--text-primary)] font-medium">2.</span> อัปโหลดสลิปการโอนเพื่อยืนยันอัตโนมัติ
                       </p>
                       <label
                         className={clsx(
                           "flex flex-col items-center justify-center gap-2 w-full rounded-xl border border-dashed cursor-pointer transition-colors",
                           slipPreview
-                            ? "border-[#ff2d55]/40 bg-[#1a1e2a] p-3"
-                            : "border-white/15 bg-[#1a1e2a] hover:border-white/30 py-8 px-4"
+                            ? "border-[#ff2d55]/40 bg-[var(--bg-card)] p-3"
+                            : "border-white/15 bg-[var(--bg-card)] hover:border-white/30 py-8 px-4"
                         )}
                       >
                         {slipPreview ? (
@@ -407,8 +407,8 @@ export default function CheckoutClient({
                           </>
                         ) : (
                           <>
-                            <Upload className="w-7 h-7 text-gray-500" />
-                            <span className="text-xs text-gray-500">แตะเพื่อเลือกรูปสลิป (สูงสุด 4MB)</span>
+                            <Upload className="w-7 h-7 text-[var(--text-secondary)]" />
+                            <span className="text-xs text-[var(--text-secondary)]">แตะเพื่อเลือกรูปสลิป (สูงสุด 4MB)</span>
                           </>
                         )}
                         <input
@@ -427,7 +427,7 @@ export default function CheckoutClient({
             {/* MOBILE BANKING */}
             {method === "MOBILE_BANKING" && (
               <div className="space-y-4">
-                <p className="text-xs text-gray-500">เลือกธนาคาร</p>
+                <p className="text-xs text-[var(--text-secondary)]">เลือกธนาคาร</p>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {BANKS.map((bank) => (
                     <button
@@ -438,7 +438,7 @@ export default function CheckoutClient({
                         "flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all",
                         selectedBank === bank.id
                           ? "border-[#ff2d55]/60 ring-1 ring-[#ff2d55]/40"
-                          : "bg-[#1a1e2a] border-white/10 hover:border-white/20"
+                          : "bg-[var(--bg-card)] border-[var(--border)] hover:border-white/20"
                       )}
                     >
                       <div
@@ -447,12 +447,12 @@ export default function CheckoutClient({
                       >
                         {bank.label}
                       </div>
-                      <span className="text-xs text-white font-medium">{bank.sub}</span>
+                      <span className="text-xs text-[var(--text-primary)] font-medium">{bank.sub}</span>
                     </button>
                   ))}
                 </div>
                 {selectedBank && (
-                  <p className="text-xs text-gray-500 text-center">
+                  <p className="text-xs text-[var(--text-secondary)] text-center">
                     ระบบจะเปิดแอป{BANKS.find(b => b.id === selectedBank)?.sub} เพื่อยืนยันการชำระเงิน
                   </p>
                 )}
@@ -466,10 +466,10 @@ export default function CheckoutClient({
                   <Wallet className="w-8 h-8 text-[#ff6600]" />
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-medium text-white mb-1">TrueMoney Wallet</p>
-                  <p className="text-xs text-gray-400">ระบบจะเปิดแอป TrueMoney Wallet เพื่อยืนยันการชำระเงิน</p>
+                  <p className="text-sm font-medium text-[var(--text-primary)] mb-1">TrueMoney Wallet</p>
+                  <p className="text-xs text-[var(--text-secondary)]">ระบบจะเปิดแอป TrueMoney Wallet เพื่อยืนยันการชำระเงิน</p>
                 </div>
-                <p className="text-2xl font-bold text-white">฿{order.price.toFixed(0)}</p>
+                <p className="text-2xl font-bold text-[var(--text-primary)]">฿{order.price.toFixed(0)}</p>
               </div>
             )}
 
@@ -480,10 +480,10 @@ export default function CheckoutClient({
                   <Wallet className="w-8 h-8 text-[#ee4d2d]" />
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-medium text-white mb-1">ShopeePay</p>
-                  <p className="text-xs text-gray-400">ระบบจะเปิดแอป Shopee เพื่อยืนยันการชำระเงิน</p>
+                  <p className="text-sm font-medium text-[var(--text-primary)] mb-1">ShopeePay</p>
+                  <p className="text-xs text-[var(--text-secondary)]">ระบบจะเปิดแอป Shopee เพื่อยืนยันการชำระเงิน</p>
                 </div>
-                <p className="text-2xl font-bold text-white">฿{order.price.toFixed(0)}</p>
+                <p className="text-2xl font-bold text-[var(--text-primary)]">฿{order.price.toFixed(0)}</p>
               </div>
             )}
 
@@ -499,7 +499,7 @@ export default function CheckoutClient({
                 <button
                   onClick={verifySlip}
                   disabled={verifying || !slipFile}
-                  className="mt-4 w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+                  className="mt-4 w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)] font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
                   {verifying
                     ? <><Loader2 className="w-4 h-4 animate-spin" /> กำลังตรวจสอบสลิป...</>
@@ -510,7 +510,7 @@ export default function CheckoutClient({
               <button
                 onClick={handlePay}
                 disabled={loading}
-                className="mt-4 w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="mt-4 w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)] font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 {loading
                   ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -521,11 +521,11 @@ export default function CheckoutClient({
           </div>
         </div>
 
-        <div className="flex items-center justify-center gap-2 text-xs text-gray-600">
+        <div className="flex items-center justify-center gap-2 text-xs text-[var(--text-muted)]">
           <ShieldCheck className="w-3.5 h-3.5" />
           <span>{omisePublicKey ? "ชำระเงินปลอดภัยด้วย Omise · SSL 256-bit" : "ข้อมูลของคุณถูกเข้ารหัสด้วย SSL 256-bit"}</span>
         </div>
-        <p className="text-center text-xs text-gray-600">
+        <p className="text-center text-xs text-[var(--text-muted)]">
           เหรียญปัจจุบัน: <span className="text-yellow-400">{userCoins.toLocaleString()}</span> เหรียญ
         </p>
       </div>

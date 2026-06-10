@@ -78,23 +78,23 @@ function RequestCard({ req, onAction }: { req: Request; onAction: () => void }) 
   }
 
   return (
-    <div className="bg-[#141720] rounded-2xl border border-white/5 p-5 space-y-4">
+    <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5 space-y-4">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-semibold text-white">{req.translator.penName}</span>
-            <span className="text-xs text-gray-500">·</span>
-            <span className="text-xs text-gray-500">{req.translator.email}</span>
+            <span className="font-semibold text-[var(--text-primary)]">{req.translator.penName}</span>
+            <span className="text-xs text-[var(--text-secondary)]">·</span>
+            <span className="text-xs text-[var(--text-secondary)]">{req.translator.email}</span>
           </div>
           <div className="flex items-baseline gap-2 flex-wrap">
-            <p className="font-bebas text-3xl text-white tracking-wider">
+            <p className="font-bebas text-3xl text-[var(--text-primary)] tracking-wider">
               ฿{(req.amount * NET_RATE).toFixed(2)}
             </p>
-            <span className="text-xs text-gray-500">
-              โอนจริง <span className="text-gray-400">(ขอ ฿{req.amount.toFixed(2)} · หัก ฿{(req.amount * PLATFORM_CUT).toFixed(2)})</span>
+            <span className="text-xs text-[var(--text-secondary)]">
+              โอนจริง <span className="text-[var(--text-secondary)]">(ขอ ฿{req.amount.toFixed(2)} · หัก ฿{(req.amount * PLATFORM_CUT).toFixed(2)})</span>
             </span>
           </div>
-          <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 flex-wrap">
+          <div className="flex items-center gap-2 mt-1 text-xs text-[var(--text-secondary)] flex-wrap">
             <span>
               {req.paymentMethod === "PROMPTPAY"
                 ? "PromptPay"
@@ -105,7 +105,7 @@ function RequestCard({ req, onAction }: { req: Request; onAction: () => void }) 
             <span>·</span>
             <span>{req.accountName}</span>
           </div>
-          <p className="text-xs text-gray-600 mt-0.5">
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">
             ขอเมื่อ {new Date(req.requestedAt).toLocaleDateString("th-TH", {
               day: "numeric", month: "short", year: "numeric",
               hour: "2-digit", minute: "2-digit",
@@ -117,7 +117,7 @@ function RequestCard({ req, onAction }: { req: Request; onAction: () => void }) 
               <span className="flex items-center gap-1 text-xs bg-green-500/10 text-green-400 px-2 py-0.5 rounded-full">
                 <Zap className="w-3 h-3" /> Auto-payout
               </span>
-              <span className="font-mono text-xs text-gray-600 truncate max-w-[180px]" title={req.omiseTransferId}>
+              <span className="font-mono text-xs text-[var(--text-muted)] truncate max-w-[180px]" title={req.omiseTransferId}>
                 {req.omiseTransferId}
               </span>
             </div>
@@ -137,7 +137,7 @@ function RequestCard({ req, onAction }: { req: Request; onAction: () => void }) 
 
       {/* PROCESSING: show refresh button */}
       {req.status === "PROCESSING" && req.omiseTransferId && (
-        <div className="pt-2 border-t border-white/5 space-y-2">
+        <div className="pt-2 border-t border-[var(--border)] space-y-2">
           <button
             onClick={refreshOmise}
             disabled={refreshing}
@@ -147,9 +147,9 @@ function RequestCard({ req, onAction }: { req: Request; onAction: () => void }) 
             ตรวจสอบสถานะจาก Omise
           </button>
           {refreshResult && (
-            <p className="text-xs text-gray-400 font-mono bg-black/30 px-3 py-1.5 rounded-lg">{refreshResult}</p>
+            <p className="text-xs text-[var(--text-secondary)] font-mono bg-black/30 px-3 py-1.5 rounded-lg">{refreshResult}</p>
           )}
-          <p className="text-xs text-gray-600">
+          <p className="text-xs text-[var(--text-muted)]">
             ระบบโอนอัตโนมัติผ่าน Omise — webhook จะอัปเดต status เป็น PAID เมื่อโอนสำเร็จ
           </p>
         </div>
@@ -157,7 +157,7 @@ function RequestCard({ req, onAction }: { req: Request; onAction: () => void }) 
 
       {/* PENDING (PromptPay or auto-payout failed): manual actions */}
       {req.status === "PENDING" && (
-        <div className="space-y-3 pt-2 border-t border-white/5">
+        <div className="space-y-3 pt-2 border-t border-[var(--border)]">
           {req.paymentMethod === "PROMPTPAY" && (
             <p className="text-xs text-yellow-400/80 bg-yellow-500/5 px-3 py-2 rounded-xl">
               PromptPay — ต้องโอนด้วยตนเอง แล้วกด "ยืนยันโอนแล้ว"
@@ -170,7 +170,7 @@ function RequestCard({ req, onAction }: { req: Request; onAction: () => void }) 
           )}
           <button
             onClick={() => setShowNote(!showNote)}
-            className="flex items-center gap-1 text-xs text-gray-500 hover:text-white transition-colors"
+            className="flex items-center gap-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
           >
             <ChevronDown className={clsx("w-3.5 h-3.5 transition-transform", showNote && "rotate-180")} />
             {showNote ? "ซ่อน" : "เพิ่ม"} หมายเหตุ (optional)
@@ -179,7 +179,7 @@ function RequestCard({ req, onAction }: { req: Request; onAction: () => void }) 
             <input
               type="text" value={note} onChange={(e) => setNote(e.target.value)}
               placeholder="หมายเหตุถึงนักแปล..."
-              className="w-full bg-[#1a1e2a] border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#ff2d55]/50"
+              className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder-gray-600 focus:outline-none focus:border-[#ff2d55]/50"
             />
           )}
           <div className="flex gap-2">
@@ -204,7 +204,7 @@ function RequestCard({ req, onAction }: { req: Request; onAction: () => void }) 
       )}
 
       {req.status === "APPROVED" && (
-        <div className="pt-2 border-t border-white/5">
+        <div className="pt-2 border-t border-[var(--border)]">
           <button
             onClick={() => action("paid")}
             disabled={loading}
@@ -217,7 +217,7 @@ function RequestCard({ req, onAction }: { req: Request; onAction: () => void }) 
       )}
 
       {req.status === "FAILED" && (
-        <div className="pt-2 border-t border-white/5">
+        <div className="pt-2 border-t border-[var(--border)]">
           <p className="text-xs text-red-400/80 bg-red-500/5 px-3 py-2 rounded-xl">
             Auto-payout ล้มเหลว — ตรวจสอบ adminNote ด้านบน ติดต่อ Omise หรือโอนด้วยตนเอง
           </p>
@@ -267,7 +267,7 @@ export default function WithdrawalsAdmin({ requests }: { requests: Request[] }) 
               onClick={() => setFilter(f)}
               className={clsx(
                 "whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-medium transition-colors shrink-0",
-                filter === f ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300"
+                filter === f ? "bg-white/10 text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               )}
             >
               {f === "ALL" ? "ทั้งหมด" : (STATUS_STYLE[f]?.label ?? f)}
@@ -285,7 +285,7 @@ export default function WithdrawalsAdmin({ requests }: { requests: Request[] }) 
       </div>
 
       {filtered.length === 0 ? (
-        <p className="text-center py-12 text-gray-600 text-sm">ไม่มีรายการ</p>
+        <p className="text-center py-12 text-[var(--text-muted)] text-sm">ไม่มีรายการ</p>
       ) : (
         <div className="space-y-4">
           {filtered.map((r) => (

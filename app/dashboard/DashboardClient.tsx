@@ -85,16 +85,16 @@ function StatCard({
   sub?: string;
 }) {
   return (
-    <div className="bg-[#141720] rounded-2xl border border-white/5 p-5 flex flex-col gap-3">
+    <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5 flex flex-col gap-3">
       <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${color}`}>
-        <Icon className="w-4 h-4 text-white" />
+        <Icon className="w-4 h-4 text-[var(--text-primary)]" />
       </div>
       <div>
-        <p className="text-2xl font-bold text-white">
+        <p className="text-2xl font-bold text-[var(--text-primary)]">
           {typeof value === "number" ? value.toLocaleString() : value}
         </p>
-        <p className="text-xs text-gray-500 mt-0.5">{label}</p>
-        {sub && <p className="text-xs text-gray-600 mt-0.5">{sub}</p>}
+        <p className="text-xs text-[var(--text-secondary)] mt-0.5">{label}</p>
+        {sub && <p className="text-xs text-[var(--text-muted)] mt-0.5">{sub}</p>}
       </div>
     </div>
   );
@@ -110,7 +110,7 @@ function ViewBar({ value, max }: { value: number; max: number }) {
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="text-xs text-gray-400 w-12 text-right shrink-0">
+      <span className="text-xs text-[var(--text-secondary)] w-12 text-right shrink-0">
         {value.toLocaleString()}
       </span>
     </div>
@@ -151,24 +151,24 @@ export default function DashboardClient({
             <Crown className="w-5 h-5 text-[#ff6b2b]" />
             <span className="text-sm text-[#ff6b2b] font-medium">Creator Dashboard</span>
           </div>
-          <h1 className="font-bebas text-4xl text-white tracking-wider">
+          <h1 className="font-bebas text-4xl text-[var(--text-primary)] tracking-wider">
             {translator.penName}
           </h1>
           {translator.bio && (
-            <p className="text-sm text-gray-500 mt-1">{translator.bio}</p>
+            <p className="text-sm text-[var(--text-secondary)] mt-1">{translator.bio}</p>
           )}
         </div>
         <div className="flex gap-2 flex-wrap">
           <Link
             href="/dashboard/earnings"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-300 text-sm font-medium hover:bg-white/10 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-[var(--border)] text-[var(--text-primary)] text-sm font-medium hover:bg-white/10 transition-colors"
           >
             <Coins className="w-4 h-4 text-yellow-400" />
             รายได้ & ถอนเงิน
           </Link>
           <Link
             href="/upload"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white text-sm font-medium hover:opacity-90 transition-opacity"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)] text-sm font-medium hover:opacity-90 transition-opacity"
           >
             <BookOpen className="w-4 h-4" />
             อัปโหลดผลงานใหม่
@@ -220,8 +220,8 @@ export default function DashboardClient({
 
       {/* Views by manga — mini chart */}
       {mangaStats.length > 0 && (
-        <div className="bg-[#141720] rounded-2xl border border-white/5 p-5">
-          <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+        <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
             <BarChart2 className="w-4 h-4 text-[#ff6b2b]" />
             ยอดชมแต่ละผลงาน
           </h2>
@@ -233,7 +233,7 @@ export default function DashboardClient({
                 <div key={m.id} className="flex items-center gap-3 min-w-0">
                   <Link
                     href={`/content/${m.slug}`}
-                    className="text-sm text-gray-300 hover:text-white transition-colors truncate w-36 shrink-0"
+                    className="text-sm text-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors truncate w-36 shrink-0"
                   >
                     {m.title}
                   </Link>
@@ -246,7 +246,7 @@ export default function DashboardClient({
 
       {/* Tabs */}
       <div>
-        <div className="flex gap-2 mb-6 border-b border-white/5 overflow-x-auto scrollbar-none">
+        <div className="flex gap-2 mb-6 border-b border-[var(--border)] overflow-x-auto scrollbar-none">
           {TABS.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
@@ -254,8 +254,8 @@ export default function DashboardClient({
               className={clsx(
                 "flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-all whitespace-nowrap shrink-0",
                 activeTab === key
-                  ? "border-[#ff2d55] text-white"
-                  : "border-transparent text-gray-500 hover:text-gray-300"
+                  ? "border-[#ff2d55] text-[var(--text-primary)]"
+                  : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               )}
             >
               <Icon className="w-4 h-4" />
@@ -279,7 +279,7 @@ export default function DashboardClient({
                 {mangaStats.map((m) => (
                   <div
                     key={m.id}
-                    className="bg-[#141720] rounded-2xl border border-white/5 p-4 flex gap-4 items-center"
+                    className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-4 flex gap-4 items-center"
                   >
                     {/* Cover */}
                     {m.coverUrl ? (
@@ -290,7 +290,7 @@ export default function DashboardClient({
                       />
                     ) : (
                       <div className="w-12 h-16 rounded-lg bg-white/5 shrink-0 flex items-center justify-center">
-                        <BookOpen className="w-5 h-5 text-gray-600" />
+                        <BookOpen className="w-5 h-5 text-[var(--text-muted)]" />
                       </div>
                     )}
 
@@ -299,13 +299,13 @@ export default function DashboardClient({
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <Link
                           href={`/content/${m.slug}`}
-                          className="font-semibold text-white hover:text-[#ff6b2b] transition-colors truncate"
+                          className="font-semibold text-[var(--text-primary)] hover:text-[#ff6b2b] transition-colors truncate"
                         >
                           {m.title}
                         </Link>
                         <StatusBadge status={m.status} />
                       </div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--text-secondary)]">
                         <span className="flex items-center gap-1">
                           <Eye className="w-3 h-3" />
                           {m.totalViews.toLocaleString()} ชม
@@ -336,7 +336,7 @@ export default function DashboardClient({
                           {m.genres.slice(0, 3).map((g) => (
                             <span
                               key={g}
-                              className="text-xs px-1.5 py-0.5 rounded bg-white/5 text-gray-500"
+                              className="text-xs px-1.5 py-0.5 rounded bg-white/5 text-[var(--text-secondary)]"
                             >
                               {g}
                             </span>
@@ -349,13 +349,13 @@ export default function DashboardClient({
                       <Link
                         href={`/dashboard/manga/${m.slug}/chapters`}
                         title="จัดการตอน (ล็อค/ฟรี, ราคา, จัดเรียงหน้า)"
-                        className="p-2 rounded-lg bg-white/5 hover:bg-[#ff6b2b]/20 text-gray-500 hover:text-[#ff6b2b] transition-all"
+                        className="p-2 rounded-lg bg-white/5 hover:bg-[#ff6b2b]/20 text-[var(--text-secondary)] hover:text-[#ff6b2b] transition-all"
                       >
                         <Settings className="w-4 h-4" />
                       </Link>
                       <Link
                         href={`/content/${m.slug}`}
-                        className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-500 hover:text-white transition-all"
+                        className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all"
                       >
                         <ArrowUpRight className="w-4 h-4" />
                       </Link>
@@ -378,10 +378,10 @@ export default function DashboardClient({
                 cta="อัปโหลดเลย"
               />
             ) : (
-              <div className="bg-[#141720] rounded-2xl border border-white/5 overflow-hidden">
+              <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-xs text-gray-500 border-b border-white/5">
+                    <tr className="text-xs text-[var(--text-secondary)] border-b border-[var(--border)]">
                       <th className="text-left px-4 py-3 font-medium">#</th>
                       <th className="text-left px-4 py-3 font-medium">ผลงาน / ตอน</th>
                       <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">ยอดชม</th>
@@ -393,20 +393,20 @@ export default function DashboardClient({
                   <tbody className="divide-y divide-white/5">
                     {topChapters.map((ch, i) => (
                       <tr key={ch.id} className="hover:bg-white/5 transition-colors">
-                        <td className="px-4 py-3 text-gray-600 text-xs w-8">
+                        <td className="px-4 py-3 text-[var(--text-muted)] text-xs w-8">
                           {i + 1}
                         </td>
                         <td className="px-4 py-3">
                           <Link
                             href={`/content/${ch.mangaSlug}`}
-                            className="text-xs text-gray-500 hover:text-gray-300 transition-colors block"
+                            className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors block"
                           >
                             {ch.mangaTitle}
                           </Link>
-                          <span className="text-white font-medium">
+                          <span className="text-[var(--text-primary)] font-medium">
                             ตอนที่ {ch.chapterNum}
                             {ch.title && (
-                              <span className="text-gray-400 font-normal ml-1">
+                              <span className="text-[var(--text-secondary)] font-normal ml-1">
                                 · {ch.title}
                               </span>
                             )}
@@ -424,7 +424,7 @@ export default function DashboardClient({
                           </div>
                         </td>
                         <td className="px-4 py-3 hidden md:table-cell">
-                          <span className="flex items-center gap-1 text-gray-400">
+                          <span className="flex items-center gap-1 text-[var(--text-secondary)]">
                             <MessageSquare className="w-3 h-3" />
                             {ch.commentCount}
                           </span>
@@ -436,10 +436,10 @@ export default function DashboardClient({
                               {ch.coinsEarned}
                             </span>
                           ) : (
-                            <span className="text-gray-600 text-xs">-</span>
+                            <span className="text-[var(--text-muted)] text-xs">-</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 hidden sm:table-cell text-gray-600 text-xs">
+                        <td className="px-4 py-3 hidden sm:table-cell text-[var(--text-muted)] text-xs">
                           {new Date(ch.publishedAt).toLocaleDateString("th-TH")}
                         </td>
                       </tr>
@@ -456,28 +456,28 @@ export default function DashboardClient({
           <div className="space-y-4">
             {/* Revenue summary */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-[#141720] rounded-2xl border border-white/5 p-5">
-                <p className="text-xs text-gray-500 mb-1">เหรียญทั้งหมดที่รับมา</p>
+              <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5">
+                <p className="text-xs text-[var(--text-secondary)] mb-1">เหรียญทั้งหมดที่รับมา</p>
                 <p className="text-3xl font-bold text-yellow-400">
                   {stats.totalCoins.toLocaleString()}
                 </p>
-                <p className="text-xs text-gray-600 mt-1">จาก {stats.totalUnlocks} ครั้ง unlock</p>
+                <p className="text-xs text-[var(--text-muted)] mt-1">จาก {stats.totalUnlocks} ครั้ง unlock</p>
               </div>
-              <div className="bg-[#141720] rounded-2xl border border-white/5 p-5">
-                <p className="text-xs text-gray-500 mb-1">รายรับเฉลี่ยต่อ unlock</p>
-                <p className="text-3xl font-bold text-white">
+              <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5">
+                <p className="text-xs text-[var(--text-secondary)] mb-1">รายรับเฉลี่ยต่อ unlock</p>
+                <p className="text-3xl font-bold text-[var(--text-primary)]">
                   {stats.totalUnlocks > 0
                     ? (stats.totalCoins / stats.totalUnlocks).toFixed(1)
                     : "0"}
                 </p>
-                <p className="text-xs text-gray-600 mt-1">เหรียญ / ครั้ง</p>
+                <p className="text-xs text-[var(--text-muted)] mt-1">เหรียญ / ครั้ง</p>
               </div>
             </div>
 
             {/* Revenue by manga */}
             {mangaStats.some((m) => m.coinsEarned > 0) && (
-              <div className="bg-[#141720] rounded-2xl border border-white/5 p-5">
-                <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+              <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5">
+                <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-[#ff6b2b]" />
                   รายรับแยกตามผลงาน
                 </h3>
@@ -498,7 +498,7 @@ export default function DashboardClient({
                         <div key={m.id} className="flex items-center gap-3 min-w-0">
                           <Link
                             href={`/content/${m.slug}`}
-                            className="text-sm text-gray-300 hover:text-white transition-colors truncate w-36 shrink-0"
+                            className="text-sm text-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors truncate w-36 shrink-0"
                           >
                             {m.title}
                           </Link>
@@ -520,15 +520,15 @@ export default function DashboardClient({
             )}
 
             {/* Recent unlock feed */}
-            <div className="bg-[#141720] rounded-2xl border border-white/5 overflow-hidden">
-              <div className="px-5 py-4 border-b border-white/5">
-                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+            <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] overflow-hidden">
+              <div className="px-5 py-4 border-b border-[var(--border)]">
+                <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-[#ff6b2b]" />
                   รายการ Unlock ล่าสุด
                 </h3>
               </div>
               {recentUnlocks.length === 0 ? (
-                <div className="py-12 text-center text-gray-600 text-sm">
+                <div className="py-12 text-center text-[var(--text-muted)] text-sm">
                   ยังไม่มีรายการ unlock
                 </div>
               ) : (
@@ -539,12 +539,12 @@ export default function DashboardClient({
                       className="flex items-center justify-between px-5 py-3 hover:bg-white/5 transition-colors"
                     >
                       <div className="min-w-0">
-                        <p className="text-sm text-white truncate">
+                        <p className="text-sm text-[var(--text-primary)] truncate">
                           {u.mangaTitle}{" "}
-                          <span className="text-gray-500">ตอน {u.chapterNum}</span>
+                          <span className="text-[var(--text-secondary)]">ตอน {u.chapterNum}</span>
                         </p>
                         {u.chapterTitle && (
-                          <p className="text-xs text-gray-600 truncate">{u.chapterTitle}</p>
+                          <p className="text-xs text-[var(--text-muted)] truncate">{u.chapterTitle}</p>
                         )}
                       </div>
                       <div className="flex items-center gap-4 shrink-0 ml-4">
@@ -552,7 +552,7 @@ export default function DashboardClient({
                           <Coins className="w-3.5 h-3.5" />
                           {u.coinSpent}
                         </span>
-                        <span className="text-xs text-gray-600">
+                        <span className="text-xs text-[var(--text-muted)]">
                           {new Date(u.unlockedAt).toLocaleDateString("th-TH")}
                         </span>
                       </div>
@@ -579,11 +579,11 @@ function EmptyState({
   return (
     <div className="text-center py-16">
       <BookOpen className="w-10 h-10 mx-auto mb-3 text-gray-700" />
-      <p className="text-white font-medium mb-1">{label}</p>
-      <p className="text-sm text-gray-500 mb-4">{sub}</p>
+      <p className="text-[var(--text-primary)] font-medium mb-1">{label}</p>
+      <p className="text-sm text-[var(--text-secondary)] mb-4">{sub}</p>
       <Link
         href={href}
-        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white text-sm font-medium hover:opacity-90 transition-opacity"
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)] text-sm font-medium hover:opacity-90 transition-opacity"
       >
         {cta}
         <ChevronRight className="w-4 h-4" />

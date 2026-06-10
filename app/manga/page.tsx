@@ -59,7 +59,7 @@ async function MangaGrid({ searchParams }: { searchParams: SearchParams }) {
 
   return (
     <>
-      <p className="text-sm text-gray-500 mb-4">
+      <p className="text-sm text-[var(--text-secondary)] mb-4">
         พบ {total} เรื่อง
       </p>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -96,8 +96,8 @@ async function MangaGrid({ searchParams }: { searchParams: SearchParams }) {
                 href={`?page=${p}`}
                 className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-all ${
                   p === page
-                    ? "bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white"
-                    : "bg-[#1a1e2a] text-gray-400 hover:text-white border border-white/10"
+                    ? "bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)]"
+                    : "bg-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)]"
                 }`}
               >
                 {p}
@@ -128,16 +128,16 @@ export default async function MangaPage({
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-      <h1 className="font-bebas text-4xl text-white tracking-wider mb-6">
+      <h1 className="font-bebas text-4xl text-[var(--text-primary)] tracking-wider mb-6">
         เรื่องทั้งหมด
       </h1>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-6 p-4 bg-[#141720] rounded-2xl border border-white/5">
+      <div className="flex flex-wrap gap-3 mb-6 p-4 bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)]">
         <select
           name="status"
           defaultValue={params.status || ""}
-          className="bg-[#1a1e2a] border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none"
+          className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none"
         >
           <option value="">สถานะทั้งหมด</option>
           {statusOptions.map((s) => (
@@ -150,7 +150,7 @@ export default async function MangaPage({
         <select
           name="type"
           defaultValue={params.type || ""}
-          className="bg-[#1a1e2a] border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none"
+          className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none"
         >
           <option value="">ประเภททั้งหมด</option>
           {typeOptions.map((t) => (
@@ -163,7 +163,7 @@ export default async function MangaPage({
         <select
           name="sort"
           defaultValue={params.sort || "latest"}
-          className="bg-[#1a1e2a] border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none"
+          className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none"
         >
           {sortOptions.map((s) => (
             <option key={s.value} value={s.value}>

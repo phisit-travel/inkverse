@@ -53,7 +53,7 @@ export default function ChapterRow({
       <Link
         href={href}
         onClick={handleClick}
-        className="flex items-center justify-between px-4 py-3 rounded-xl bg-[#141720] border border-white/5 hover:border-[#ff2d55]/30 hover:bg-[#1a1e2a] transition-all group"
+        className="flex items-center justify-between px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] hover:border-[#ff2d55]/30 hover:bg-[var(--bg-card)] transition-all group"
       >
         <div className="flex items-center gap-3">
           {isPremium ? (
@@ -64,10 +64,10 @@ export default function ChapterRow({
             )
           ) : null}
 
-          <span className="text-sm font-medium text-white group-hover:text-[#ff6b2b] transition-colors">
+          <span className="text-sm font-medium text-[var(--text-primary)] group-hover:text-[#ff6b2b] transition-colors">
             ตอนที่ {chapterNum}
             {title && (
-              <span className="text-gray-500 font-normal ml-2">— {title}</span>
+              <span className="text-[var(--text-secondary)] font-normal ml-2">— {title}</span>
             )}
           </span>
 
@@ -83,7 +83,7 @@ export default function ChapterRow({
           )}
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-gray-500">
+        <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
           <span>{new Date(publishedAt).toLocaleDateString("th-TH")}</span>
           <Eye className="w-3.5 h-3.5" />
           <span>{viewCount}</span>

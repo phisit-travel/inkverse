@@ -35,7 +35,7 @@ export default function UpdateRow({
       href={`/content/${slug}/${chapterNum}`}
       className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-colors group"
     >
-      <div className="relative w-12 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-[#1a1e2a]">
+      <div className="relative w-12 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-[var(--bg-card)]">
         {coverUrl ? (
           <Image
             src={coverUrl}
@@ -46,7 +46,7 @@ export default function UpdateRow({
             unoptimized
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#1a1e2a] to-[#141720]">
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-surface)]">
             <span className="text-lg opacity-20">📖</span>
           </div>
         )}
@@ -54,11 +54,11 @@ export default function UpdateRow({
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold text-white line-clamp-1 group-hover:text-[#ff6b2b] transition-colors">
+          <p className="text-sm font-semibold text-[var(--text-primary)] line-clamp-1 group-hover:text-[#ff6b2b] transition-colors">
             {title}
           </p>
           {type && (
-            <span className="text-[10px] px-1 py-0.5 rounded bg-white/10 text-gray-400 flex-shrink-0 uppercase">
+            <span className="text-[10px] px-1 py-0.5 rounded bg-white/10 text-[var(--text-secondary)] flex-shrink-0 uppercase">
               {type}
             </span>
           )}
@@ -74,7 +74,7 @@ export default function UpdateRow({
             {chapterTitle ? ` — ${chapterTitle}` : ""}
           </span>
         </div>
-        <p className="text-xs text-gray-500 mt-0.5">{timeAgo}</p>
+        <p className="text-xs text-[var(--text-secondary)] mt-0.5">{timeAgo}</p>
       </div>
     </Link>
   );

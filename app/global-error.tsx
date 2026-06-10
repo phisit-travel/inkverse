@@ -17,7 +17,7 @@ export default function GlobalError({
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          background: "#080a10",
+          background: "var(--bg-primary)",
           color: "#fff",
           fontFamily: "system-ui, sans-serif",
           textAlign: "center",

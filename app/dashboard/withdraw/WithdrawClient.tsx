@@ -92,24 +92,24 @@ export default function WithdrawClient({ availableBalance, history }: WithdrawCl
   return (
     <div className="max-w-xl mx-auto space-y-6">
       {/* Balance */}
-      <div className="bg-[#141720] rounded-2xl border border-white/5 p-5">
-        <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">ยอดที่ถอนได้</p>
-        <p className="font-bebas text-5xl text-white tracking-wider">฿{availableBalance.toFixed(2)}</p>
-        <p className="text-xs text-gray-600 mt-1">ถอนขั้นต่ำ ฿{MIN_GROSS} · หักค่าแพลตฟอร์ม 20% → รับจริง ฿{(MIN_GROSS * NET_RATE).toFixed(0)}</p>
+      <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5">
+        <p className="text-xs text-[var(--text-secondary)] uppercase tracking-widest mb-1">ยอดที่ถอนได้</p>
+        <p className="font-bebas text-5xl text-[var(--text-primary)] tracking-wider">฿{availableBalance.toFixed(2)}</p>
+        <p className="text-xs text-[var(--text-muted)] mt-1">ถอนขั้นต่ำ ฿{MIN_GROSS} · หักค่าแพลตฟอร์ม 20% → รับจริง ฿{(MIN_GROSS * NET_RATE).toFixed(0)}</p>
       </div>
 
       {/* Fee info banner */}
-      <div className="flex items-start gap-2.5 px-4 py-3 bg-white/3 border border-white/8 rounded-xl text-xs text-gray-400">
-        <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-gray-500" />
+      <div className="flex items-start gap-2.5 px-4 py-3 bg-white/3 border border-white/8 rounded-xl text-xs text-[var(--text-secondary)]">
+        <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-[var(--text-secondary)]" />
         <span>
-          แพลตฟอร์มหัก <span className="text-white font-medium">20%</span> จากยอดที่ขอถอน
+          แพลตฟอร์มหัก <span className="text-[var(--text-primary)] font-medium">20%</span> จากยอดที่ขอถอน
           &nbsp;·&nbsp; ยอดที่โอนให้จริง = ยอดที่ขอ × 80%
         </span>
       </div>
 
       {submitted ? (
         <div className={clsx(
-          "bg-[#141720] rounded-2xl border p-6 text-center space-y-4",
+          "bg-[var(--bg-surface)] rounded-2xl border p-6 text-center space-y-4",
           submitted.auto ? "border-green-500/20" : "border-yellow-500/20"
         )}>
           {submitted.auto ? (
@@ -119,10 +119,10 @@ export default function WithdrawClient({ availableBalance, history }: WithdrawCl
           )}
 
           <div>
-            <p className="text-white font-semibold">
+            <p className="text-[var(--text-primary)] font-semibold">
               {submitted.auto ? "ส่งคำสั่งโอนสำเร็จ!" : "รับคำขอถอนเงินแล้ว"}
             </p>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-sm text-[var(--text-secondary)] mt-1">
               {submitted.auto
                 ? "ระบบส่งคำสั่งโอนผ่าน Omise แล้ว เงินจะเข้าภายใน 1–3 วันทำการ"
                 : "ทีมงานจะดำเนินการโอนภายใน 1–2 วันทำการ"}
@@ -131,17 +131,17 @@ export default function WithdrawClient({ availableBalance, history }: WithdrawCl
 
           {/* Breakdown summary */}
           <div className="bg-black/20 rounded-xl px-4 py-3 text-sm space-y-1.5 text-left">
-            <div className="flex justify-between text-gray-400">
+            <div className="flex justify-between text-[var(--text-secondary)]">
               <span>ยอดที่ขอถอน</span>
-              <span className="text-white">฿{(submitted.netAmount / NET_RATE).toFixed(2)}</span>
+              <span className="text-[var(--text-primary)]">฿{(submitted.netAmount / NET_RATE).toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-gray-500 text-xs">
+            <div className="flex justify-between text-[var(--text-secondary)] text-xs">
               <span>ค่าแพลตฟอร์ม 20%</span>
               <span className="text-red-400">−฿{submitted.platformFee.toFixed(2)}</span>
             </div>
             <div className="h-px bg-white/10" />
             <div className="flex justify-between font-semibold">
-              <span className="text-gray-300">ยอดที่จะได้รับ</span>
+              <span className="text-[var(--text-primary)]">ยอดที่จะได้รับ</span>
               <span className="text-green-400">฿{submitted.netAmount.toFixed(2)}</span>
             </div>
           </div>
@@ -154,26 +154,26 @@ export default function WithdrawClient({ availableBalance, history }: WithdrawCl
           </button>
         </div>
       ) : availableBalance < MIN_GROSS ? (
-        <div className="bg-[#141720] rounded-2xl border border-white/5 p-6 text-center space-y-2">
-          <Wallet className="w-10 h-10 text-gray-600 mx-auto" />
-          <p className="text-sm text-gray-400">
+        <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-6 text-center space-y-2">
+          <Wallet className="w-10 h-10 text-[var(--text-muted)] mx-auto" />
+          <p className="text-sm text-[var(--text-secondary)]">
             ยอดเงินต่ำกว่าขั้นต่ำ (฿{MIN_GROSS}) ยังไม่สามารถถอนได้
           </p>
-          <p className="text-xs text-gray-600">ยอดปัจจุบัน: ฿{availableBalance.toFixed(2)}</p>
+          <p className="text-xs text-[var(--text-muted)]">ยอดปัจจุบัน: ฿{availableBalance.toFixed(2)}</p>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="bg-[#141720] rounded-2xl border border-white/5 p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-white">ขอถอนเงิน</h2>
+        <form onSubmit={handleSubmit} className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5 space-y-4">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">ขอถอนเงิน</h2>
 
           {/* Amount + breakdown */}
           <div>
-            <label className="text-xs text-gray-500 mb-1.5 block">จำนวนเงินที่ต้องการถอน (บาท)</label>
+            <label className="text-xs text-[var(--text-secondary)] mb-1.5 block">จำนวนเงินที่ต้องการถอน (บาท)</label>
             <div className="flex gap-2">
               <input
                 type="number" min={MIN_GROSS} max={availableBalance} step={1}
                 value={amount} onChange={(e) => setAmount(e.target.value)}
                 placeholder={`ขั้นต่ำ ฿${MIN_GROSS}`}
-                className="flex-1 bg-[#1a1e2a] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#ff2d55]/50"
+                className="flex-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-gray-600 focus:outline-none focus:border-[#ff2d55]/50"
               />
               <button
                 type="button" onClick={() => setAmount(String(availableBalance))}
@@ -186,17 +186,17 @@ export default function WithdrawClient({ availableBalance, history }: WithdrawCl
             {/* Live fee breakdown */}
             {amountNum > 0 && (
               <div className="mt-2 px-3 py-2.5 bg-black/20 rounded-xl text-xs space-y-1.5">
-                <div className="flex justify-between text-gray-500">
+                <div className="flex justify-between text-[var(--text-secondary)]">
                   <span>ยอดที่ขอถอน</span>
-                  <span className="text-gray-300">฿{amountNum.toFixed(2)}</span>
+                  <span className="text-[var(--text-primary)]">฿{amountNum.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-gray-500">
+                <div className="flex justify-between text-[var(--text-secondary)]">
                   <span>ค่าแพลตฟอร์ม 20%</span>
                   <span className="text-red-400">−฿{platformFee.toFixed(2)}</span>
                 </div>
                 <div className="h-px bg-white/8" />
                 <div className="flex justify-between font-semibold">
-                  <span className="text-gray-300">ยอดที่จะได้รับ</span>
+                  <span className="text-[var(--text-primary)]">ยอดที่จะได้รับ</span>
                   <span className={amountNum >= MIN_GROSS ? "text-green-400" : "text-red-400"}>
                     ฿{netAmount.toFixed(2)}
                   </span>
@@ -213,7 +213,7 @@ export default function WithdrawClient({ availableBalance, history }: WithdrawCl
 
           {/* Payment method */}
           <div>
-            <label className="text-xs text-gray-500 mb-1.5 block">ช่องทางรับเงิน</label>
+            <label className="text-xs text-[var(--text-secondary)] mb-1.5 block">ช่องทางรับเงิน</label>
             <div className="grid grid-cols-2 gap-2">
               {([
                 { id: "BANK_TRANSFER", label: "โอนธนาคาร", icon: CreditCard, badge: "อัตโนมัติ" },
@@ -224,8 +224,8 @@ export default function WithdrawClient({ availableBalance, history }: WithdrawCl
                   className={clsx(
                     "flex flex-col items-start gap-1 px-3 py-3 rounded-xl border text-sm transition-all",
                     method === m.id
-                      ? "bg-[#ff2d55]/10 border-[#ff2d55]/50 text-white"
-                      : "bg-[#1a1e2a] border-white/10 text-gray-400 hover:border-white/20"
+                      ? "bg-[#ff2d55]/10 border-[#ff2d55]/50 text-[var(--text-primary)]"
+                      : "bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-white/20"
                   )}
                 >
                   <div className="flex items-center gap-2">
@@ -248,10 +248,10 @@ export default function WithdrawClient({ availableBalance, history }: WithdrawCl
           {/* Bank selector */}
           {method === "BANK_TRANSFER" && (
             <div>
-              <label className="text-xs text-gray-500 mb-1.5 block">ธนาคาร</label>
+              <label className="text-xs text-[var(--text-secondary)] mb-1.5 block">ธนาคาร</label>
               <select
                 value={bankCode} onChange={(e) => setBankCode(e.target.value)}
-                className="w-full bg-[#1a1e2a] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#ff2d55]/50"
+                className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#ff2d55]/50"
               >
                 {BANK_OPTIONS.map((b) => (
                   <option key={b.code} value={b.code}>{b.name}</option>
@@ -262,25 +262,25 @@ export default function WithdrawClient({ availableBalance, history }: WithdrawCl
 
           {/* Account number */}
           <div>
-            <label className="text-xs text-gray-500 mb-1.5 block">
+            <label className="text-xs text-[var(--text-secondary)] mb-1.5 block">
               {method === "PROMPTPAY" ? "เบอร์มือถือ / เลขบัตรประชาชน" : "เลขบัญชี"}
             </label>
             <input
               type="text" value={accountNumber}
               onChange={(e) => setAccountNumber(e.target.value)}
               placeholder={method === "PROMPTPAY" ? "0XX-XXX-XXXX" : "XXX-X-XXXXX-X"}
-              className="w-full bg-[#1a1e2a] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#ff2d55]/50 font-mono"
+              className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-gray-600 focus:outline-none focus:border-[#ff2d55]/50 font-mono"
             />
           </div>
 
           {/* Account name */}
           <div>
-            <label className="text-xs text-gray-500 mb-1.5 block">ชื่อเจ้าของบัญชี</label>
+            <label className="text-xs text-[var(--text-secondary)] mb-1.5 block">ชื่อเจ้าของบัญชี</label>
             <input
               type="text" value={accountName}
               onChange={(e) => setAccountName(e.target.value)}
               placeholder="ชื่อ-นามสกุล (ภาษาไทยหรืออังกฤษ)"
-              className="w-full bg-[#1a1e2a] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#ff2d55]/50"
+              className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-gray-600 focus:outline-none focus:border-[#ff2d55]/50"
             />
           </div>
 
@@ -300,7 +300,7 @@ export default function WithdrawClient({ availableBalance, history }: WithdrawCl
 
           <button
             type="submit" disabled={loading || !canSubmit}
-            className="w-full flex flex-col items-center gap-0.5 py-3 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-40"
+            className="w-full flex flex-col items-center gap-0.5 py-3 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)] font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-40"
           >
             <div className="flex items-center gap-2">
               {loading
@@ -323,8 +323,8 @@ export default function WithdrawClient({ availableBalance, history }: WithdrawCl
 
       {/* History */}
       {history.length > 0 && (
-        <div className="bg-[#141720] rounded-2xl border border-white/5 p-5">
-          <h2 className="text-sm font-semibold text-white mb-4">ประวัติคำขอถอนเงิน</h2>
+        <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-4">ประวัติคำขอถอนเงิน</h2>
           <div className="divide-y divide-white/5">
             {history.map((w) => {
               const s = STATUS_STYLE[w.status] ?? STATUS_STYLE.PENDING;
@@ -334,22 +334,22 @@ export default function WithdrawClient({ availableBalance, history }: WithdrawCl
                 <div key={w.id} className="py-3 space-y-1.5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-sm font-medium text-white">
+                      <span className="text-sm font-medium text-[var(--text-primary)]">
                         ขอถอน ฿{w.amount.toFixed(2)}
                       </span>
-                      <span className="text-xs text-gray-600 ml-1.5">
+                      <span className="text-xs text-[var(--text-muted)] ml-1.5">
                         → รับจริง <span className="text-green-400">฿{net.toFixed(2)}</span>
                         <span className="text-gray-700 ml-1">(หัก ฿{fee.toFixed(2)})</span>
                       </span>
                     </div>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${s.cls}`}>{s.label}</span>
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-[var(--text-secondary)]">
                     {w.paymentMethod === "PROMPTPAY"
                       ? `PromptPay · ${w.accountNumber}`
                       : `${w.bankName ?? "ธนาคาร"} · ${w.accountNumber}`}
                   </p>
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-[var(--text-muted)]">
                     {new Date(w.requestedAt).toLocaleDateString("th-TH", {
                       day: "numeric", month: "short", year: "numeric",
                     })}

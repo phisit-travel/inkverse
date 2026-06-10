@@ -86,7 +86,16 @@ export default async function RootLayout({
       lang="th"
       className={`${bebasNeue.variable} ${notoSansThai.variable}`}
     >
-      <body className="min-h-screen flex flex-col bg-[#080a10] text-white font-[family-name:var(--font-noto)]">
+      <head>
+        {/* Apply saved theme before paint to avoid a flash (default: dark). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();",
+          }}
+        />
+      </head>
+      <body className="min-h-screen flex flex-col bg-[var(--bg-primary)] text-[var(--text-primary)] font-[family-name:var(--font-noto)]">
         <WebsiteJsonLd />
         <Navbar user={session?.user} userCoins={userCoins} />
         <main className="flex-1">{children}</main>

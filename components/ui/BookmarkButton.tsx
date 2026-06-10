@@ -38,7 +38,7 @@ export default function BookmarkButton({
         "w-full py-3 rounded-xl border text-sm font-semibold flex items-center justify-center gap-2 transition-all",
         bookmarked
           ? "bg-[#ff2d55]/20 border-[#ff2d55]/40 text-[#ff2d55]"
-          : "bg-[#1a1e2a] border-white/10 text-gray-300 hover:border-white/30"
+          : "bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)] hover:border-white/30"
       )}
     >
       <Bookmark

@@ -16,12 +16,12 @@ function StatCard({
   icon: React.ElementType; color: string;
 }) {
   return (
-    <div className="bg-[#141720] rounded-2xl border border-white/5 p-5">
+    <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5">
       <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 ${color}`}>
-        <Icon className="w-4 h-4 text-white" />
+        <Icon className="w-4 h-4 text-[var(--text-primary)]" />
       </div>
-      <p className="text-2xl font-bold text-white">{value}</p>
-      <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+      <p className="text-2xl font-bold text-[var(--text-primary)]">{value}</p>
+      <p className="text-xs text-[var(--text-secondary)] mt-0.5">{label}</p>
       {sub && <p className="text-xs text-[#ff6b2b] mt-1">{sub}</p>}
     </div>
   );
@@ -103,16 +103,16 @@ export default async function EarningsPage() {
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-white mb-2 transition-colors">
+          <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] mb-2 transition-colors">
             <ArrowLeft className="w-3.5 h-3.5" /> Dashboard
           </Link>
-          <h1 className="font-bebas text-4xl text-white tracking-wider">รายได้ของฉัน</h1>
-          <p className="text-xs text-gray-500 mt-0.5">อัตราแบ่งรายได้: นักแปล 70% / แพลตฟอร์ม 30%</p>
+          <h1 className="font-bebas text-4xl text-[var(--text-primary)] tracking-wider">รายได้ของฉัน</h1>
+          <p className="text-xs text-[var(--text-secondary)] mt-0.5">อัตราแบ่งรายได้: นักแปล 70% / แพลตฟอร์ม 30%</p>
         </div>
         {available >= 100 && (
           <Link
             href="/dashboard/withdraw"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white text-sm font-semibold hover:opacity-90 transition-opacity"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)] text-sm font-semibold hover:opacity-90 transition-opacity"
           >
             <Wallet className="w-4 h-4" />
             ถอนเงิน ฿{available.toFixed(0)}
@@ -153,8 +153,8 @@ export default async function EarningsPage() {
 
       {/* Earnings by manga */}
       {byManga.length > 0 && (
-        <div className="bg-[#141720] rounded-2xl border border-white/5 p-5">
-          <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+        <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
             <Coins className="w-4 h-4 text-yellow-400" />
             รายได้แยกตามผลงาน
           </h2>
@@ -166,8 +166,8 @@ export default async function EarningsPage() {
                   <img src={m.coverUrl} alt="" className="w-9 h-12 object-cover rounded-lg shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-white truncate">{m.title}</p>
-                  <p className="text-xs text-gray-500">{m._count} ครั้งปลดล็อก · {m.totalCoins} coins</p>
+                  <p className="text-sm text-[var(--text-primary)] truncate">{m.title}</p>
+                  <p className="text-xs text-[var(--text-secondary)]">{m._count} ครั้งปลดล็อก · {m.totalCoins} coins</p>
                 </div>
                 <span className="text-sm font-semibold text-yellow-400 shrink-0">
                   ฿{m.totalAmount.toFixed(2)}
@@ -180,8 +180,8 @@ export default async function EarningsPage() {
 
       {/* Recent earnings */}
       {recentEarnings.length > 0 && (
-        <div className="bg-[#141720] rounded-2xl border border-white/5 p-5">
-          <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+        <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-[#ff6b2b]" />
             รายการรายได้ล่าสุด
           </h2>
@@ -189,13 +189,13 @@ export default async function EarningsPage() {
             {recentEarnings.map((e) => (
               <div key={e.id} className="flex items-center justify-between py-2.5 gap-3">
                 <div className="min-w-0">
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-[var(--text-secondary)]">
                     {new Date(e.createdAt).toLocaleDateString("th-TH", {
                       day: "numeric", month: "short", year: "numeric",
                       hour: "2-digit", minute: "2-digit",
                     })}
                   </p>
-                  <p className="text-xs text-gray-600">{e.coinsSpent} coins</p>
+                  <p className="text-xs text-[var(--text-muted)]">{e.coinsSpent} coins</p>
                 </div>
                 <span className="text-sm font-semibold text-green-400 shrink-0">+฿{e.amount.toFixed(2)}</span>
               </div>
@@ -206,9 +206,9 @@ export default async function EarningsPage() {
 
       {/* Withdrawal history */}
       {withdrawals.length > 0 && (
-        <div className="bg-[#141720] rounded-2xl border border-white/5 p-5">
+        <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-white flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
               <Wallet className="w-4 h-4 text-[#ff2d55]" />
               ประวัติการถอนเงิน
             </h2>
@@ -218,16 +218,16 @@ export default async function EarningsPage() {
           </div>
           <div className="divide-y divide-white/5">
             {withdrawals.map((w) => {
-              const s = statusLabel[w.status] ?? { label: w.status, cls: "bg-gray-500/20 text-gray-400" };
+              const s = statusLabel[w.status] ?? { label: w.status, cls: "bg-gray-500/20 text-[var(--text-secondary)]" };
               return (
                 <div key={w.id} className="flex items-center justify-between py-2.5 gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm text-white font-medium">฿{w.amount.toFixed(2)}</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-sm text-[var(--text-primary)] font-medium">฿{w.amount.toFixed(2)}</p>
+                    <p className="text-xs text-[var(--text-secondary)]">
                       {w.paymentMethod === "PROMPTPAY" ? "PromptPay" : `ธนาคาร ${w.bankName ?? ""}`}
                       {" · "}{w.accountNumber}
                     </p>
-                    <p className="text-xs text-gray-600">
+                    <p className="text-xs text-[var(--text-muted)]">
                       {new Date(w.requestedAt).toLocaleDateString("th-TH")}
                     </p>
                   </div>
@@ -242,7 +242,7 @@ export default async function EarningsPage() {
       )}
 
       {totalEarned === 0 && (
-        <div className="text-center py-16 text-gray-600">
+        <div className="text-center py-16 text-[var(--text-muted)]">
           <Coins className="w-10 h-10 mx-auto mb-3 opacity-40" />
           <p className="text-sm">ยังไม่มีรายได้ เพิ่มตอน premium เพื่อเริ่มสร้างรายได้</p>
         </div>

@@ -54,10 +54,10 @@ export default async function AdminWithdrawalsPage() {
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <Link href="/admin" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-white mb-2 transition-colors">
+          <Link href="/admin" className="inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] mb-2 transition-colors">
             <ArrowLeft className="w-3.5 h-3.5" /> Admin
           </Link>
-          <h1 className="font-bebas text-4xl text-white tracking-wider flex items-center gap-3">
+          <h1 className="font-bebas text-4xl text-[var(--text-primary)] tracking-wider flex items-center gap-3">
             <Wallet className="w-7 h-7 text-[#ff6b2b]" />
             คำขอถอนเงิน
           </h1>

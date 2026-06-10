@@ -99,26 +99,26 @@ export default async function DiscoverPage({
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-      <h1 className="font-bebas text-4xl text-white tracking-wider mb-6 flex items-center gap-3">
+      <h1 className="font-bebas text-4xl text-[var(--text-primary)] tracking-wider mb-6 flex items-center gap-3">
         <Search className="w-8 h-8 text-[#ff2d55]" />
         ค้นหามังงะ
       </h1>
 
       {/* Search + Filter bar */}
-      <div className="bg-[#141720] rounded-2xl border border-white/5 p-4 mb-8 space-y-4">
+      <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-4 mb-8 space-y-4">
         <form className="flex gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
             <input
               name="q"
               defaultValue={q || ""}
               placeholder="ค้นหาชื่อเรื่อง..."
-              className="w-full bg-[#1a1e2a] border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#ff2d55]/50"
+              className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl pl-9 pr-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-gray-500 focus:outline-none focus:border-[#ff2d55]/50"
             />
           </div>
           <button
             type="submit"
-            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white text-sm font-medium hover:opacity-90 transition-opacity"
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)] text-sm font-medium hover:opacity-90 transition-opacity"
           >
             ค้นหา
           </button>
@@ -133,10 +133,10 @@ export default async function DiscoverPage({
       {/* Adult content toggle */}
       {hasConsent && (
         <div className="flex items-center justify-between mb-4">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-[var(--text-secondary)]">
             {q && (
               <span>
-                ผลการค้นหา &quot;<span className="text-white">{q}</span>&quot; —{" "}
+                ผลการค้นหา &quot;<span className="text-[var(--text-primary)]">{q}</span>&quot; —{" "}
               </span>
             )}
             พบ {total} เรื่อง
@@ -146,7 +146,7 @@ export default async function DiscoverPage({
             className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl border transition-all ${
               showAdult
                 ? "bg-red-500/20 border-red-500/30 text-red-400"
-                : "bg-white/5 border-white/10 text-gray-500 hover:text-gray-300"
+                : "bg-white/5 border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
             <ShieldAlert className="w-3.5 h-3.5" />
@@ -155,10 +155,10 @@ export default async function DiscoverPage({
         </div>
       )}
       {!hasConsent && (
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-[var(--text-secondary)] mb-4">
           {q && (
             <span>
-              ผลการค้นหา &quot;<span className="text-white">{q}</span>&quot; —{" "}
+              ผลการค้นหา &quot;<span className="text-[var(--text-primary)]">{q}</span>&quot; —{" "}
             </span>
           )}
           พบ {total} เรื่อง
@@ -197,18 +197,18 @@ export default async function DiscoverPage({
               {pageNum > 1 && (
                 <a
                   href={buildUrl({ page: String(pageNum - 1) })}
-                  className="px-4 py-2 rounded-lg bg-[#1a1e2a] border border-white/10 text-sm text-gray-400 hover:text-white transition-colors"
+                  className="px-4 py-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 >
                   ← ก่อนหน้า
                 </a>
               )}
-              <span className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-white text-sm">
+              <span className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#ff2d55] to-[#ff6b2b] text-[var(--text-primary)] text-sm">
                 {pageNum} / {totalPages}
               </span>
               {pageNum < totalPages && (
                 <a
                   href={buildUrl({ page: String(pageNum + 1) })}
-                  className="px-4 py-2 rounded-lg bg-[#1a1e2a] border border-white/10 text-sm text-gray-400 hover:text-white transition-colors"
+                  className="px-4 py-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 >
                   ถัดไป →
                 </a>
@@ -219,8 +219,8 @@ export default async function DiscoverPage({
       ) : (
         <div className="text-center py-20">
           <div className="text-6xl mb-4">🔍</div>
-          <p className="text-gray-500">ไม่พบผลลัพธ์ที่ตรงกัน</p>
-          <p className="text-sm text-gray-600 mt-1">ลองเปลี่ยนคำค้นหาหรือตัวกรอง</p>
+          <p className="text-[var(--text-secondary)]">ไม่พบผลลัพธ์ที่ตรงกัน</p>
+          <p className="text-sm text-[var(--text-muted)] mt-1">ลองเปลี่ยนคำค้นหาหรือตัวกรอง</p>
         </div>
       )}
     </div>

@@ -51,7 +51,7 @@ export default async function ProfilePage({ params }: Props) {
   if (!user) notFound();
 
   const roleLabel: Record<string, { label: string; color: string }> = {
-    READER: { label: "นักอ่าน", color: "text-gray-400" },
+    READER: { label: "นักอ่าน", color: "text-[var(--text-secondary)]" },
     TRANSLATOR: { label: "นักแปล", color: "text-[#ff6b2b]" },
     ADMIN: { label: "ผู้ดูแลระบบ", color: "text-[#ff2d55]" },
   };
@@ -62,9 +62,9 @@ export default async function ProfilePage({ params }: Props) {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
       {/* Profile Header */}
       <div className="relative mb-8">
-        <div className="h-32 rounded-2xl bg-gradient-to-r from-[#ff2d55]/20 via-[#1a1e2a] to-[#ff6b2b]/20 border border-white/5" />
+        <div className="h-32 rounded-2xl bg-gradient-to-r from-[#ff2d55]/20 via-[var(--bg-card)] to-[#ff6b2b]/20 border border-[var(--border)]" />
         <div className="flex items-end gap-4 px-6 -mt-10">
-          <div className="relative w-20 h-20 rounded-full overflow-hidden border-4 border-[#080a10] bg-[#1a1e2a] flex-shrink-0">
+          <div className="relative w-20 h-20 rounded-full overflow-hidden border-4 border-[var(--bg-primary)] bg-[var(--bg-card)] flex-shrink-0">
             {user.avatarUrl ? (
               <Image
                 src={user.avatarUrl}
@@ -73,13 +73,13 @@ export default async function ProfilePage({ params }: Props) {
                 className="object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-white bg-gradient-to-br from-[#ff2d55] to-[#ff6b2b]">
+              <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-[var(--text-primary)] bg-gradient-to-br from-[#ff2d55] to-[#ff6b2b]">
                 {user.username[0]?.toUpperCase()}
               </div>
             )}
           </div>
           <div className="pb-2">
-            <h1 className="font-bebas text-3xl text-white tracking-wider">
+            <h1 className="font-bebas text-3xl text-[var(--text-primary)] tracking-wider">
               {user.username}
             </h1>
             <p className={`text-sm font-medium ${roleInfo.color}`}>
@@ -114,11 +114,11 @@ export default async function ProfilePage({ params }: Props) {
         ].map(({ icon: Icon, label, value }) => (
           <div
             key={label}
-            className="bg-[#141720] rounded-xl p-4 border border-white/5 text-center"
+            className="bg-[var(--bg-surface)] rounded-xl p-4 border border-[var(--border)] text-center"
           >
             <Icon className="w-5 h-5 text-[#ff2d55] mx-auto mb-1" />
-            <p className="text-xl font-bold text-white">{value}</p>
-            <p className="text-xs text-gray-500">{label}</p>
+            <p className="text-xl font-bold text-[var(--text-primary)]">{value}</p>
+            <p className="text-xs text-[var(--text-secondary)]">{label}</p>
           </div>
         ))}
       </div>
@@ -126,7 +126,7 @@ export default async function ProfilePage({ params }: Props) {
       {/* Bookmarks */}
       {user.bookmarks.length > 0 && (
         <section className="mb-10">
-          <h2 className="font-bebas text-2xl text-white tracking-wider mb-4 flex items-center gap-2">
+          <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-wider mb-4 flex items-center gap-2">
             <span className="w-1 h-6 bg-gradient-to-b from-[#ff2d55] to-[#ff6b2b] rounded-full" />
             บุ๊กมาร์ก
           </h2>
@@ -157,7 +157,7 @@ export default async function ProfilePage({ params }: Props) {
       {/* Read history */}
       {user.readHistory.length > 0 && (
         <section>
-          <h2 className="font-bebas text-2xl text-white tracking-wider mb-4 flex items-center gap-2">
+          <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-wider mb-4 flex items-center gap-2">
             <span className="w-1 h-6 bg-gradient-to-b from-[#ff2d55] to-[#ff6b2b] rounded-full" />
             ประวัติการอ่าน
           </h2>
@@ -165,9 +165,9 @@ export default async function ProfilePage({ params }: Props) {
             {user.readHistory.map((h) => (
               <div
                 key={`${h.userId}-${h.chapterId}`}
-                className="flex items-center gap-4 p-3 bg-[#141720] rounded-xl border border-white/5"
+                className="flex items-center gap-4 p-3 bg-[var(--bg-surface)] rounded-xl border border-[var(--border)]"
               >
-                <div className="relative w-10 h-14 rounded-lg overflow-hidden bg-[#1a1e2a] flex-shrink-0">
+                <div className="relative w-10 h-14 rounded-lg overflow-hidden bg-[var(--bg-card)] flex-shrink-0">
                   {h.chapter.manga.coverUrl && (
                     <Image
                       src={h.chapter.manga.coverUrl}
@@ -179,14 +179,14 @@ export default async function ProfilePage({ params }: Props) {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white line-clamp-1">
+                  <p className="text-sm font-medium text-[var(--text-primary)] line-clamp-1">
                     {h.chapter.manga.title}
                   </p>
                   <p className="text-xs text-[#ff6b2b]">
                     ตอนที่ {h.chapter.chapterNum}
                   </p>
                 </div>
-                <p className="text-xs text-gray-500 flex-shrink-0">
+                <p className="text-xs text-[var(--text-secondary)] flex-shrink-0">
                   {new Date(h.readAt).toLocaleDateString("th-TH")}
                 </p>
               </div>

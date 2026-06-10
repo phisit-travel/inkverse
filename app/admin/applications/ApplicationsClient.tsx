@@ -60,11 +60,11 @@ export default function ApplicationsClient({
       <div className="flex items-center gap-4 mb-8">
         <Link
           href="/admin"
-          className="p-2 rounded-lg bg-[#141720] border border-white/10 text-gray-400 hover:text-white transition-colors"
+          className="p-2 rounded-lg bg-[var(--bg-surface)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </Link>
-        <h1 className="font-bebas text-3xl text-white tracking-wider">
+        <h1 className="font-bebas text-3xl text-[var(--text-primary)] tracking-wider">
           ใบสมัครนักแปล
         </h1>
       </div>
@@ -78,15 +78,15 @@ export default function ApplicationsClient({
             className={clsx(
               "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all border",
               currentStatus === key
-                ? "bg-[#1a1e2a] border-white/20 text-white"
-                : "bg-[#141720] border-white/5 text-gray-500 hover:text-gray-300"
+                ? "bg-[var(--bg-card)] border-white/20 text-[var(--text-primary)]"
+                : "bg-[var(--bg-surface)] border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             )}
           >
             <Icon className={clsx("w-4 h-4", currentStatus === key ? color : "")} />
             {label}
             <span className={clsx(
               "text-xs px-1.5 py-0.5 rounded-full",
-              currentStatus === key ? "bg-white/10 text-white" : "bg-white/5 text-gray-600"
+              currentStatus === key ? "bg-white/10 text-[var(--text-primary)]" : "bg-white/5 text-[var(--text-muted)]"
             )}>
               {counts[key] ?? 0}
             </span>
@@ -96,7 +96,7 @@ export default function ApplicationsClient({
 
       {/* Applications list */}
       {applications.length === 0 ? (
-        <div className="text-center py-16 text-gray-500">
+        <div className="text-center py-16 text-[var(--text-secondary)]">
           <Clock className="w-10 h-10 mx-auto mb-3 opacity-30" />
           <p>ไม่มีใบสมัครในสถานะนี้</p>
         </div>
@@ -105,7 +105,7 @@ export default function ApplicationsClient({
           {applications.map((app) => {
             const isOpen = expanded === app.id;
             return (
-              <div key={app.id} className="bg-[#141720] rounded-2xl border border-white/5 overflow-hidden">
+              <div key={app.id} className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] overflow-hidden">
                 {/* Header row */}
                 <button
                   onClick={() => setExpanded(isOpen ? null : app.id)}
@@ -118,29 +118,29 @@ export default function ApplicationsClient({
                       </span>
                     </div>
                     <div>
-                      <p className="text-white font-semibold">{app.penName}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-[var(--text-primary)] font-semibold">{app.penName}</p>
+                      <p className="text-xs text-[var(--text-secondary)]">
                         @{app.user.username} · {app.experience}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-gray-600">
+                    <span className="text-xs text-[var(--text-muted)]">
                       {new Date(app.createdAt).toLocaleDateString("th-TH")}
                     </span>
                     {isOpen ? (
-                      <ChevronUp className="w-4 h-4 text-gray-500" />
+                      <ChevronUp className="w-4 h-4 text-[var(--text-secondary)]" />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-gray-500" />
+                      <ChevronDown className="w-4 h-4 text-[var(--text-secondary)]" />
                     )}
                   </div>
                 </button>
 
                 {/* Expanded detail */}
                 {isOpen && (
-                  <div className="border-t border-white/5 px-5 pb-5 space-y-4">
+                  <div className="border-t border-[var(--border)] px-5 pb-5 space-y-4">
                     {/* User info */}
-                    <div className="flex gap-4 pt-4 text-sm text-gray-400">
+                    <div className="flex gap-4 pt-4 text-sm text-[var(--text-secondary)]">
                       <span className="flex items-center gap-1.5">
                         <User className="w-3.5 h-3.5" />
                         {app.user.email}
@@ -167,20 +167,20 @@ export default function ApplicationsClient({
 
                     {/* Sample work */}
                     <div>
-                      <p className="text-xs text-gray-500 mb-1.5 flex items-center gap-1">
+                      <p className="text-xs text-[var(--text-secondary)] mb-1.5 flex items-center gap-1">
                         <BookOpen className="w-3 h-3" /> ตัวอย่างผลงาน
                       </p>
-                      <div className="bg-[#1a1e2a] rounded-xl p-3 text-sm text-gray-300 whitespace-pre-wrap max-h-32 overflow-y-auto">
+                      <div className="bg-[var(--bg-card)] rounded-xl p-3 text-sm text-[var(--text-primary)] whitespace-pre-wrap max-h-32 overflow-y-auto">
                         {app.sampleWork}
                       </div>
                     </div>
 
                     {/* Motivation */}
                     <div>
-                      <p className="text-xs text-gray-500 mb-1.5 flex items-center gap-1">
+                      <p className="text-xs text-[var(--text-secondary)] mb-1.5 flex items-center gap-1">
                         <MessageSquare className="w-3 h-3" /> แรงจูงใจ
                       </p>
-                      <div className="bg-[#1a1e2a] rounded-xl p-3 text-sm text-gray-300 whitespace-pre-wrap max-h-32 overflow-y-auto">
+                      <div className="bg-[var(--bg-card)] rounded-xl p-3 text-sm text-[var(--text-primary)] whitespace-pre-wrap max-h-32 overflow-y-auto">
                         {app.motivation}
                       </div>
                     </div>
@@ -189,7 +189,7 @@ export default function ApplicationsClient({
                     {app.adminNote && (
                       <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
                         <p className="text-xs text-red-400 font-medium mb-1">เหตุผลที่ปฏิเสธ</p>
-                        <p className="text-sm text-gray-400">{app.adminNote}</p>
+                        <p className="text-sm text-[var(--text-secondary)]">{app.adminNote}</p>
                       </div>
                     )}
 
@@ -201,7 +201,7 @@ export default function ApplicationsClient({
                           onChange={(e) => setRejectNote((n) => ({ ...n, [app.id]: e.target.value }))}
                           placeholder="เหตุผลที่ปฏิเสธ (กรอกเฉพาะกรณีปฏิเสธ)"
                           rows={2}
-                          className="w-full bg-[#1a1e2a] border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-red-500/40 resize-none"
+                          className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder-gray-600 focus:outline-none focus:border-red-500/40 resize-none"
                         />
                         <div className="flex gap-3">
                           <button

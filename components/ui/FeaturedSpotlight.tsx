@@ -26,7 +26,7 @@ export default function FeaturedSpotlight({
 }: FeaturedSpotlightProps) {
   return (
     <section className="mb-10">
-      <h2 className="font-bebas text-2xl text-white tracking-wider mb-4 flex items-center gap-2">
+      <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-wider mb-4 flex items-center gap-2">
         <span className="w-1 h-6 bg-gradient-to-b from-[#ff2d55] to-[#ff6b2b] rounded-full" />
         แนะนำพิเศษ
       </h2>
@@ -35,7 +35,7 @@ export default function FeaturedSpotlight({
         {/* Main featured — 2/3 width */}
         <Link
           href={`/content/${featured.slug}`}
-          className="lg:col-span-2 relative h-64 lg:h-80 rounded-2xl overflow-hidden group border border-white/5 hover:border-[#ff2d55]/40 transition-all"
+          className="lg:col-span-2 relative h-64 lg:h-80 rounded-2xl overflow-hidden group border border-[var(--border)] hover:border-[#ff2d55]/40 transition-all"
         >
           {featured.coverUrl ? (
             <Image
@@ -58,24 +58,24 @@ export default function FeaturedSpotlight({
               {featured.genres?.slice(0, 3).map((g) => (
                 <span
                   key={g}
-                  className="text-xs px-2 py-0.5 rounded-full bg-[#ff2d55]/80 text-white font-medium"
+                  className="text-xs px-2 py-0.5 rounded-full bg-[#ff2d55]/80 text-[var(--text-primary)] font-medium"
                 >
                   {g}
                 </span>
               ))}
               {featured.type && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-gray-300">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-[var(--text-primary)]">
                   {featured.type}
                 </span>
               )}
             </div>
-            <h3 className="font-bebas text-3xl text-white tracking-wider leading-tight">
+            <h3 className="font-bebas text-3xl text-[var(--text-primary)] tracking-wider leading-tight">
               {featured.title}
             </h3>
-            <p className="text-sm text-gray-300 mt-1 line-clamp-2">
+            <p className="text-sm text-[var(--text-primary)] mt-1 line-clamp-2">
               {featured.description}
             </p>
-            <div className="flex items-center gap-4 mt-3 text-sm text-gray-400">
+            <div className="flex items-center gap-4 mt-3 text-sm text-[var(--text-secondary)]">
               {featured.rating !== undefined && (
                 <span className="flex items-center gap-1">
                   <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
@@ -106,7 +106,7 @@ export default function FeaturedSpotlight({
             <Link
               key={manga.slug}
               href={`/content/${manga.slug}`}
-              className="relative h-[calc(50%-8px)] min-h-[140px] rounded-2xl overflow-hidden group border border-white/5 hover:border-[#ff2d55]/40 transition-all"
+              className="relative h-[calc(50%-8px)] min-h-[140px] rounded-2xl overflow-hidden group border border-[var(--border)] hover:border-[#ff2d55]/40 transition-all"
             >
               {manga.coverUrl ? (
                 <Image
@@ -118,11 +118,11 @@ export default function FeaturedSpotlight({
                   sizes="(max-width: 1024px) 100vw, 33vw"
                 />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-[#1a1e2a] to-[#141720]" />
+                <div className="w-full h-full bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-surface)]" />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
               <div className="absolute bottom-0 p-3">
-                <h4 className="font-semibold text-white text-sm line-clamp-1">
+                <h4 className="font-semibold text-[var(--text-primary)] text-sm line-clamp-1">
                   {manga.title}
                 </h4>
                 {manga.latestChapter !== undefined && (

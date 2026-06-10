@@ -46,7 +46,7 @@ export default function StarRating({
               sizes[size],
               display >= star
                 ? "fill-yellow-400 text-yellow-400"
-                : "fill-transparent text-gray-600"
+                : "fill-transparent text-[var(--text-muted)]"
             )}
           />
         </button>
