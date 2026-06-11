@@ -17,11 +17,11 @@ import { ChevronRight } from "lucide-react";
 export const revalidate = 300; // 5 minutes
 
 async function getData() {
-  const [mangas, genres, latestChapters, weeklyRank, monthlyRank, allRank] =
+  const [mangas, genres, latestChapters, weeklyRank, monthlyRank, allRank, topNovels] =
     await Promise.all([
       prisma.manga.findMany({
         take: 12,
-        where: { contentRating: { not: "ADULT" } },
+        where: { contentRating: { not: "ADULT" }, type: { not: "NOVEL" } },
         orderBy: { totalViews: "desc" },
         include: {
           genres: { include: { genre: true } },
@@ -37,7 +37,7 @@ async function getData() {
       prisma.chapter.findMany({
         take: 10,
         orderBy: { publishedAt: "desc" },
-        where: { manga: { contentRating: { not: "ADULT" } }, ...liveChapterWhere() },
+        where: { manga: { contentRating: { not: "ADULT" }, type: { not: "NOVEL" } }, ...liveChapterWhere() },
         include: {
           manga: { select: { title: true, slug: true, coverUrl: true, type: true } },
         },
@@ -45,6 +45,15 @@ async function getData() {
       getRanking("WEEK", 10),
       getRanking("MONTH", 10),
       getRanking("ALL", 10),
+      prisma.manga.findMany({
+        take: 6,
+        where: { contentRating: { not: "ADULT" }, type: "NOVEL" },
+        orderBy: { totalViews: "desc" },
+        include: {
+          chapters: { where: liveChapterWhere(), orderBy: { chapterNum: "desc" }, take: 1 },
+          ratings: { select: { score: true } },
+        },
+      }),
     ]);
 
   // Top translators ranked by total views across their works.
@@ -78,11 +87,22 @@ async function getData() {
     })
     .filter((x): x is NonNullable<typeof x> => x !== null);
 
-  return { mangas, genres, latestChapters, weeklyRank, monthlyRank, allRank, translatorRanking };
+  const novels = topNovels.map((m) => ({
+    slug: m.slug,
+    title: m.title,
+    coverUrl: m.coverUrl,
+    type: m.type,
+    status: m.status,
+    totalViews: m.totalViews,
+    latestChapter: m.chapters[0]?.chapterNum,
+    avgRating: m.ratings.length > 0 ? m.ratings.reduce((a, b) => a + b.score, 0) / m.ratings.length : 0,
+  }));
+
+  return { mangas, genres, latestChapters, weeklyRank, monthlyRank, allRank, translatorRanking, novels };
 }
 
 export default async function HomePage() {
-  const { mangas, genres, latestChapters, weeklyRank, monthlyRank, allRank, translatorRanking } =
+  const { mangas, genres, latestChapters, weeklyRank, monthlyRank, allRank, translatorRanking, novels } =
     await getData();
 
   const withRating = mangas.map((m) => ({
@@ -241,6 +261,38 @@ export default async function HomePage() {
           </div>
         </div>
       </div>
+
+      {/* Novels — kept in their own section so readers never mistake a novel for a comic */}
+      {novels.length > 0 && (
+        <section className="mt-14">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-[0.15em] uppercase flex items-center gap-2">
+              📖 นิยายน่าอ่าน
+            </h2>
+            <Link
+              href="/manga?type=NOVEL"
+              className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1 transition-colors"
+            >
+              ดูนิยายทั้งหมด <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+            {novels.map((n) => (
+              <MangaCard
+                key={n.slug}
+                slug={n.slug}
+                title={n.title}
+                coverUrl={n.coverUrl}
+                latestChapter={n.latestChapter}
+                rating={n.avgRating}
+                views={n.totalViews}
+                status={n.status}
+                type={n.type}
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
