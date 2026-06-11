@@ -94,15 +94,30 @@ export default async function MangaProfilePage({ params }: Props) {
     }
   }
 
-  // Get user's coin balance + which chapters they've unlocked
-  const [userCoins, unlockedSet] = await Promise.all([
+  // Get user's coin balance + which chapters they've unlocked + which they've read
+  const [userCoins, unlockedSet, readSet] = await Promise.all([
     userId ? getUserCoins(userId) : Promise.resolve(0),
     userId
       ? prisma.unlockedChapter
           .findMany({ where: { userId }, select: { chapterId: true } })
           .then((rows) => new Set(rows.map((r) => r.chapterId)))
       : Promise.resolve(new Set<string>()),
+    userId
+      ? prisma.readHistory
+          .findMany({
+            where: { userId, chapter: { mangaId: manga.id } },
+            select: { chapterId: true },
+          })
+          .then((rows) => new Set(rows.map((r) => r.chapterId)))
+      : Promise.resolve(new Set<string>()),
   ]);
+
+  // Reading progress (chapters opened / total)
+  const readCount = manga.chapters.filter((ch) => readSet.has(ch.id)).length;
+  const readPercent =
+    manga.chapters.length > 0
+      ? Math.round((readCount / manga.chapters.length) * 100)
+      : 0;
 
   // Count views from readers only — never the creator viewing their own work.
   const isOwner = !!userId && manga.translator?.userId === userId;
@@ -384,6 +399,29 @@ export default async function MangaProfilePage({ params }: Props) {
               รายการตอน ({manga.chapters.length})
             </h2>
 
+            {/* Reading progress */}
+            {userId && (
+              <div className="mb-4">
+                <div className="flex items-center justify-between text-xs mb-1.5">
+                  <span className="uppercase tracking-wide text-[var(--text-secondary)]">
+                    ความคืบหน้า
+                  </span>
+                  <span className="font-semibold text-[var(--text-primary)]">
+                    อ่านแล้ว {readPercent}%{" "}
+                    <span className="text-[var(--text-secondary)] font-normal">
+                      ({readCount}/{manga.chapters.length} ตอน)
+                    </span>
+                  </span>
+                </div>
+                <div className="h-1.5 w-full bg-[var(--bg-card)] border border-[var(--border)] overflow-hidden">
+                  <div
+                    className="h-full bg-[var(--text-primary)] transition-all"
+                    style={{ width: `${readPercent}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
             {lockedPremium.length > 0 && (
               <div className="mb-4">
                 <BulkUnlock
@@ -406,6 +444,7 @@ export default async function MangaProfilePage({ params }: Props) {
                   publishedAt={ch.publishedAt.toISOString()}
                   viewCount={ch.viewCount}
                   isUnlocked={unlockedSet.has(ch.id)}
+                  isRead={readSet.has(ch.id)}
                   mangaSlug={slug}
                   userCoins={userCoins}
                   isLoggedIn={!!userId}
