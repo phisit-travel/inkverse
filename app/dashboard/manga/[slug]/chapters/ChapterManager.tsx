@@ -108,11 +108,13 @@ function ChapterRow({
 
   return (
     <div className={clsx(
-      "flex items-center gap-3 px-4 py-3 rounded-xl border transition-all",
+      "flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 rounded-xl border transition-all",
       chapter.isPremium
         ? "bg-[var(--bg-card)] border-[var(--border)] hover:border-[var(--text-primary)]"
         : "bg-[var(--bg-card)] border-[var(--border)] hover:border-[var(--border)]"
     )}>
+      {/* num + title — full width on mobile so the action buttons wrap below instead of covering the title */}
+      <div className="flex items-center gap-3 flex-1 min-w-0 basis-full sm:basis-0">
       {/* Drag handle hint */}
       <GripVertical className="w-4 h-4 text-gray-700 shrink-0" />
 
@@ -191,9 +193,10 @@ function ChapterRow({
           <span>{chapter.viewCount.toLocaleString()} ชม</span>
         </div>
       </div>
+      </div>
 
       {/* Lock / Price control */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-2 shrink-0 ml-auto">
         {chapter.isPremium && (
           <>
             {editingPrice ? (

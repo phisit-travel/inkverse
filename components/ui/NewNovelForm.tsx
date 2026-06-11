@@ -14,12 +14,15 @@ function slugify(s: string): string {
   return base || "novel";
 }
 
-export default function NewNovelForm() {
+export default function NewNovelForm({ genres = [] }: { genres?: { id: string; name: string }[] }) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
+  const [genreIds, setGenreIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const toggleGenre = (id: string) =>
+    setGenreIds((g) => (g.includes(id) ? g.filter((x) => x !== id) : [...g, id]));
 
   async function create() {
     if (!title.trim()) {
@@ -40,6 +43,7 @@ export default function NewNovelForm() {
           type: "NOVEL",
           originCountry: "TH",
           contentRating: "TEEN",
+          genreIds,
         }),
       });
       if (!res.ok) {
@@ -78,6 +82,28 @@ export default function NewNovelForm() {
           <span className="block text-xs text-[var(--text-secondary)] uppercase tracking-wide mb-1">เรื่องย่อ (ไม่บังคับ)</span>
           <textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={3} placeholder="เกริ่นเรื่องสั้นๆ..." className={`${input} resize-y`} maxLength={1000} />
         </label>
+
+        {genres.length > 0 && (
+          <div>
+            <span className="block text-xs text-[var(--text-secondary)] uppercase tracking-wide mb-1.5">หมวดหมู่ / แท็ก (เลือกได้หลายอัน)</span>
+            <div className="flex flex-wrap gap-1.5">
+              {genres.map((g) => (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => toggleGenre(g.id)}
+                  className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                    genreIds.includes(g.id)
+                      ? "bg-[var(--text-primary)] text-[var(--bg-primary)] border-[var(--text-primary)]"
+                      : "border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  }`}
+                >
+                  {g.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {error && <p className="text-sm text-[var(--text-primary)]">{error}</p>}
 

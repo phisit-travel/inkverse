@@ -33,7 +33,14 @@ const RATING = [
 
 const sel = "w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--text-primary)]/50";
 
-export default function MangaSettings({ slug, manga }: { slug: string; manga: MangaData }) {
+export default function MangaSettings({
+  slug, manga, allGenres, initialGenreIds,
+}: {
+  slug: string;
+  manga: MangaData;
+  allGenres: { id: string; name: string }[];
+  initialGenreIds: string[];
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(manga);
@@ -43,6 +50,11 @@ export default function MangaSettings({ slug, manga }: { slug: string; manga: Ma
   const [deleting, setDeleting] = useState(false);
   const [cover, setCover] = useState(manga.coverUrl);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [genreIds, setGenreIds] = useState<string[]>(initialGenreIds);
+  const toggleGenre = (id: string) => {
+    setGenreIds((g) => (g.includes(id) ? g.filter((x) => x !== id) : [...g, id]));
+    setSaved(false);
+  };
 
   const set = (k: keyof MangaData, v: string) => { setForm((f) => ({ ...f, [k]: v })); setSaved(false); };
 
@@ -78,7 +90,7 @@ export default function MangaSettings({ slug, manga }: { slug: string; manga: Ma
       const res = await fetch(`/api/manga/${slug}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, genreIds }),
       });
       if (!res.ok) { setError("บันทึกไม่สำเร็จ"); return; }
       setSaved(true);
@@ -158,6 +170,28 @@ export default function MangaSettings({ slug, manga }: { slug: string; manga: Ma
               <select value={form.contentRating} onChange={(e) => set("contentRating", e.target.value)} className={sel}>
                 {RATING.map((s) => <option key={s.v} value={s.v}>{s.l}</option>)}
               </select>
+            </div>
+          </div>
+
+          {/* Genres / tags */}
+          <div>
+            <label className="block text-xs text-[var(--text-secondary)] mb-1.5">หมวดหมู่ / แท็ก</label>
+            <div className="flex flex-wrap gap-1.5">
+              {allGenres.map((g) => (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => toggleGenre(g.id)}
+                  className={clsx(
+                    "px-2.5 py-1 rounded-full text-xs border transition-colors",
+                    genreIds.includes(g.id)
+                      ? "bg-[var(--text-primary)] text-[var(--bg-primary)] border-[var(--text-primary)]"
+                      : "border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  )}
+                >
+                  {g.name}
+                </button>
+              ))}
             </div>
           </div>
 

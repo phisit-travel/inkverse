@@ -36,10 +36,16 @@ export default async function MangaChaptersPage({ params }: Props) {
         include: { _count: { select: { pages: true } } },
       },
       translator: { select: { userId: true } },
+      genres: { select: { genreId: true } },
     },
   });
 
   if (!manga) notFound();
+
+  const allGenres = await prisma.genre.findMany({
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
+  });
 
   // Ownership check (admin bypasses)
   if (role !== "ADMIN" && manga.translator?.userId !== userId) {
@@ -108,6 +114,8 @@ export default async function MangaChaptersPage({ params }: Props) {
           contentRating: manga.contentRating,
           coverUrl: manga.coverUrl ?? null,
         }}
+        allGenres={allGenres}
+        initialGenreIds={manga.genres.map((g) => g.genreId)}
       />
 
       <ChapterManager
