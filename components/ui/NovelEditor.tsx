@@ -57,6 +57,13 @@ export default function NovelEditor({
 
   const fileRef = useRef<HTMLInputElement>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Re-rendering the whole editor on every keystroke makes the page jump/scroll
+  // on mobile. Throttle the toolbar/word-count refresh to ~5×/sec instead.
+  const forceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduleForce = useCallback(() => {
+    if (forceTimer.current) return;
+    forceTimer.current = setTimeout(() => { forceTimer.current = null; force((n) => n + 1); }, 200);
+  }, []);
   // Latest field values for the debounced autosave closure.
   const stateRef = useRef({ chapterId, title, num, isPremium, coinCost, authorNote });
   stateRef.current = { chapterId, title, num, isPremium, coinCost, authorNote };
@@ -75,8 +82,8 @@ export default function NovelEditor({
       CharacterCount,
     ],
     content: existing?.content ?? "",
-    onUpdate: () => { force((n) => n + 1); scheduleSave(); },
-    onSelectionUpdate: () => force((n) => n + 1),
+    onUpdate: () => { scheduleForce(); scheduleSave(); },
+    onSelectionUpdate: () => scheduleForce(),
   });
 
   // ── Save (create-or-patch) ───────────────────────────────────
