@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Lock, Unlock, Coins, ArrowUpDown, Check, X, Loader2,
-  ChevronRight, GripVertical, Edit3, Trash2,
+  ChevronRight, GripVertical, Edit3, Trash2, Clock,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -21,6 +21,13 @@ interface Chapter {
   status?: string;
   scheduledAt?: string | null;
   publishedAt: string;
+  freeAt?: string | null;
+}
+
+const EARLY_DAYS = [1, 2, 3, 7];
+
+function fmtFree(iso: string): string {
+  return new Date(iso).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
 function ChapterRow({
@@ -43,7 +50,17 @@ function ChapterRow({
   const [editingNum, setEditingNum] = useState(false);
   const [numInput, setNumInput] = useState(String(chapter.chapterNum));
   const [numError, setNumError] = useState("");
+  const [editingEarly, setEditingEarly] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const earlyActive = !!chapter.freeAt && new Date(chapter.freeAt).getTime() > Date.now();
+
+  // days = number → free in N days; null → permanent premium (clear freeAt).
+  async function setEarly(days: number | null) {
+    const freeAt = days === null ? null : new Date(Date.now() + days * 86400000).toISOString();
+    await patchChapter({ isPremium: true, coinCost: parseInt(priceInput) || chapter.coinCost || 2, freeAt });
+    setEditingEarly(false);
+  }
 
   async function patchChapter(data: Partial<Chapter>): Promise<{ ok: boolean; error?: string }> {
     setLoading(true);
@@ -229,6 +246,33 @@ function ChapterRow({
               </button>
             )}
           </>
+        )}
+
+        {/* Early access — auto-free date */}
+        {chapter.isPremium && (
+          editingEarly ? (
+            <div className="flex items-center gap-1 flex-wrap">
+              {EARLY_DAYS.map((d) => (
+                <button key={d} onClick={() => setEarly(d)} disabled={loading}
+                  className="px-2 py-1 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] text-xs text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-colors">
+                  {d} วัน
+                </button>
+              ))}
+              <button onClick={() => setEarly(null)} disabled={loading}
+                title="ติดเหรียญถาวร (ไม่ปลดฟรี)"
+                className="px-2 py-1 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+                ถาวร
+              </button>
+              <button onClick={() => setEditingEarly(false)} className="p-1 text-[var(--text-secondary)]"><X className="w-3.5 h-3.5" /></button>
+            </div>
+          ) : (
+            <button onClick={() => setEditingEarly(true)} disabled={loading}
+              title="ตั้งวันปลดเป็นฟรีอัตโนมัติ (อ่านล่วงหน้า)"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] text-xs text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-colors">
+              <Clock className="w-3 h-3" />
+              {earlyActive ? `ฟรี ${fmtFree(chapter.freeAt!)}` : "อ่านล่วงหน้า"}
+            </button>
+          )
         )}
 
         {/* Toggle lock */}

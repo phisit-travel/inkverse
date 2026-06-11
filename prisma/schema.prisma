@@ -284,6 +284,7 @@ model Chapter {
   authorNote       String?           @db.Text // optional note shown at the end of a novel chapter
   status           String            @default("PUBLISHED") // DRAFT | PUBLISHED
   publishAt        DateTime?         // future timestamp for scheduled release; null = live now
+  freeAt           DateTime?         // early access: premium chapter auto-unlocks for everyone at this time
   manga            Manga             @relation(fields: [mangaId], references: [id], onDelete: Cascade)
   pages            Page[]
   readHistory      ReadHistory[]

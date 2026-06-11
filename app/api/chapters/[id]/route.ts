@@ -52,6 +52,7 @@ export async function PATCH(
     status?: string;
     publishAt?: string | null;
     authorNote?: string;
+    freeAt?: string | null;
   };
 
   const data: Record<string, unknown> = {};
@@ -67,9 +68,16 @@ export async function PATCH(
   if (typeof body.isPremium === "boolean") {
     data.isPremium = body.isPremium;
     data.coinCost = body.isPremium ? (typeof body.coinCost === "number" ? Math.max(1, body.coinCost) : chapter.coinCost || 2) : 0;
+    if (!body.isPremium) data.freeAt = null; // free chapter has no early-access window
   }
   if (typeof body.coinCost === "number" && body.isPremium !== false) {
     data.coinCost = Math.max(1, body.coinCost);
+  }
+  // Early access: freeAt = future date → auto-free then; null → permanent premium.
+  if (body.freeAt === null) data.freeAt = null;
+  else if (typeof body.freeAt === "string") {
+    const f = new Date(body.freeAt);
+    if (!isNaN(f.getTime())) data.freeAt = f;
   }
   if (typeof body.chapterNum === "number" && Number.isFinite(body.chapterNum) && body.chapterNum >= 0) {
     data.chapterNum = body.chapterNum;

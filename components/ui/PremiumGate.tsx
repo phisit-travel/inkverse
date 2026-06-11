@@ -12,6 +12,7 @@ interface PremiumGateProps {
   userCoins: number;
   mangaTitle: string;
   mangaSlug: string;
+  freeAt?: string | null;
 }
 
 export default function PremiumGate({
@@ -21,12 +22,23 @@ export default function PremiumGate({
   userCoins,
   mangaTitle,
   mangaSlug,
+  freeAt,
 }: PremiumGateProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const canAfford = userCoins >= coinCost;
+
+  const freeDate = freeAt ? new Date(freeAt) : null;
+  const earlyAccess = !!freeDate && freeDate.getTime() > Date.now();
+  let freeIn: string | null = null;
+  if (earlyAccess && freeDate) {
+    const ms = freeDate.getTime() - Date.now();
+    const d = Math.floor(ms / 86400000);
+    const h = Math.floor((ms % 86400000) / 3600000);
+    freeIn = d > 0 ? `${d} วัน${h > 0 ? ` ${h} ชม.` : ""}` : h > 0 ? `${h} ชม.` : "ไม่ถึงชั่วโมง";
+  }
 
   async function handleUnlock() {
     setLoading(true);
@@ -73,10 +85,12 @@ export default function PremiumGate({
               <Lock className="w-9 h-9 text-[var(--text-primary)]" />
             </div>
             <h1 className="font-bebas text-3xl text-[var(--text-primary)] tracking-wider">
-              ตอน Premium
+              {earlyAccess ? "อ่านล่วงหน้า" : "ตอน Premium"}
             </h1>
             <p className="text-[var(--text-secondary)] text-sm mt-1">
-              ตอนที่ {chapterNum} ต้องใช้เหรียญเพื่อปลดล็อก
+              {earlyAccess
+                ? `ตอนที่ ${chapterNum} · จะเปิดให้อ่านฟรีในอีก ${freeIn} — หรือใช้เหรียญอ่านเลยตอนนี้`
+                : `ตอนที่ ${chapterNum} ต้องใช้เหรียญเพื่อปลดล็อก`}
             </p>
           </div>
 

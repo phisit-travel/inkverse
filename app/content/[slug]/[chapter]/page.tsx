@@ -71,7 +71,11 @@ export default async function ReaderPage({ params }: Props) {
     if (!isOwnerPreview) notFound();
   }
 
-  if (chapterData.isPremium) {
+  // Premium / early-access: still paid while freeAt is null (permanent) or in the future.
+  // Once freeAt passes, the chapter is free for everyone.
+  const stillPaid =
+    chapterData.isPremium && (!chapterData.freeAt || chapterData.freeAt.getTime() > Date.now());
+  if (stillPaid) {
     if (!userId) {
       redirect(`/auth/signin?callbackUrl=/content/${slug}/${chapter}`);
     }
@@ -86,6 +90,7 @@ export default async function ReaderPage({ params }: Props) {
           userCoins={userCoins}
           mangaTitle={manga.title}
           mangaSlug={slug}
+          freeAt={chapterData.freeAt ? chapterData.freeAt.toISOString() : null}
         />
       );
     }

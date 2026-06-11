@@ -65,6 +65,7 @@ export default async function MangaChaptersPage({ params }: Props) {
     status: ch.status,
     scheduledAt: ch.publishAt ? ch.publishAt.toISOString() : null,
     publishedAt: ch.publishedAt.toISOString(),
+    freeAt: ch.freeAt ? ch.freeAt.toISOString() : null,
   }));
 
   return (

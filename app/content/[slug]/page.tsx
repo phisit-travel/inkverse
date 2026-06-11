@@ -10,7 +10,7 @@ import ChapterRow from "@/components/ui/ChapterRow";
 import AgeGate from "@/components/ui/AgeGate";
 import { getUserCoins } from "@/lib/coins";
 import { getUserRankBadge } from "@/lib/ranks";
-import { liveChapterWhere } from "@/lib/chapters";
+import { liveChapterWhere, isChapterLocked } from "@/lib/chapters";
 import RankChip from "@/components/ui/RankChip";
 import {
   BookOpen,
@@ -150,7 +150,7 @@ export default async function MangaProfilePage({ params }: Props) {
 
   // Premium chapters the user hasn't unlocked yet (ascending) — for bulk unlock.
   const lockedPremium = manga.chapters
-    .filter((ch) => ch.isPremium && !unlockedSet.has(ch.id))
+    .filter((ch) => isChapterLocked(ch, unlockedSet.has(ch.id)))
     .map((ch) => ({ id: ch.id, chapterNum: ch.chapterNum, coinCost: ch.coinCost }));
 
   const statusLabel: Record<string, string> = {
@@ -472,6 +472,7 @@ export default async function MangaProfilePage({ params }: Props) {
                   mangaSlug={slug}
                   userCoins={userCoins}
                   isLoggedIn={!!userId}
+                  freeAt={ch.freeAt ? ch.freeAt.toISOString() : null}
                 />
               ))}
             </div>

@@ -18,6 +18,7 @@ interface ChapterRowProps {
   mangaSlug: string;
   userCoins: number;
   isLoggedIn: boolean;
+  freeAt?: string | null;
 }
 
 export default function ChapterRow({
@@ -33,10 +34,15 @@ export default function ChapterRow({
   mangaSlug,
   userCoins,
   isLoggedIn,
+  freeAt,
 }: ChapterRowProps) {
   const [showModal, setShowModal] = useState(false);
 
-  const canRead = !isPremium || isUnlocked;
+  // A premium chapter becomes free once its early-access window (freeAt) elapses.
+  const freeNow = !!freeAt && new Date(freeAt).getTime() <= Date.now();
+  const locked = isPremium && !isUnlocked && !freeNow;
+  const earlyAccess = locked && !!freeAt; // freeAt is in the future here
+  const canRead = !locked;
   const href = `/content/${mangaSlug}/${chapterNum}`;
 
   function handleClick(e: React.MouseEvent) {
@@ -58,12 +64,10 @@ export default function ChapterRow({
         className="flex items-center justify-between px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] bal-invert group"
       >
         <div className="flex items-center gap-3">
-          {isPremium ? (
-            isUnlocked ? (
-              <Unlock className="w-4 h-4 text-[var(--text-primary)] flex-shrink-0" />
-            ) : (
-              <Lock className="w-4 h-4 text-[var(--text-primary)] flex-shrink-0" />
-            )
+          {locked ? (
+            <Lock className="w-4 h-4 text-[var(--text-primary)] flex-shrink-0" />
+          ) : isPremium && isUnlocked ? (
+            <Unlock className="w-4 h-4 text-[var(--text-primary)] flex-shrink-0" />
           ) : null}
 
           <span
@@ -86,9 +90,9 @@ export default function ChapterRow({
             </span>
           )}
 
-          {isPremium && !isUnlocked && (
+          {locked && (
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border)] flex-shrink-0">
-              {coinCost} เหรียญ
+              {earlyAccess ? `อ่านล่วงหน้า · ${coinCost} เหรียญ` : `${coinCost} เหรียญ`}
             </span>
           )}
           {isPremium && isUnlocked && (
