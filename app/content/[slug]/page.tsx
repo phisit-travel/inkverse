@@ -78,7 +78,15 @@ export default async function MangaProfilePage({ params }: Props) {
     where: { slug },
     include: {
       genres: { include: { genre: true } },
-      chapters: { where: liveChapterWhere(), orderBy: { chapterNum: "asc" } },
+      chapters: {
+        where: liveChapterWhere(),
+        orderBy: { chapterNum: "asc" },
+        // List view only — never pull the chapter bodies (huge for novels).
+        select: {
+          id: true, chapterNum: true, title: true, isPremium: true,
+          coinCost: true, viewCount: true, publishedAt: true, freeAt: true,
+        },
+      },
       ratings: { select: { score: true } },
       bookmarks: userId
         ? { where: { userId }, take: 1 }
