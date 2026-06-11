@@ -8,7 +8,8 @@ export const metadata: Metadata = {
     "แอป INKVERSE สำหรับ Android — อ่านมังงะ/นิยายแบบกันแคปหน้าจอ (FLAG_SECURE) ลื่นกว่า อัปเดตอัตโนมัติ",
 };
 
-const APK_URL = process.env.NEXT_PUBLIC_ANDROID_APK_URL || "";
+// Published automatically by the Android build workflow into public/downloads.
+const APK_URL = process.env.NEXT_PUBLIC_ANDROID_APK_URL || "/downloads/inkverse.apk";
 const APK_VERSION = process.env.NEXT_PUBLIC_ANDROID_APK_VERSION || "";
 
 const FEATURES = [
@@ -36,6 +37,7 @@ export default function DownloadPage() {
           {available ? (
             <a
               href={APK_URL}
+              download
               className="inline-flex items-center gap-2 px-8 py-4 bal-btn text-sm font-semibold uppercase tracking-widest"
             >
               <Download className="w-5 h-5" /> ดาวน์โหลด .apk
