@@ -34,7 +34,7 @@ export async function POST(
   }
 
   const body = await req.json();
-  const { chapterNum, title, isPremium = false, coinCost = 0, content, status, publishAt, authorNote } = body;
+  const { chapterNum, title, isPremium = false, coinCost = 0, content, status, publishAt, authorNote, freeAt } = body;
 
   if (typeof chapterNum !== "number" || isNaN(chapterNum)) {
     return NextResponse.json({ error: "Valid chapterNum required" }, { status: 400 });
@@ -60,6 +60,7 @@ export async function POST(
       content: typeof content === "string" ? renderNovel(content.slice(0, 500000)) : null,
       status: status === "DRAFT" ? "DRAFT" : "PUBLISHED",
       publishAt: publishDate,
+      freeAt: isPremium && typeof freeAt === "string" && !isNaN(new Date(freeAt).getTime()) ? new Date(freeAt) : null,
       authorNote: typeof authorNote === "string" ? authorNote.slice(0, 5000) || null : null,
     },
   });

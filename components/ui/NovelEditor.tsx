@@ -24,6 +24,7 @@ interface Existing {
   status: string;
   publishAt: string | null;
   authorNote: string | null;
+  freeAt: string | null;
 }
 
 type SaveState = "idle" | "saving" | "saved" | "error";
@@ -37,6 +38,11 @@ export default function NovelEditor({
   const [num, setNum] = useState(String(existing?.chapterNum ?? suggestedNum));
   const [isPremium, setIsPremium] = useState(existing?.isPremium ?? false);
   const [coinCost, setCoinCost] = useState(String(existing?.coinCost || 5));
+  const [earlyDays, setEarlyDays] = useState(() => {
+    if (!existing?.freeAt) return "";
+    const ms = new Date(existing.freeAt).getTime() - Date.now();
+    return ms > 0 ? String(Math.max(1, Math.round(ms / 86400000))) : "";
+  });
   const [authorNote, setAuthorNote] = useState(existing?.authorNote ?? "");
   const [status, setStatus] = useState(existing?.status ?? "DRAFT");
   const [scheduleAt, setScheduleAt] = useState(existing?.publishAt ? existing.publishAt.slice(0, 16) : "");
@@ -75,7 +81,7 @@ export default function NovelEditor({
 
   // ── Save (create-or-patch) ───────────────────────────────────
   const doSave = useCallback(
-    async (override?: { status?: string; publishAt?: string | null }) => {
+    async (override?: { status?: string; publishAt?: string | null; freeAt?: string | null }) => {
       if (!editor) return;
       const st = stateRef.current;
       const n = parseFloat(st.num);
@@ -89,6 +95,7 @@ export default function NovelEditor({
         authorNote: st.authorNote.trim(),
         status: override?.status ?? "DRAFT",
         publishAt: override?.publishAt ?? null,
+        ...(override?.freeAt !== undefined ? { freeAt: override.freeAt } : {}),
       };
       try {
         let res: Response;
@@ -124,13 +131,18 @@ export default function NovelEditor({
     saveTimer.current = setTimeout(() => doSave(), 2000);
   }
 
+  function computeFreeAt(baseMs: number): string | null {
+    const d = isPremium && earlyDays && Number(earlyDays) > 0 ? Number(earlyDays) : 0;
+    return d > 0 ? new Date(baseMs + d * 86400000).toISOString() : null;
+  }
   async function publish() {
-    const ok = await doSave({ status: "PUBLISHED", publishAt: null });
+    const ok = await doSave({ status: "PUBLISHED", publishAt: null, freeAt: computeFreeAt(Date.now()) });
     if (ok) { router.push(`/dashboard/manga/${mangaSlug}/chapters`); router.refresh(); }
   }
   async function schedule() {
     if (!scheduleAt) { setError("เลือกวันเวลาก่อน"); return; }
-    const ok = await doSave({ status: "PUBLISHED", publishAt: new Date(scheduleAt).toISOString() });
+    const base = new Date(scheduleAt);
+    const ok = await doSave({ status: "PUBLISHED", publishAt: base.toISOString(), freeAt: computeFreeAt(base.getTime()) });
     if (ok) { router.push(`/dashboard/manga/${mangaSlug}/chapters`); router.refresh(); }
   }
 
@@ -277,10 +289,17 @@ export default function NovelEditor({
               <span className="text-[var(--text-primary)] font-medium">ตอนพรีเมียม (ปลดด้วยเหรียญ)</span>
             </button>
             {isPremium && (
-              <label className="flex items-center gap-2 mt-3 text-sm text-[var(--text-secondary)]">
-                <Coins className="w-4 h-4 text-[var(--text-primary)]" /> ราคา
-                <input value={coinCost} onChange={(ev) => setCoinCost(ev.target.value)} type="number" min="1" className="w-20 bg-[var(--bg-card)] border border-[var(--border)] px-2 py-1 text-[var(--text-primary)]" /> เหรียญ
-              </label>
+              <div className="space-y-3 mt-3">
+                <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                  <Coins className="w-4 h-4 text-[var(--text-primary)]" /> ราคา
+                  <input value={coinCost} onChange={(ev) => setCoinCost(ev.target.value)} type="number" min="1" className="w-20 bg-[var(--bg-card)] border border-[var(--border)] px-2 py-1 text-[var(--text-primary)]" /> เหรียญ
+                </label>
+                <label className="flex flex-wrap items-center gap-2 text-sm text-[var(--text-secondary)]">
+                  <Clock className="w-4 h-4 text-[var(--text-primary)]" /> อ่านล่วงหน้า
+                  <input value={earlyDays} onChange={(ev) => setEarlyDays(ev.target.value)} type="number" min="0" placeholder="0" className="w-20 bg-[var(--bg-card)] border border-[var(--border)] px-2 py-1 text-[var(--text-primary)]" /> วัน
+                  <span className="text-xs text-[var(--text-muted)]">(0 / ว่าง = ติดเหรียญถาวร)</span>
+                </label>
+              </div>
             )}
           </div>
         )}

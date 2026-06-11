@@ -38,12 +38,16 @@ export default async function WriteNovelPage({ params, searchParams }: Props) {
         where: { id: ch, mangaId: manga.id },
         select: {
           id: true, chapterNum: true, title: true, content: true, isPremium: true,
-          coinCost: true, status: true, publishAt: true, authorNote: true,
+          coinCost: true, status: true, publishAt: true, authorNote: true, freeAt: true,
         },
       })
     : null;
   const existing = existingRow
-    ? { ...existingRow, publishAt: existingRow.publishAt ? existingRow.publishAt.toISOString() : null }
+    ? {
+        ...existingRow,
+        publishAt: existingRow.publishAt ? existingRow.publishAt.toISOString() : null,
+        freeAt: existingRow.freeAt ? existingRow.freeAt.toISOString() : null,
+      }
     : null;
 
   const suggestedNum = Math.floor((manga.chapters[0]?.chapterNum ?? 0) + 1);

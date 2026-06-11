@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Lock, Unlock, Coins, ArrowUpDown, Check, X, Loader2,
-  ChevronRight, GripVertical, Edit3, Trash2, Clock,
+  ChevronRight, GripVertical, Edit3, Trash2, Clock, ChevronDown, Layers,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -348,6 +348,47 @@ export default function ChapterManager({
   const premiumCount = chapters.filter((c) => c.isPremium).length;
   const freeCount = chapters.length - premiumCount;
 
+  // ── Bulk apply (range) ──────────────────────────────────────────
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bFrom, setBFrom] = useState("");
+  const [bTo, setBTo] = useState("");
+  const [bCoins, setBCoins] = useState("2");
+  const [bDays, setBDays] = useState("2"); // "" or "0" = ถาวร
+  const [bMode, setBMode] = useState<"premium" | "free">("premium");
+  const [bLoading, setBLoading] = useState(false);
+  const [bMsg, setBMsg] = useState("");
+
+  async function applyBulk() {
+    const lo = Math.min(Number(bFrom), Number(bTo));
+    const hi = Math.max(Number(bFrom), Number(bTo));
+    if (!Number.isFinite(lo) || !Number.isFinite(hi)) { setBMsg("กรอกช่วงตอนให้ครบ"); return; }
+    const days = bMode === "premium" && bDays && Number(bDays) > 0 ? Number(bDays) : null;
+    setBLoading(true); setBMsg("");
+    try {
+      const res = await fetch(`/api/manga/${mangaSlug}/chapters/bulk`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          bMode === "free"
+            ? { fromNum: lo, toNum: hi, mode: "free" }
+            : { fromNum: lo, toNum: hi, mode: "premium", coinCost: Number(bCoins) || 2, freeInDays: days }
+        ),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { setBMsg(d.error || "ไม่สำเร็จ"); return; }
+      const freeAtIso = days ? new Date(Date.now() + days * 86400000).toISOString() : null;
+      setChapters((prev) => prev.map((c) => {
+        if (c.chapterNum < lo || c.chapterNum > hi) return c;
+        return bMode === "free"
+          ? { ...c, isPremium: false, coinCost: 0, freeAt: null }
+          : { ...c, isPremium: true, coinCost: Number(bCoins) || 2, freeAt: freeAtIso };
+      }));
+      setBMsg(`อัปเดต ${d.count} ตอนแล้ว`);
+    } finally {
+      setBLoading(false);
+    }
+  }
+
   return (
     <div className="space-y-5">
       {/* Summary */}
@@ -363,6 +404,57 @@ export default function ChapterManager({
           <span className="text-xs text-[var(--text-secondary)]">ตอนล็อค</span>
         </div>
       </div>
+
+      {/* Bulk manage range */}
+      {chapters.length > 0 && (
+        <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] overflow-hidden">
+          <button onClick={() => setBulkOpen((o) => !o)} className="w-full flex items-center justify-between px-4 py-3 text-left">
+            <span className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
+              <Layers className="w-4 h-4" /> จัดการหลายตอนพร้อมกัน
+            </span>
+            <ChevronDown className={clsx("w-4 h-4 text-[var(--text-secondary)] transition-transform", bulkOpen && "rotate-180")} />
+          </button>
+          {bulkOpen && (
+            <div className="px-4 pb-4 border-t border-[var(--border)] pt-4 space-y-3">
+              <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)] flex-wrap">
+                <span>ตอนที่</span>
+                <input type="number" value={bFrom} onChange={(e) => setBFrom(e.target.value)} placeholder="เริ่ม"
+                  className="w-16 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-2 py-1 text-[var(--text-primary)] text-center focus:outline-none" />
+                <span>ถึง</span>
+                <input type="number" value={bTo} onChange={(e) => setBTo(e.target.value)} placeholder="จบ"
+                  className="w-16 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-2 py-1 text-[var(--text-primary)] text-center focus:outline-none" />
+              </div>
+              <div className="flex gap-2">
+                {([["premium", "ล็อคเหรียญ"], ["free", "เปิดฟรี"]] as const).map(([m, l]) => (
+                  <button key={m} onClick={() => setBMode(m)}
+                    className={clsx("px-3 py-1.5 rounded-lg text-xs border transition-colors",
+                      bMode === m ? "bg-[var(--text-primary)] text-[var(--bg-primary)] border-[var(--text-primary)]" : "border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+              {bMode === "premium" && (
+                <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)] flex-wrap">
+                  <span>ราคา</span>
+                  <input type="number" value={bCoins} onChange={(e) => setBCoins(e.target.value)}
+                    className="w-14 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-2 py-1 text-[var(--text-primary)] text-center focus:outline-none" />
+                  <span>เหรียญ</span>
+                  <span className="ml-2">อ่านล่วงหน้า</span>
+                  <input type="number" value={bDays} onChange={(e) => setBDays(e.target.value)}
+                    className="w-14 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-2 py-1 text-[var(--text-primary)] text-center focus:outline-none" />
+                  <span>วัน</span>
+                  <span className="text-[10px] text-[var(--text-muted)]">(0 = ถาวร)</span>
+                </div>
+              )}
+              {bMsg && <p className="text-xs text-[var(--text-primary)]">{bMsg}</p>}
+              <button onClick={applyBulk} disabled={bLoading}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bal-btn text-sm font-semibold disabled:opacity-50">
+                {bLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null} ใช้กับช่วงนี้
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Chapter list */}
       {chapters.length === 0 ? (
