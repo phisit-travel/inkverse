@@ -33,8 +33,8 @@ export async function POST(req: NextRequest, { params }: Params) {
       }),
       prisma.translator.upsert({
         where: { userId: application.userId },
-        create: { userId: application.userId, penName: application.penName, bio: "" },
-        update: { penName: application.penName },
+        create: { userId: application.userId, penName: application.penName, bio: "", kind: application.kind },
+        update: { penName: application.penName, kind: application.kind },
       }),
     ]);
 

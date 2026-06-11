@@ -30,14 +30,19 @@ export default async function SettingsPage() {
     user.role === "TRANSLATOR" || user.role === "ADMIN"
       ? await prisma.translator.findUnique({
           where: { userId },
-          select: { bio: true, socialLinks: true },
+          select: { bio: true, socialLinks: true, kind: true },
         })
       : null;
+
+  const roleText =
+    user.role === "TRANSLATOR" && translator?.kind === "WRITER"
+      ? "นักเขียน"
+      : roleLabel[user.role] ?? user.role;
 
   const rows = [
     { icon: User, label: "ชื่อผู้ใช้", value: user.username },
     { icon: Mail, label: "อีเมล", value: user.email },
-    { icon: Shield, label: "บทบาท", value: roleLabel[user.role] ?? user.role },
+    { icon: Shield, label: "บทบาท", value: roleText },
     {
       icon: Calendar,
       label: "เข้าร่วมเมื่อ",

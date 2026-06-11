@@ -230,6 +230,7 @@ model Translator {
   userId      String  @unique
   penName     String
   bio         String?
+  kind        String  @default("TRANSLATOR") // TRANSLATOR | WRITER — drives the นักแปล/นักเขียน label
   socialLinks Json?   // { facebook?, x?, youtube?, tiktok?, discord?, website? }
   totalWorks  Int     @default(0)
   user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)

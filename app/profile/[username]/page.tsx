@@ -117,6 +117,10 @@ export default async function ProfilePage({ params }: Props) {
   const socials = (user.translator?.socialLinks as Record<string, string> | null) ?? {};
   const role = ROLES[user.role as keyof typeof ROLES] ?? ROLES.READER;
   const RoleIcon = role.icon;
+  // Translators and writers share the TRANSLATOR role — distinguish by Translator.kind.
+  const isWriterCreator = user.role === "TRANSLATOR" && user.translator?.kind === "WRITER";
+  const roleLabel = isWriterCreator ? "นักเขียน" : role.label;
+  const creatorWord = isWriterCreator ? "นักเขียน" : "นักแปล";
   // Paid identity verification (admins are inherently official).
   const isVerified = !!user.verifiedAt || user.role === "ADMIN";
   // Translators only earn the "VERIFIED" eyebrow once actually verified.
@@ -240,7 +244,7 @@ export default async function ProfilePage({ params }: Props) {
               <BadgeCheck className="w-5 h-5 text-[var(--text-primary)] shrink-0" />
             )}
             <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] ${role.chip}`}>
-              <RoleIcon className="w-3.5 h-3.5" /> {role.label}
+              <RoleIcon className="w-3.5 h-3.5" /> {roleLabel}
             </span>
           </div>
           <p className="text-xs text-[var(--text-secondary)] mt-2 uppercase tracking-[0.2em]">@{user.username}</p>
@@ -299,7 +303,7 @@ export default async function ProfilePage({ params }: Props) {
       {/* ── Rank: translator for creators, reader for everyone else ── */}
       {isCreator && tRank ? (
         <section className="mb-10">
-          <SectionTitle><Trophy className="w-5 h-5" /> ยศนักแปล</SectionTitle>
+          <SectionTitle><Trophy className="w-5 h-5" /> ยศ{creatorWord}</SectionTitle>
           <div className="flex items-center gap-4 border border-[var(--border)] bg-[var(--bg-surface)] p-5">
             <div className="w-16 h-16 flex items-center justify-center bg-[var(--text-primary)] text-[var(--bg-primary)] shrink-0">
               <TRankIcon className="w-8 h-8" />
@@ -429,7 +433,7 @@ export default async function ProfilePage({ params }: Props) {
       {isOwner && isCreator && (
         <section className="mb-10">
           <SectionTitle>
-            <PenTool className="w-5 h-5" /> เครื่องมือนักแปล
+            <PenTool className="w-5 h-5" /> เครื่องมือ{creatorWord}
           </SectionTitle>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {[
