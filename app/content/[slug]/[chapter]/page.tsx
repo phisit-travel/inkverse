@@ -45,7 +45,7 @@ export default async function ReaderPage({ params }: Props) {
 
   const manga = await prisma.manga.findUnique({
     where: { slug },
-    select: { id: true, title: true, slug: true },
+    select: { id: true, title: true, slug: true, translator: { select: { userId: true } } },
   });
   if (!manga) notFound();
 
@@ -102,19 +102,28 @@ export default async function ReaderPage({ params }: Props) {
     take: 30,
     include: {
       user: { select: { username: true, avatarUrl: true } },
+      likedBy: userId ? { where: { userId }, select: { id: true } } : false,
       replies: {
-        include: { user: { select: { username: true, avatarUrl: true } } },
+        include: {
+          user: { select: { username: true, avatarUrl: true } },
+          likedBy: userId ? { where: { userId }, select: { id: true } } : false,
+        },
         orderBy: { createdAt: "asc" },
         take: 10,
       },
     },
   });
 
+  // Count views from readers only — never the creator viewing their own work.
+  const isOwner = !!userId && manga.translator?.userId === userId;
+
   // Increment chapter views + save history
-  await prisma.chapter.update({
-    where: { id: chapterData.id },
-    data: { viewCount: { increment: 1 } },
-  });
+  if (!isOwner) {
+    await prisma.chapter.update({
+      where: { id: chapterData.id },
+      data: { viewCount: { increment: 1 } },
+    });
+  }
 
   if (userId) {
     await prisma.readHistory.upsert({
@@ -146,9 +155,11 @@ export default async function ReaderPage({ params }: Props) {
           comments={comments.map((c) => ({
             ...c,
             createdAt: c.createdAt.toISOString(),
+            likedByMe: Array.isArray(c.likedBy) && c.likedBy.length > 0,
             replies: c.replies.map((r) => ({
               ...r,
               createdAt: r.createdAt.toISOString(),
+              likedByMe: Array.isArray(r.likedBy) && r.likedBy.length > 0,
               replies: [],
             })),
           }))}

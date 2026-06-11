@@ -104,11 +104,14 @@ export default async function MangaProfilePage({ params }: Props) {
       : Promise.resolve(new Set<string>()),
   ]);
 
-  // Increment views
-  await prisma.manga.update({
-    where: { id: manga.id },
-    data: { totalViews: { increment: 1 } },
-  });
+  // Count views from readers only — never the creator viewing their own work.
+  const isOwner = !!userId && manga.translator?.userId === userId;
+  if (!isOwner) {
+    await prisma.manga.update({
+      where: { id: manga.id },
+      data: { totalViews: { increment: 1 } },
+    });
+  }
 
   const avgRating =
     manga.ratings.length > 0
