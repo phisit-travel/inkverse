@@ -14,6 +14,7 @@ interface Props {
   nextChapter?: number | null;
   minutes?: number;
   authorNote?: string | null;
+  watermark?: string | null;
 }
 
 type Settings = {
@@ -36,7 +37,7 @@ const THEMES: Record<Settings["theme"], { bg: string; fg: string; label: string 
 const WIDTHS = { narrow: "max-w-xl", normal: "max-w-2xl", wide: "max-w-3xl" };
 
 export default function TextReader({
-  html, chapterTitle, chapterNum, mangaTitle, mangaSlug, prevChapter, nextChapter, minutes, authorNote,
+  html, chapterTitle, chapterNum, mangaTitle, mangaSlug, prevChapter, nextChapter, minutes, authorNote, watermark,
 }: Props) {
   const [s, setS] = useState<Settings>(DEFAULT);
   const [open, setOpen] = useState(false);
@@ -60,6 +61,17 @@ export default function TextReader({
 
   return (
     <div style={{ background: t.bg, color: t.fg }} className="min-h-screen transition-colors">
+      {/* Traceable watermark — a leaked screenshot carries the reader's name */}
+      {watermark && (
+        <div className="pointer-events-none fixed inset-0 z-20 overflow-hidden select-none" aria-hidden="true">
+          <div className="absolute inset-[-25%] flex flex-wrap content-start gap-x-14 gap-y-20 rotate-[-28deg] opacity-[0.07]">
+            {Array.from({ length: 90 }).map((_, i) => (
+              <span key={i} className="text-[11px] whitespace-nowrap" style={{ color: t.fg }}>{watermark}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* top bar */}
       <div className="sticky top-0 z-30 backdrop-blur-sm border-b border-black/10" style={{ background: t.bg }}>
         <div className={`mx-auto ${WIDTHS[s.width]} px-4 py-3 flex items-center justify-between gap-3`}>
@@ -122,7 +134,12 @@ export default function TextReader({
       )}
 
       {/* content */}
-      <article className={`mx-auto ${WIDTHS[s.width]} px-5 sm:px-6 py-10`}>
+      <article
+        className={`mx-auto ${WIDTHS[s.width]} px-5 sm:px-6 py-10 select-none`}
+        onContextMenu={(e) => e.preventDefault()}
+        onCopy={(e) => e.preventDefault()}
+        onDragStart={(e) => e.preventDefault()}
+      >
         <p className="text-xs uppercase tracking-[0.3em] opacity-50 mb-2 flex items-center gap-2">
           <BookOpen className="w-3.5 h-3.5" /> ตอนที่ {chapterNum}{minutes ? ` · อ่าน ~${minutes} นาที` : ""}
         </p>

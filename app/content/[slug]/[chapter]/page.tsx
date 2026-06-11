@@ -174,6 +174,7 @@ export default async function ReaderPage({ params }: Props) {
           nextChapter={nextChapter?.chapterNum ?? null}
           minutes={novelStats(chapterData.content).minutes}
           authorNote={chapterData.authorNote}
+          watermark={(session?.user as { username?: string; name?: string })?.username ?? session?.user?.name ?? "INKVERSE"}
         />
       ) : (
         <ReaderViewer
