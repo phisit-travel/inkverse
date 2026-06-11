@@ -9,6 +9,7 @@ import NotificationBell from "./NotificationBell";
 import ThemeToggle from "./ThemeToggle";
 import SearchBox from "./SearchBox";
 import UserMenu from "./UserMenu";
+import type { RankBadge } from "@/lib/ranks";
 import clsx from "clsx";
 
 interface NavbarProps {
@@ -20,6 +21,7 @@ interface NavbarProps {
     role?: string;
   } | null;
   userCoins?: number;
+  rankBadge?: RankBadge | null;
 }
 
 const navLinks = [
@@ -32,7 +34,7 @@ const navLinks = [
   { href: "/apply", label: "สมัครเป็นนักแปล" },
 ];
 
-export default function Navbar({ user, userCoins = 0 }: NavbarProps) {
+export default function Navbar({ user, userCoins = 0, rankBadge = null }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -73,7 +75,7 @@ export default function Navbar({ user, userCoins = 0 }: NavbarProps) {
             <>
               <CoinBadge initialCoins={userCoins} />
               <NotificationBell />
-              <UserMenu user={user} />
+              <UserMenu user={user} rankBadge={rankBadge} />
             </>
           ) : (
             <Link

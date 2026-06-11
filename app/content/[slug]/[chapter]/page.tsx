@@ -7,6 +7,7 @@ import CommentSection from "@/components/ui/CommentSection";
 import PremiumGate from "@/components/ui/PremiumGate";
 import { getUserCoins, hasUnlockedChapter } from "@/lib/coins";
 import { evaluateAchievements } from "@/lib/achievements";
+import { getRankBadges } from "@/lib/ranks";
 import type { Metadata } from "next";
 
 const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inkverse.com";
@@ -102,11 +103,11 @@ export default async function ReaderPage({ params }: Props) {
     orderBy: { createdAt: "desc" },
     take: 30,
     include: {
-      user: { select: { username: true, avatarUrl: true } },
+      user: { select: { id: true, username: true, avatarUrl: true } },
       likedBy: userId ? { where: { userId }, select: { id: true } } : false,
       replies: {
         include: {
-          user: { select: { username: true, avatarUrl: true } },
+          user: { select: { id: true, username: true, avatarUrl: true } },
           likedBy: userId ? { where: { userId }, select: { id: true } } : false,
         },
         orderBy: { createdAt: "asc" },
@@ -114,6 +115,14 @@ export default async function ReaderPage({ params }: Props) {
       },
     },
   });
+
+  // Rank badges for everyone in the thread (+ current user, for new comments).
+  const rankMap = await getRankBadges([
+    ...comments.map((c) => c.user.id),
+    ...comments.flatMap((c) => c.replies.map((r) => r.user.id)),
+    ...(userId ? [userId] : []),
+  ]);
+  const currentUserRank = userId ? rankMap.get(userId) ?? null : null;
 
   // Count views from readers only — never the creator viewing their own work.
   const isOwner = !!userId && manga.translator?.userId === userId;
@@ -159,15 +168,26 @@ export default async function ReaderPage({ params }: Props) {
             ...c,
             createdAt: c.createdAt.toISOString(),
             likedByMe: Array.isArray(c.likedBy) && c.likedBy.length > 0,
+            user: {
+              username: c.user.username,
+              avatarUrl: c.user.avatarUrl,
+              rank: rankMap.get(c.user.id) ?? null,
+            },
             replies: c.replies.map((r) => ({
               ...r,
               createdAt: r.createdAt.toISOString(),
               likedByMe: Array.isArray(r.likedBy) && r.likedBy.length > 0,
+              user: {
+                username: r.user.username,
+                avatarUrl: r.user.avatarUrl,
+                rank: rankMap.get(r.user.id) ?? null,
+              },
               replies: [],
             })),
           }))}
           currentUserId={userId ?? undefined}
           currentUsername={session?.user?.name ?? undefined}
+          currentUserRank={currentUserRank}
         />
       </div>
     </div>

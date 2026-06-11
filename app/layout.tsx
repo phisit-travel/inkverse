@@ -5,6 +5,7 @@ import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/layout/Footer";
 import { auth } from "@/lib/auth";
 import { getUserCoins } from "@/lib/coins";
+import { getUserRankBadge } from "@/lib/ranks";
 import { WebsiteJsonLd } from "@/components/seo/JsonLd";
 import HelpChatbot from "@/components/ui/HelpChatbot";
 import ReadingProgressProvider from "@/components/ui/ReadingProgressProvider";
@@ -81,7 +82,10 @@ export default async function RootLayout({
 }) {
   const session = await auth();
   const userId = session?.user ? (session.user as { id: string }).id : null;
-  const userCoins = userId ? await getUserCoins(userId) : 0;
+  const userRole = session?.user ? (session.user as { role?: string }).role : undefined;
+  const [userCoins, rankBadge] = userId
+    ? await Promise.all([getUserCoins(userId), getUserRankBadge(userId, userRole)])
+    : [0, null];
 
   return (
     <html
@@ -99,7 +103,7 @@ export default async function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col bg-[var(--bg-primary)] text-[var(--text-primary)] font-[family-name:var(--font-noto)]">
         <WebsiteJsonLd />
-        <Navbar user={session?.user} userCoins={userCoins} />
+        <Navbar user={session?.user} userCoins={userCoins} rankBadge={rankBadge} />
         <main className="flex-1">
           {userId ? (
             <ReadingProgressProvider>{children}</ReadingProgressProvider>

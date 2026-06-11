@@ -6,6 +6,8 @@ import { signOut } from "next-auth/react";
 import {
   User, LayoutDashboard, Settings, LogOut, Coins, Shield, Upload, ChevronDown, Gift, MessageSquare, Trophy, Medal,
 } from "lucide-react";
+import RankChip from "./RankChip";
+import type { RankBadge } from "@/lib/ranks";
 
 interface MenuUser {
   name?: string | null;
@@ -15,7 +17,13 @@ interface MenuUser {
   role?: string;
 }
 
-export default function UserMenu({ user }: { user: MenuUser }) {
+export default function UserMenu({ user, rankBadge }: { user: MenuUser; rankBadge?: RankBadge | null }) {
+  const ringClass =
+    rankBadge?.kind === "admin"
+      ? "ring-2 ring-[var(--text-primary)]"
+      : rankBadge
+      ? "ring-1 ring-[var(--text-primary)]/40"
+      : "";
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -40,7 +48,7 @@ export default function UserMenu({ user }: { user: MenuUser }) {
         aria-label="เมนูผู้ใช้"
         className="flex items-center gap-1 p-0.5 rounded-full hover:bg-white/10 transition-colors"
       >
-        <span className="w-8 h-8 rounded-full overflow-hidden bg-[var(--accent)] flex items-center justify-center text-white text-sm font-semibold shrink-0">
+        <span className={`w-8 h-8 rounded-full overflow-hidden bg-[var(--accent)] flex items-center justify-center text-white text-sm font-semibold shrink-0 ${ringClass}`}>
           {user.image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={user.image} alt="" className="w-full h-full object-cover" />
@@ -59,6 +67,11 @@ export default function UserMenu({ user }: { user: MenuUser }) {
           <div className="px-3 py-2.5 border-b border-[var(--border)]">
             <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{username}</p>
             {user.email && <p className="text-xs text-[var(--text-secondary)] truncate">{user.email}</p>}
+            {rankBadge && (
+              <div className="mt-1.5">
+                <RankChip badge={rankBadge} />
+              </div>
+            )}
           </div>
 
           <Link href={`/profile/${user.username ?? user.name}`} className={item}>

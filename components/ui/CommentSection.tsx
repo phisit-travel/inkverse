@@ -6,14 +6,17 @@ import { MessageCircle, Heart, ChevronDown, AlertTriangle, Trash2, CornerDownRig
 import { formatDistanceToNow } from "date-fns";
 import { th } from "date-fns/locale";
 import clsx from "clsx";
+import RankChip from "./RankChip";
+import type { RankBadge } from "@/lib/ranks";
 
 interface Comment {
   id: string;
   content: string;
   isSpoiler: boolean;
   likes: number;
+  likedByMe?: boolean;
   createdAt: string | Date;
-  user: { username: string; avatarUrl?: string | null };
+  user: { username: string; avatarUrl?: string | null; rank?: RankBadge | null };
   replies?: Comment[];
 }
 
@@ -22,6 +25,7 @@ interface CommentSectionProps {
   comments?: Comment[];
   currentUserId?: string;
   currentUsername?: string;
+  currentUserRank?: RankBadge | null;
 }
 
 // ─── Reply Form ────────────────────────────────────────────────
@@ -113,17 +117,33 @@ function CommentItem({
   const [showReplies, setShowReplies] = useState(true);
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [likes, setLikes] = useState(comment.likes);
-  const [liked, setLiked] = useState(false);
+  const [liked, setLiked] = useState(!!comment.likedByMe);
+  const [liking, setLiking] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   async function handleLike() {
-    if (liked || !currentUserId) return;
-    setLiked(true);
-    setLikes((n) => n + 1);
-    await fetch(`/api/comment/${comment.id}`, { method: "PATCH" }).catch(() => {
-      setLiked(false);
-      setLikes((n) => n - 1);
-    });
+    if (liking || !currentUserId) return;
+    setLiking(true);
+    // Optimistic toggle; reconcile with the server's authoritative count.
+    const next = !liked;
+    setLiked(next);
+    setLikes((n) => Math.max(0, n + (next ? 1 : -1)));
+    try {
+      const res = await fetch(`/api/comment/${comment.id}`, { method: "PATCH" });
+      if (res.ok) {
+        const data = (await res.json()) as { likes: number; liked: boolean };
+        setLiked(data.liked);
+        setLikes(data.likes);
+      } else {
+        setLiked(!next);
+        setLikes((n) => Math.max(0, n + (next ? -1 : 1)));
+      }
+    } catch {
+      setLiked(!next);
+      setLikes((n) => Math.max(0, n + (next ? -1 : 1)));
+    } finally {
+      setLiking(false);
+    }
   }
 
   async function handleDelete() {
@@ -153,6 +173,7 @@ function CommentItem({
         {/* Header */}
         <div className="flex items-center gap-2 mb-1 flex-wrap">
           <span className="text-sm font-semibold text-[var(--text-primary)]">{comment.user.username}</span>
+          {comment.user.rank && <RankChip badge={comment.user.rank} />}
           <span className="text-xs text-[var(--text-secondary)]">
             {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: th })}
           </span>
@@ -176,7 +197,7 @@ function CommentItem({
         <div className="flex items-center gap-3 mt-2">
           <button
             onClick={handleLike}
-            disabled={!currentUserId || liked}
+            disabled={!currentUserId || liking}
             className={clsx(
               "flex items-center gap-1 text-xs transition-colors",
               liked ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
@@ -257,6 +278,7 @@ export default function CommentSection({
   comments: initial = [],
   currentUserId,
   currentUsername,
+  currentUserRank,
 }: CommentSectionProps) {
   const [comments, setComments] = useState<Comment[]>(initial);
   const [content, setContent] = useState("");
@@ -277,7 +299,15 @@ export default function CommentSection({
       });
       if (!res.ok) { setError("ส่งความคิดเห็นไม่สำเร็จ"); return; }
       const newComment = await res.json() as Comment;
-      setComments((prev) => [{ ...newComment, createdAt: newComment.createdAt, replies: [] }, ...prev]);
+      setComments((prev) => [
+        {
+          ...newComment,
+          createdAt: newComment.createdAt,
+          replies: [],
+          user: { ...newComment.user, rank: currentUserRank ?? null },
+        },
+        ...prev,
+      ]);
       setContent("");
       setIsSpoiler(false);
     } finally {
@@ -301,10 +331,11 @@ export default function CommentSection({
 
   function handleReplyAdded(parentId: string, reply: Comment | null) {
     if (!reply) return;
+    const withRank = { ...reply, user: { ...reply.user, rank: currentUserRank ?? null } };
     setComments((prev) =>
       prev.map((c) =>
         c.id === parentId
-          ? { ...c, replies: [...(c.replies ?? []), reply] }
+          ? { ...c, replies: [...(c.replies ?? []), withRank] }
           : c
       )
     );

@@ -1,3 +1,5 @@
+import { prisma } from "./prisma";
+
 /**
  * Reader rank ladder. Rank is DERIVED (not stored): the highest tier whose BOTH
  * conditions are met — chapters read AND coins spent unlocking premium chapters.
@@ -17,15 +19,15 @@ export interface ReaderRank {
 }
 
 export const READER_RANKS: ReaderRank[] = [
-  { level: 1, name: "ผู้เริ่มต้น",        nameEn: "Novice",      icon: "Sprout",     minReads: 0,    minCoinsSpent: 0 },
-  { level: 2, name: "นักอ่านพเนจร",       nameEn: "Wanderer",    icon: "Footprints", minReads: 10,   minCoinsSpent: 0 },
-  { level: 3, name: "นักอ่านชั้นต้น",      nameEn: "Initiate",    icon: "BookOpen",   minReads: 30,   minCoinsSpent: 0 },
-  { level: 4, name: "นักอ่านชั้นกลาง",     nameEn: "Adept",       icon: "Swords",     minReads: 80,   minCoinsSpent: 0 },
+  { level: 1, name: "ผู้เริ่มต้น",        nameEn: "Awakened",     icon: "Sprout",     minReads: 0,    minCoinsSpent: 0 },
+  { level: 2, name: "นักอ่านพเนจร",       nameEn: "Disciple",     icon: "Footprints", minReads: 10,   minCoinsSpent: 0 },
+  { level: 3, name: "นักอ่านชั้นต้น",      nameEn: "Adept",        icon: "BookOpen",   minReads: 30,   minCoinsSpent: 0 },
+  { level: 4, name: "นักอ่านชั้นกลาง",     nameEn: "Ascendant",    icon: "Swords",     minReads: 80,   minCoinsSpent: 0 },
   // ── second half: coins required, thresholds climb hard ──
-  { level: 5, name: "นักอ่านชั้นสูง",      nameEn: "Expert",      icon: "Flame",      minReads: 175,  minCoinsSpent: 100 },
-  { level: 6, name: "ปรมาจารย์นักอ่าน",    nameEn: "Master",      icon: "Shield",     minReads: 350,  minCoinsSpent: 350 },
-  { level: 7, name: "มหาเซียนนักอ่าน",     nameEn: "Grandmaster", icon: "Gem",        minReads: 700,  minCoinsSpent: 900 },
-  { level: 8, name: "ตำนานนักอ่าน",        nameEn: "Legend",      icon: "Crown",      minReads: 1400, minCoinsSpent: 2000 },
+  { level: 5, name: "นักอ่านชั้นสูง",      nameEn: "Sovereign",    icon: "Flame",      minReads: 175,  minCoinsSpent: 100 },
+  { level: 6, name: "ปรมาจารย์นักอ่าน",    nameEn: "Saint",        icon: "Shield",     minReads: 350,  minCoinsSpent: 350 },
+  { level: 7, name: "มหาเซียนนักอ่าน",     nameEn: "Transcendent", icon: "Gem",        minReads: 700,  minCoinsSpent: 900 },
+  { level: 8, name: "ตำนานนักอ่าน",        nameEn: "Immortal",     icon: "Crown",      minReads: 1400, minCoinsSpent: 2000 },
 ];
 
 export interface RankInfo {
@@ -82,11 +84,11 @@ export interface TranslatorRank {
 }
 
 export const TRANSLATOR_RANKS: TranslatorRank[] = [
-  { level: 1, name: "นักแปลฝึกหัด",     nameEn: "Apprentice", icon: "PenTool",    minChapters: 0,    minViews: 0 },
-  { level: 2, name: "นักแปลมือใหม่",     nameEn: "Scribe",     icon: "Feather",    minChapters: 30,   minViews: 5000 },
-  { level: 3, name: "นักแปลชำนาญ",       nameEn: "Artisan",    icon: "BookMarked", minChapters: 150,  minViews: 50000 },
-  { level: 4, name: "นักแปลชั้นครู",      nameEn: "Maestro",    icon: "Award",      minChapters: 500,  minViews: 300000 },
-  { level: 5, name: "ปรมาจารย์นักแปล",   nameEn: "Virtuoso",   icon: "Crown",     minChapters: 1200, minViews: 1000000 },
+  { level: 1, name: "นักแปลฝึกหัด",     nameEn: "Scribe",    icon: "PenTool",    minChapters: 0,    minViews: 0 },
+  { level: 2, name: "นักแปลมือใหม่",     nameEn: "Artisan",   icon: "Feather",    minChapters: 30,   minViews: 5000 },
+  { level: 3, name: "นักแปลชำนาญ",       nameEn: "Maestro",   icon: "BookMarked", minChapters: 150,  minViews: 50000 },
+  { level: 4, name: "นักแปลชั้นครู",      nameEn: "Luminary",  icon: "Award",      minChapters: 500,  minViews: 300000 },
+  { level: 5, name: "ปรมาจารย์นักแปล",   nameEn: "Celestial", icon: "Crown",     minChapters: 1200, minViews: 1000000 },
 ];
 
 export interface TranslatorRankInfo {
@@ -125,4 +127,80 @@ export function getTranslatorRank(chapters: number, views: number): TranslatorRa
     viewsToNext: next ? Math.max(0, next.minViews - views) : 0,
     percentToNext,
   };
+}
+
+/* ─────────────────── Compact rank badges (navbar / comments) ─────────────────── */
+
+export type RankBadgeKind = "reader" | "translator" | "admin";
+export interface RankBadge {
+  kind: RankBadgeKind;
+  level: number;
+  nameEn: string;
+}
+
+/** A single user's badge — used in the navbar. `role` lets us skip a query. */
+export async function getUserRankBadge(userId: string, role?: string): Promise<RankBadge> {
+  if (role === "ADMIN") return { kind: "admin", level: 0, nameEn: "Official" };
+
+  const translator = await prisma.translator.findUnique({
+    where: { userId },
+    select: { mangas: { select: { totalViews: true, _count: { select: { chapters: true } } } } },
+  });
+  if (translator) {
+    const ch = translator.mangas.reduce((s, m) => s + m._count.chapters, 0);
+    const v = translator.mangas.reduce((s, m) => s + m.totalViews, 0);
+    const r = getTranslatorRank(ch, v);
+    return { kind: "translator", level: r.current.level, nameEn: r.current.nameEn };
+  }
+
+  const [reads, spent] = await Promise.all([
+    prisma.readHistory.count({ where: { userId } }),
+    prisma.unlockedChapter.aggregate({ where: { userId }, _sum: { coinSpent: true } }),
+  ]);
+  const r = getReaderRank(reads, spent._sum.coinSpent ?? 0);
+  return { kind: "reader", level: r.current.level, nameEn: r.current.nameEn };
+}
+
+/** Batch badges for many users (comment lists) — fixed number of queries. */
+export async function getRankBadges(userIds: string[]): Promise<Map<string, RankBadge>> {
+  const ids = [...new Set(userIds)];
+  const out = new Map<string, RankBadge>();
+  if (ids.length === 0) return out;
+
+  const [users, reads, spent, translators] = await Promise.all([
+    prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, role: true } }),
+    prisma.readHistory.groupBy({ by: ["userId"], where: { userId: { in: ids } }, _count: { userId: true } }),
+    prisma.unlockedChapter.groupBy({ by: ["userId"], where: { userId: { in: ids } }, _sum: { coinSpent: true } }),
+    prisma.translator.findMany({
+      where: { userId: { in: ids } },
+      select: { userId: true, mangas: { select: { totalViews: true, _count: { select: { chapters: true } } } } },
+    }),
+  ]);
+  const readMap = new Map(reads.map((r) => [r.userId, r._count.userId]));
+  const spentMap = new Map(spent.map((s) => [s.userId, s._sum.coinSpent ?? 0]));
+  const tMap = new Map(
+    translators.map((t) => [
+      t.userId,
+      {
+        ch: t.mangas.reduce((s, m) => s + m._count.chapters, 0),
+        v: t.mangas.reduce((s, m) => s + m.totalViews, 0),
+      },
+    ])
+  );
+
+  for (const u of users) {
+    if (u.role === "ADMIN") {
+      out.set(u.id, { kind: "admin", level: 0, nameEn: "Official" });
+      continue;
+    }
+    const t = tMap.get(u.id);
+    if (t) {
+      const r = getTranslatorRank(t.ch, t.v);
+      out.set(u.id, { kind: "translator", level: r.current.level, nameEn: r.current.nameEn });
+    } else {
+      const r = getReaderRank(readMap.get(u.id) ?? 0, spentMap.get(u.id) ?? 0);
+      out.set(u.id, { kind: "reader", level: r.current.level, nameEn: r.current.nameEn });
+    }
+  }
+  return out;
 }
