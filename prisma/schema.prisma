@@ -28,6 +28,7 @@ model User {
   bookmarks        Bookmark[]
   readHistory      ReadHistory[]
   comments         Comment[]
+  commentLikes     CommentLike[]
   ratings          Rating[]
   translator       Translator?
   coinTransactions        CoinTransaction[]
@@ -41,6 +42,19 @@ model User {
   contactMessages         ContactMessage[]
   verificationRequest     VerificationRequest?
   passwordResetTokens     PasswordResetToken[]
+  achievements            UserAchievement[]
+}
+
+// Unlocked achievements. Definitions live in code (lib/achievements.ts); this
+// table only records which keys a user has earned (one row per unlock).
+model UserAchievement {
+  userId         String
+  achievementKey String
+  unlockedAt     DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, achievementKey])
+  @@index([userId])
 }
 
 model PasswordResetToken {
@@ -297,6 +311,21 @@ model Comment {
   replies   Comment[] @relation("Replies")
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   chapter   Chapter   @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  likedBy   CommentLike[]
+}
+
+// One row per (user, comment) like — makes liking idempotent + toggleable, and
+// `Comment.likes` the denormalised count kept in sync on create/delete.
+model CommentLike {
+  id        String   @id @default(cuid())
+  userId    String
+  commentId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, commentId])
+  @@index([commentId])
 }
 
 model Rating {

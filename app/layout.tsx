@@ -7,6 +7,7 @@ import { auth } from "@/lib/auth";
 import { getUserCoins } from "@/lib/coins";
 import { WebsiteJsonLd } from "@/components/seo/JsonLd";
 import HelpChatbot from "@/components/ui/HelpChatbot";
+import ReadingProgressProvider from "@/components/ui/ReadingProgressProvider";
 
 const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inkverse.com";
 
@@ -98,7 +99,13 @@ export default async function RootLayout({
       <body className="min-h-screen flex flex-col bg-[var(--bg-primary)] text-[var(--text-primary)] font-[family-name:var(--font-noto)]">
         <WebsiteJsonLd />
         <Navbar user={session?.user} userCoins={userCoins} />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1">
+          {userId ? (
+            <ReadingProgressProvider>{children}</ReadingProgressProvider>
+          ) : (
+            children
+          )}
+        </main>
         <Footer />
         <HelpChatbot />
       </body>

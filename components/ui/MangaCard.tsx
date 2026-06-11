@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import clsx from "clsx";
 import { Star, Eye, Bookmark } from "lucide-react";
+import { useReadingProgress } from "./ReadingProgressProvider";
 
 interface MangaCardProps {
   slug: string;
@@ -34,6 +35,10 @@ export default function MangaCard({
 }: MangaCardProps) {
   const isCompact = variant === "compact";
   const isLarge = variant === "large";
+
+  const { bySlug } = useReadingProgress();
+  const readPercent = bySlug[slug];
+  const hasProgress = readPercent !== undefined && readPercent > 0;
 
   return (
     <Link
@@ -99,6 +104,23 @@ export default function MangaCard({
           <span className="absolute top-2 right-2 text-[10px] font-black px-1.5 py-0.5 rounded bg-[var(--text-primary)] text-[var(--bg-primary)] border border-[var(--border)]">
             18+
           </span>
+        )}
+
+        {/* Reading progress (per-user, from context) */}
+        {hasProgress && (
+          <>
+            {!isCompact && (
+              <span className="absolute bottom-1.5 left-1.5 z-10 text-[9px] font-bold px-1.5 py-0.5 rounded bg-[var(--text-primary)] text-[var(--bg-primary)]">
+                {readPercent >= 100 ? "อ่านจบแล้ว" : `อ่านแล้ว ${readPercent}%`}
+              </span>
+            )}
+            <div className="absolute bottom-0 inset-x-0 h-1 bg-black/40 z-10">
+              <div
+                className="h-full bg-[var(--text-primary)]"
+                style={{ width: `${readPercent}%` }}
+              />
+            </div>
+          </>
         )}
       </div>
 

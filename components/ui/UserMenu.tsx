@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import {
-  User, LayoutDashboard, Settings, LogOut, Coins, Shield, Upload, ChevronDown, Gift, MessageSquare,
+  User, LayoutDashboard, Settings, LogOut, Coins, Shield, Upload, ChevronDown, Gift, MessageSquare, Trophy,
 } from "lucide-react";
 
 interface MenuUser {
@@ -81,6 +81,9 @@ export default function UserMenu({ user }: { user: MenuUser }) {
           )}
           <Link href="/topup" className={item}>
             <Coins className="w-4 h-4" /> เติมเหรียญ
+          </Link>
+          <Link href="/achievements" className={item}>
+            <Trophy className="w-4 h-4" /> ความสำเร็จ
           </Link>
           <Link href="/referral" className={item}>
             <Gift className="w-4 h-4" /> ชวนเพื่อน

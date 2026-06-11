@@ -1,29 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { History } from "lucide-react";
-
-interface Item {
-  slug: string;
-  title: string;
-  coverUrl: string | null;
-  chapterNum: number;
-}
+import { useReadingProgress } from "./ReadingProgressProvider";
 
 export default function ContinueReading() {
-  const [items, setItems] = useState<Item[] | null>(null);
+  const { items, loaded } = useReadingProgress();
 
-  useEffect(() => {
-    let alive = true;
-    fetch("/api/continue-reading")
-      .then((r) => (r.ok ? r.json() : { items: [] }))
-      .then((d) => { if (alive) setItems(d.items ?? []); })
-      .catch(() => { if (alive) setItems([]); });
-    return () => { alive = false; };
-  }, []);
-
-  if (!items || items.length === 0) return null;
+  if (!loaded || items.length === 0) return null;
 
   return (
     <section className="mb-8">
@@ -32,7 +16,11 @@ export default function ContinueReading() {
       </h2>
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
         {items.map((it) => (
-          <Link key={it.slug} href={`/content/${it.slug}/${it.chapterNum}`} className="shrink-0 w-28 group">
+          <Link
+            key={it.slug}
+            href={`/content/${it.slug}/${it.chapterNum}`}
+            className="shrink-0 w-28 group"
+          >
             <div className="relative aspect-[3/4] rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--bg-card)]">
               {it.coverUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -40,13 +28,20 @@ export default function ContinueReading() {
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-2xl opacity-30">📖</div>
               )}
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent px-2 py-1.5">
-                <span className="text-[10px] text-[var(--text-primary)] font-medium">ตอนที่ {it.chapterNum}</span>
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent px-2 pt-3 pb-1.5">
+                <span className="text-[10px] text-[var(--text-primary)] font-medium">
+                  ตอนที่ {it.chapterNum}
+                </span>
+                {/* Progress bar */}
+                <div className="h-1 w-full bg-white/25 mt-1 overflow-hidden rounded-full">
+                  <div className="h-full bg-[var(--text-primary)]" style={{ width: `${it.percent}%` }} />
+                </div>
               </div>
             </div>
             <p className="text-xs text-[var(--text-secondary)] mt-1 line-clamp-1 group-hover:text-[var(--text-primary)] transition-colors">
               {it.title}
             </p>
+            <p className="text-[10px] text-[var(--text-secondary)]">อ่านแล้ว {it.percent}%</p>
           </Link>
         ))}
       </div>

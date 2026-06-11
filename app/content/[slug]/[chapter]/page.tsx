@@ -6,6 +6,7 @@ import ScrollToTop from "@/components/ui/ScrollToTop";
 import CommentSection from "@/components/ui/CommentSection";
 import PremiumGate from "@/components/ui/PremiumGate";
 import { getUserCoins, hasUnlockedChapter } from "@/lib/coins";
+import { evaluateAchievements } from "@/lib/achievements";
 import type { Metadata } from "next";
 
 const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inkverse.com";
@@ -131,6 +132,8 @@ export default async function ReaderPage({ params }: Props) {
       create: { userId, chapterId: chapterData.id, lastPage: 1 },
       update: { readAt: new Date() },
     });
+    // Unlock any reading achievements this opened up (grants coins + notifies).
+    await evaluateAchievements(userId);
   }
 
   return (
