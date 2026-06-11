@@ -19,6 +19,7 @@ const genres = [
   { name: "Adventure", slug: "adventure" },
   { name: "Supernatural", slug: "supernatural" },
   { name: "Sports", slug: "sports" },
+  { name: "Murim", slug: "murim" },
 ];
 
 const mangas = [
