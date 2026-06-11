@@ -12,7 +12,7 @@ const links = {
   บัญชี: [
     { href: "/auth/signin", label: "เข้าสู่ระบบ" },
     { href: "/auth/signup", label: "สมัครสมาชิก" },
-    { href: "/upload", label: "อัปโหลดผลงาน" },
+    { href: "/creators", label: "ลงงานกับเรา (รับ 80%)" },
   ],
   ข้อมูล: [
     { href: "/about", label: "เกี่ยวกับเรา" },
