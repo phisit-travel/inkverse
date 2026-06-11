@@ -9,8 +9,9 @@ import BookmarkButton from "@/components/ui/BookmarkButton";
 import ChapterRow from "@/components/ui/ChapterRow";
 import AgeGate from "@/components/ui/AgeGate";
 import { getUserCoins } from "@/lib/coins";
-import { getUserRankBadge } from "@/lib/ranks";
+import { getUserRankBadge, getRankBadges } from "@/lib/ranks";
 import { liveChapterWhere, isChapterLocked } from "@/lib/chapters";
+import CommentSection from "@/components/ui/CommentSection";
 import RankChip from "@/components/ui/RankChip";
 import {
   BookOpen,
@@ -152,6 +153,44 @@ export default async function MangaProfilePage({ params }: Props) {
   const lockedPremium = manga.chapters
     .filter((ch) => isChapterLocked(ch, unlockedSet.has(ch.id)))
     .map((ch) => ({ id: ch.id, chapterNum: ch.chapterNum, coinCost: ch.coinCost }));
+
+  // Work-level (หน้ารวม) comments — readers discuss the whole story here.
+  const workComments = await prisma.comment.findMany({
+    where: { mangaId: manga.id, parentId: null },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+    include: {
+      user: { select: { id: true, username: true, avatarUrl: true } },
+      likedBy: userId ? { where: { userId }, select: { id: true } } : false,
+      replies: {
+        include: {
+          user: { select: { id: true, username: true, avatarUrl: true } },
+          likedBy: userId ? { where: { userId }, select: { id: true } } : false,
+        },
+        orderBy: { createdAt: "asc" },
+        take: 10,
+      },
+    },
+  });
+  const commentRankMap = await getRankBadges([
+    ...workComments.map((c) => c.user.id),
+    ...workComments.flatMap((c) => c.replies.map((r) => r.user.id)),
+    ...(userId ? [userId] : []),
+  ]);
+  const currentUserRank = userId ? commentRankMap.get(userId) ?? null : null;
+  const workCommentData = workComments.map((c) => ({
+    ...c,
+    createdAt: c.createdAt.toISOString(),
+    likedByMe: Array.isArray(c.likedBy) && c.likedBy.length > 0,
+    user: { username: c.user.username, avatarUrl: c.user.avatarUrl, rank: commentRankMap.get(c.user.id) ?? null },
+    replies: c.replies.map((r) => ({
+      ...r,
+      createdAt: r.createdAt.toISOString(),
+      likedByMe: Array.isArray(r.likedBy) && r.likedBy.length > 0,
+      user: { username: r.user.username, avatarUrl: r.user.avatarUrl, rank: commentRankMap.get(r.user.id) ?? null },
+      replies: [],
+    })),
+  }));
 
   const statusLabel: Record<string, string> = {
     ONGOING: "กำลังดำเนินเรื่อง",
@@ -480,6 +519,17 @@ export default async function MangaProfilePage({ params }: Props) {
         </div>
       </div>
     </div>
+
+      {/* Work-level comments — readers discuss the whole story (key for novels) */}
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 pb-16">
+        <CommentSection
+          mangaId={manga.id}
+          comments={workCommentData}
+          currentUserId={userId ?? undefined}
+          currentUsername={session?.user?.name ?? undefined}
+          currentUserRank={currentUserRank}
+        />
+      </section>
     </>
   );
 }

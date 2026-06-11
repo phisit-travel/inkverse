@@ -4,23 +4,27 @@ import { auth } from "@/lib/auth";
 import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
 
-const commentSchema = z.object({
-  chapterId: z.string().min(1),
-  content: z.string().min(1).max(2000),
-  isSpoiler: z.boolean().optional().default(false),
-  parentId: z.string().optional(),
-});
+const commentSchema = z
+  .object({
+    chapterId: z.string().min(1).optional(),
+    mangaId: z.string().min(1).optional(),
+    content: z.string().min(1).max(2000),
+    isSpoiler: z.boolean().optional().default(false),
+    parentId: z.string().optional(),
+  })
+  .refine((d) => d.chapterId || d.mangaId, { message: "chapterId or mangaId required" });
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const chapterId = searchParams.get("chapterId");
+  const mangaId = searchParams.get("mangaId");
 
-  if (!chapterId) {
-    return NextResponse.json({ error: "chapterId required" }, { status: 400 });
+  if (!chapterId && !mangaId) {
+    return NextResponse.json({ error: "chapterId or mangaId required" }, { status: 400 });
   }
 
   const comments = await prisma.comment.findMany({
-    where: { chapterId, parentId: null },
+    where: chapterId ? { chapterId, parentId: null } : { mangaId, parentId: null },
     orderBy: { createdAt: "desc" },
     take: 50,
     include: {
@@ -56,10 +60,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { chapterId, content, isSpoiler, parentId } = parsed.data;
+  const { chapterId, mangaId, content, isSpoiler, parentId } = parsed.data;
 
   const comment = await prisma.comment.create({
-    data: { userId, chapterId, content, isSpoiler, parentId },
+    data: { userId, chapterId: chapterId ?? null, mangaId: mangaId ?? null, content, isSpoiler, parentId },
     include: { user: { select: { username: true, avatarUrl: true } } },
   });
 

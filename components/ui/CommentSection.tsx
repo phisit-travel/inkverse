@@ -21,7 +21,8 @@ interface Comment {
 }
 
 interface CommentSectionProps {
-  chapterId: string;
+  chapterId?: string;
+  mangaId?: string;
   comments?: Comment[];
   currentUserId?: string;
   currentUsername?: string;
@@ -31,11 +32,13 @@ interface CommentSectionProps {
 // ─── Reply Form ────────────────────────────────────────────────
 function ReplyForm({
   chapterId,
+  mangaId,
   parentId,
   onSubmit,
   onCancel,
 }: {
-  chapterId: string;
+  chapterId?: string;
+  mangaId?: string;
   parentId: string;
   onSubmit: (comment: Comment) => void;
   onCancel: () => void;
@@ -52,7 +55,7 @@ function ReplyForm({
       const res = await fetch("/api/comment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chapterId, content: content.trim(), isSpoiler, parentId }),
+        body: JSON.stringify({ chapterId, mangaId, content: content.trim(), isSpoiler, parentId }),
       });
       if (res.ok) {
         const newReply = await res.json() as Comment;
@@ -103,13 +106,15 @@ function CommentItem({
   depth = 0,
   currentUserId,
   chapterId,
+  mangaId,
   onDelete,
   onReplyAdded,
 }: {
   comment: Comment;
   depth?: number;
   currentUserId?: string;
-  chapterId: string;
+  chapterId?: string;
+  mangaId?: string;
   onDelete: (id: string, parentId?: string) => void;
   onReplyAdded: (parentId: string, reply: Comment) => void;
 }) {
@@ -233,6 +238,7 @@ function CommentItem({
         {showReplyForm && (
           <ReplyForm
             chapterId={chapterId}
+            mangaId={mangaId}
             parentId={comment.id}
             onSubmit={(reply) => {
               onReplyAdded(comment.id, reply);
@@ -261,6 +267,7 @@ function CommentItem({
                 depth={depth + 1}
                 currentUserId={currentUserId}
                 chapterId={chapterId}
+                mangaId={mangaId}
                 onDelete={(id) => onDelete(id, comment.id)}
                 onReplyAdded={onReplyAdded}
               />
@@ -275,6 +282,7 @@ function CommentItem({
 // ─── Main Section ──────────────────────────────────────────────
 export default function CommentSection({
   chapterId,
+  mangaId,
   comments: initial = [],
   currentUserId,
   currentUsername,
@@ -295,7 +303,7 @@ export default function CommentSection({
       const res = await fetch("/api/comment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chapterId, content: content.trim(), isSpoiler }),
+        body: JSON.stringify({ chapterId, mangaId, content: content.trim(), isSpoiler }),
       });
       if (!res.ok) { setError("ส่งความคิดเห็นไม่สำเร็จ"); return; }
       const newComment = await res.json() as Comment;
@@ -401,6 +409,7 @@ export default function CommentSection({
               comment={comment}
               currentUserId={currentUserId}
               chapterId={chapterId}
+              mangaId={mangaId}
               onDelete={handleDelete}
               onReplyAdded={handleReplyAdded}
             />
