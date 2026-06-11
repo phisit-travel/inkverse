@@ -223,7 +223,7 @@ function ChapterRow({
       </div>
 
       {/* Lock / Price control */}
-      <div className="flex items-center gap-2 shrink-0 ml-auto">
+      <div className="flex flex-wrap items-center justify-end gap-2 ml-auto">
         {chapter.isPremium && (
           <>
             {editingPrice ? (
