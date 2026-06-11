@@ -10,6 +10,7 @@ import { WebsiteJsonLd } from "@/components/seo/JsonLd";
 import HelpChatbot from "@/components/ui/HelpChatbot";
 import ReadingProgressProvider from "@/components/ui/ReadingProgressProvider";
 import AchievementToaster from "@/components/ui/AchievementToaster";
+import TrafficBeacon from "@/components/ui/TrafficBeacon";
 
 const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inkverse.com";
 
@@ -113,6 +114,7 @@ export default async function RootLayout({
         </main>
         <Footer />
         <HelpChatbot />
+        <TrafficBeacon />
         {userId && <AchievementToaster />}
       </body>
     </html>

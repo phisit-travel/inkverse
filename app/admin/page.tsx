@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { Users, BookOpen, MessageSquare, TrendingUp } from "lucide-react";
+import { Users, BookOpen, MessageSquare, TrendingUp, Wallet, ShoppingBag, Coins, Eye, UserCheck } from "lucide-react";
 import Link from "next/link";
 import RecalculateButton from "./RecalculateButton";
 
@@ -14,8 +14,11 @@ export default async function AdminPage() {
     redirect("/");
   }
 
-  const [userCount, mangaCount, chapterCount, commentCount, pendingApps, openContacts, pendingVerifs, recentMangas] =
-    await Promise.all([
+  const today = new Date().toISOString().slice(0, 10);
+  const [
+    userCount, mangaCount, chapterCount, commentCount, pendingApps, openContacts, pendingVerifs,
+    revenue, payingUsers, trafficToday, trafficTotal, traffic7, recentMangas,
+  ] = await Promise.all([
       // Real users only — exclude seed/test accounts (rating bots etc.).
       prisma.user.count({
         where: { NOT: { email: { endsWith: "@seed.inkverse.local" } } },
@@ -26,6 +29,11 @@ export default async function AdminPage() {
       prisma.translatorApplication.count({ where: { status: "PENDING" } }),
       prisma.contactMessage.count({ where: { status: "OPEN" } }),
       prisma.verificationRequest.count({ where: { status: "PENDING" } }),
+      prisma.coinOrder.aggregate({ where: { status: "PAID" }, _sum: { price: true, coins: true, bonus: true }, _count: true }),
+      prisma.coinOrder.groupBy({ by: ["userId"], where: { status: "PAID" } }).then((r) => r.length),
+      prisma.dailyStat.findUnique({ where: { day: today } }),
+      prisma.dailyStat.aggregate({ _sum: { pageViews: true, visitors: true } }),
+      prisma.dailyStat.findMany({ orderBy: { day: "desc" }, take: 7 }),
       prisma.manga.findMany({
         take: 10,
         orderBy: { createdAt: "desc" },
@@ -41,6 +49,15 @@ export default async function AdminPage() {
         },
       }),
     ]);
+
+  const totalRevenue = revenue._sum.price ?? 0;
+  const paidOrders = revenue._count ?? 0;
+  const coinsSold = (revenue._sum.coins ?? 0) + (revenue._sum.bonus ?? 0);
+  const pvToday = trafficToday?.pageViews ?? 0;
+  const visToday = trafficToday?.visitors ?? 0;
+  const pvTotal = trafficTotal._sum.pageViews ?? 0;
+  const visTotal = trafficTotal._sum.visitors ?? 0;
+  const maxDay = Math.max(1, ...traffic7.map((d) => d.visitors));
 
   const stats = [
     { label: "ผู้ใช้ทั้งหมด", value: userCount, icon: Users, color: "text-[var(--text-secondary)]" },
@@ -70,6 +87,62 @@ export default async function AdminPage() {
           </div>
         ))}
       </div>
+
+      {/* Revenue */}
+      <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-[0.18em] uppercase flex items-center gap-3 mb-4">
+        <span className="w-6 h-px bg-[var(--text-primary)]" /> รายได้ &amp; ยอดขาย
+      </h2>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+        {[
+          { label: "รายได้รวม", value: `฿${totalRevenue.toLocaleString()}`, icon: Wallet },
+          { label: "ออเดอร์สำเร็จ", value: paidOrders.toLocaleString(), icon: ShoppingBag },
+          { label: "ผู้ซื้อ (คน)", value: payingUsers.toLocaleString(), icon: UserCheck },
+          { label: "เหรียญที่ขาย", value: coinsSold.toLocaleString(), icon: Coins },
+        ].map(({ label, value, icon: Icon }) => (
+          <div key={label} className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--text-primary)]/25 p-5">
+            <Icon className="w-6 h-6 text-[var(--text-primary)] mb-3" />
+            <p className="text-3xl font-bold text-[var(--text-primary)] mb-0.5">{value}</p>
+            <p className="text-sm text-[var(--text-secondary)]">{label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Traffic */}
+      <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-[0.18em] uppercase flex items-center gap-3 mb-4">
+        <span className="w-6 h-px bg-[var(--text-primary)]" /> ยอดเข้าชม <span className="text-[10px] text-[var(--text-muted)] normal-case tracking-normal">(ไม่นับแอดมิน)</span>
+      </h2>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        {[
+          { label: "ผู้เข้าชมวันนี้", value: visToday.toLocaleString(), icon: Eye },
+          { label: "เพจวิววันนี้", value: pvToday.toLocaleString(), icon: TrendingUp },
+          { label: "ผู้เข้าชมรวม", value: visTotal.toLocaleString(), icon: Users },
+          { label: "เพจวิวรวม", value: pvTotal.toLocaleString(), icon: Eye },
+        ].map(({ label, value, icon: Icon }) => (
+          <div key={label} className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5">
+            <Icon className="w-6 h-6 text-[var(--text-primary)] mb-3" />
+            <p className="text-3xl font-bold text-[var(--text-primary)] mb-0.5">{value}</p>
+            <p className="text-sm text-[var(--text-secondary)]">{label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* 7-day traffic bars */}
+      {traffic7.length > 0 && (
+        <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5 mb-10">
+          <p className="text-sm font-semibold text-[var(--text-primary)] mb-3">ผู้เข้าชม 7 วันล่าสุด</p>
+          <div className="space-y-2">
+            {[...traffic7].reverse().map((d) => (
+              <div key={d.day} className="flex items-center gap-3 text-xs">
+                <span className="w-20 shrink-0 text-[var(--text-secondary)]">{d.day.slice(5)}</span>
+                <div className="flex-1 h-4 bg-[var(--bg-card)] overflow-hidden">
+                  <div className="h-full bg-[var(--text-primary)]" style={{ width: `${Math.round((d.visitors / maxDay) * 100)}%` }} />
+                </div>
+                <span className="w-24 shrink-0 text-right text-[var(--text-secondary)]">{d.visitors.toLocaleString()} คน · {d.pageViews.toLocaleString()} วิว</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Quick actions */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-10">

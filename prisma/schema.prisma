@@ -57,6 +57,13 @@ model UserAchievement {
   @@index([userId])
 }
 
+// Lightweight daily traffic counter (page views + per-day unique visitors).
+model DailyStat {
+  day       String @id // "YYYY-MM-DD" (UTC)
+  pageViews Int    @default(0)
+  visitors  Int    @default(0)
+}
+
 model PasswordResetToken {
   id        String   @id @default(cuid())
   token     String   @unique // random, emailed to the user
