@@ -162,6 +162,18 @@
     animation: frame-spin 4s linear infinite;
   }
 
+  /* ── Black-mamba serpent frame effects ── */
+  @keyframes snake-slither { to { stroke-dashoffset: -100; } }
+  @keyframes snake-tongue {
+    0%, 68%, 100% { opacity: 0; transform: translateY(1.5px) scaleY(0.5); }
+    78%, 90%      { opacity: 1; transform: translateY(0) scaleY(1); }
+  }
+  @keyframes snake-eye { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .snake-glint { animation: snake-slither 3.2s linear infinite; }
+  .snake-tongue { transform-origin: 50% 100%; animation: snake-tongue 2.6s ease-in-out infinite; }
+  .snake-eye { animation: snake-eye 2s ease-in-out infinite; }
+
   /* Couture micro-label with a leading hairline rule. */
   .eyebrow {
     display: inline-flex;

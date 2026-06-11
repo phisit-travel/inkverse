@@ -1,51 +1,44 @@
 /**
- * Monochrome serpent coiled around a square avatar — the admin frame.
- * Pure SVG, theme-aware (uses --text-primary / --bg-primary).
+ * Black-mamba inspired serpent coiled ~1.5 times around a square avatar.
+ * Sleek (thin body), monochrome, with animated effects: a glint travelling
+ * along the body, a pulsing eye, and a flicking forked tongue.
  */
 export default function SnakeFrame() {
-  // Centerline of the body: a rounded square loop with a gap at the top
-  // (where the head meets the tail).
-  const BODY =
-    "M58,8 H72 C82,8 92,18 92,28 V72 C92,82 82,92 72,92 H28 C18,92 8,82 8,72 V28 C8,18 18,8 28,8 H42";
+  // Inward spiral: outer-left bulge → right bulge → inner-left bulge, head on top.
+  const BODY = "M50,94 A44,44 0 0 1 50,6 A38,38 0 0 1 50,82 A30,30 0 0 1 50,22";
 
   return (
     <svg
       viewBox="0 0 100 100"
-      className="absolute inset-0 w-full h-full pointer-events-none drop-shadow-[0_0_2px_rgba(0,0,0,0.6)]"
+      className="absolute inset-0 w-full h-full pointer-events-none overflow-visible"
       fill="none"
       aria-hidden
     >
-      {/* body */}
-      <path d={BODY} stroke="var(--text-primary)" strokeWidth="8.5" strokeLinecap="round" />
-      {/* scale segments (cut across the body in the background colour) */}
+      {/* contrast shadow under the body (legible over light avatars) */}
+      <path d={BODY} stroke="var(--bg-primary)" strokeWidth="5" strokeLinecap="round" opacity="0.6" />
+      {/* sleek body */}
+      <path d={BODY} stroke="var(--text-primary)" strokeWidth="3.2" strokeLinecap="round" opacity="0.82" />
+      {/* travelling glint (bright segment sliding along the body) */}
       <path
         d={BODY}
-        stroke="var(--bg-primary)"
-        strokeWidth="8.5"
-        strokeLinecap="butt"
-        strokeDasharray="1.4 6"
-        opacity="0.55"
-      />
-      {/* belly highlight line */}
-      <path d={BODY} stroke="var(--bg-primary)" strokeWidth="1.6" strokeLinecap="round" opacity="0.35" />
-
-      {/* tail taper (sits over the right end of the gap) */}
-      <path d="M58,8 L63,4 L60,11 Z" fill="var(--text-primary)" />
-
-      {/* head (left end of the gap), pointing up-left */}
-      <path
-        d="M43,12 C39,7 41,2 47,3 C52,4 55,8 53,12 C51,15 46,15 43,12 Z"
-        fill="var(--text-primary)"
-      />
-      {/* eye */}
-      <circle cx="48.5" cy="7.2" r="1.5" fill="var(--bg-primary)" />
-      {/* forked tongue flicking out */}
-      <path
-        d="M42,9 L33,6 M42,9 L34,11"
+        pathLength={100}
         stroke="var(--text-primary)"
-        strokeWidth="1.1"
+        strokeWidth="3.2"
         strokeLinecap="round"
+        strokeDasharray="9 91"
+        className="snake-glint"
       />
+
+      {/* head (coffin-shaped), on top */}
+      <path d="M50,12.5 L44.5,21.5 L50,28 L55.5,21.5 Z" fill="var(--text-primary)" />
+      {/* eye */}
+      <circle cx="52.3" cy="20.2" r="1.15" fill="var(--bg-primary)" className="snake-eye" />
+      {/* flicking forked tongue */}
+      <g className="snake-tongue" stroke="var(--text-primary)" strokeWidth="1" strokeLinecap="round">
+        <path d="M50,12.5 L50,7.5" />
+        <path d="M50,7.5 L47,3.5" />
+        <path d="M50,7.5 L53,3.5" />
+      </g>
     </svg>
   );
 }
