@@ -30,7 +30,8 @@ const navLinks = [
   { href: "/manga?type=MANHWA", label: "มังฮวา" },
   { href: "/manga?type=MANHUA", label: "มังฮัว" },
   { href: "/manga?type=NOVEL", label: "Novel" },
-  { href: "/apply", label: "สมัครนักเขียน" },
+  { href: "/apply?as=translator", label: "สมัครนักแปล" },
+  { href: "/apply?as=writer", label: "สมัครนักเขียน" },
 ];
 
 export default function Navbar({ user, userCoins = 0, rankBadge = null }: NavbarProps) {

@@ -22,11 +22,14 @@ const EXPERIENCE_OPTIONS = [
   "มากกว่า 3 ปี",
 ];
 
-export default function ApplyClient({ genres, prevApplication }: {
+export default function ApplyClient({ genres, prevApplication, mode = "translator" }: {
   genres: Genre[];
   prevApplication: PrevApp | null;
+  mode?: "translator" | "writer";
 }) {
   const router = useRouter();
+  const isWriter = mode === "writer";
+  const role = isWriter ? "นักเขียน" : "นักแปล";
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,13 +104,13 @@ export default function ApplyClient({ genres, prevApplication }: {
       <div className="text-center mb-10">
         <div className="inline-flex items-center gap-2 bg-[var(--text-primary)]/10 border border-[var(--text-primary)]/30 rounded-full px-4 py-1.5 text-sm text-[var(--text-primary)] font-medium mb-4">
           <PenTool className="w-4 h-4" />
-          สมัครเป็นนักแปล / นักเขียน
+          สมัครเป็น{role}
         </div>
         <h1 className="font-bebas text-4xl text-[var(--text-primary)] tracking-wider mb-2">
           ร่วมเป็นส่วนหนึ่งของ INKVERSE
         </h1>
         <p className="text-[var(--text-secondary)] text-sm">
-          แบ่งปันผลงานของคุณกับผู้อ่านหลักล้านคน
+          {isWriter ? "เขียนนิยายของคุณ แล้วหารายได้กับผู้อ่านหลักล้านคน" : "แปลและแบ่งปันผลงานกับผู้อ่านหลักล้านคน"}
         </p>
       </div>
 
@@ -202,12 +205,14 @@ export default function ApplyClient({ genres, prevApplication }: {
           <>
             <FormField
               label="ตัวอย่างผลงาน *"
-              hint="ลิงก์ผลงานที่ผ่านมา หรือแปะตัวอย่างข้อความที่แปล (อย่างน้อย 20 ตัวอักษร)"
+              hint={isWriter
+                ? "ลิงก์งานเขียนที่ผ่านมา หรือวางตัวอย่างงานเขียนของคุณ (อย่างน้อย 20 ตัวอักษร)"
+                : "ลิงก์ผลงานแปลที่ผ่านมา หรือวางตัวอย่างข้อความที่แปล (อย่างน้อย 20 ตัวอักษร)"}
             >
               <textarea
                 value={form.sampleWork}
                 onChange={(e) => set("sampleWork", e.target.value)}
-                placeholder="ใส่ลิงก์ผลงาน เช่น https://... หรือวางตัวอย่างข้อความแปลของคุณ"
+                placeholder={isWriter ? "ใส่ลิงก์ผลงาน เช่น https://... หรือวางตัวอย่างงานเขียนของคุณ" : "ใส่ลิงก์ผลงาน เช่น https://... หรือวางตัวอย่างข้อความแปลของคุณ"}
                 rows={5}
                 className={`${inputCls} resize-none`}
               />
@@ -253,7 +258,7 @@ export default function ApplyClient({ genres, prevApplication }: {
           <>
             <FormField
               label="แรงจูงใจในการสมัคร *"
-              hint="บอกเล่าว่าทำไมคุณถึงอยากเป็นนักแปล/นักเขียนบน INKVERSE"
+              hint={`บอกเล่าว่าทำไมคุณถึงอยากเป็น${role}บน INKVERSE`}
             >
               <textarea
                 value={form.motivation}
@@ -276,7 +281,7 @@ export default function ApplyClient({ genres, prevApplication }: {
             <div className="rounded-xl border border-[var(--border)] overflow-hidden">
               <div className="flex items-center gap-2 px-4 py-3 bg-[var(--bg-card)] border-b border-[var(--border)]">
                 <FileText className="w-4 h-4 text-[var(--text-primary)]" />
-                <span className="text-sm font-semibold text-[var(--text-primary)]">เงื่อนไขสำหรับนักแปล</span>
+                <span className="text-sm font-semibold text-[var(--text-primary)]">เงื่อนไขสำหรับ{role}</span>
               </div>
 
               {/* ส่วนแบ่งรายได้ — เน้น 20% */}
@@ -297,10 +302,10 @@ export default function ApplyClient({ genres, prevApplication }: {
               <ul className="px-4 pb-4 space-y-2 text-xs text-[var(--text-secondary)] leading-relaxed">
                 {[
                   "การถอนเงิน: ถอนรายได้สะสมผ่านระบบเมื่อถึงยอดขั้นต่ำตามที่แพลตฟอร์มกำหนด",
-                  "ลิขสิทธิ์: คุณยืนยันว่ามีสิทธิ์ในการแปล/เผยแพร่ผลงานที่อัปโหลด และรับผิดชอบเองหากเกิดการละเมิดลิขสิทธิ์ของผู้อื่น",
-                  "คุณภาพ: รักษามาตรฐานการแปลและอัปเดตอย่างสม่ำเสมอ ทีมงานมีสิทธิ์ตรวจสอบและลบเนื้อหาที่ไม่ได้มาตรฐาน",
+                  "ลิขสิทธิ์: คุณยืนยันว่ามีสิทธิ์ในการเผยแพร่ผลงานที่ลงในเว็บ และรับผิดชอบเองหากเกิดการละเมิดลิขสิทธิ์ของผู้อื่น",
+                  "คุณภาพ: รักษามาตรฐานผลงานและอัปเดตอย่างสม่ำเสมอ ทีมงานมีสิทธิ์ตรวจสอบและลบเนื้อหาที่ไม่ได้มาตรฐาน",
                   "เนื้อหาต้องห้าม: ห้ามเนื้อหาผิดกฎหมาย ลามกอนาจารผู้เยาว์ หรือเนื้อหาที่สร้างความเกลียดชัง",
-                  "การระงับสิทธิ์: หากฝ่าฝืนเงื่อนไข แพลตฟอร์มมีสิทธิ์ระงับสถานะนักแปลและรายได้ที่เกี่ยวข้อง",
+                  "การระงับสิทธิ์: หากฝ่าฝืนเงื่อนไข แพลตฟอร์มมีสิทธิ์ระงับสถานะครีเอเตอร์และรายได้ที่เกี่ยวข้อง",
                   "เงื่อนไขอาจมีการปรับปรุงได้ โดยจะแจ้งให้ทราบล่วงหน้า",
                 ].map((t, i) => (
                   <li key={i} className="flex gap-2">

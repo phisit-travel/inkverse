@@ -5,11 +5,19 @@ import ApplyClient from "./ApplyClient";
 import ApplyStatus from "./ApplyStatus";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "สมัครนักเขียน | INKVERSE" };
+export const metadata: Metadata = { title: "สมัครนักแปล / นักเขียน | INKVERSE" };
 
-export default async function ApplyPage() {
+export default async function ApplyPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ as?: string }>;
+}) {
   const session = await auth();
-  if (!session?.user) redirect("/auth/signin?callbackUrl=/apply");
+  const { as } = await searchParams;
+  const mode: "translator" | "writer" = as === "writer" ? "writer" : "translator";
+  if (!session?.user) {
+    redirect(`/auth/signin?callbackUrl=/apply${as ? `?as=${as}` : ""}`);
+  }
 
   const userId = (session.user as { id: string }).id;
   const role = (session.user as { role?: string }).role;
@@ -35,6 +43,7 @@ export default async function ApplyPage() {
     <ApplyClient
       genres={genres.map((g) => ({ id: g.id, name: g.name, slug: g.slug }))}
       prevApplication={application}
+      mode={mode}
     />
   );
 }

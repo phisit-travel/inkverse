@@ -41,8 +41,8 @@ export async function POST(req: NextRequest, { params }: Params) {
     await createNotification({
       userId: application.userId,
       type: "APPLICATION_APPROVED",
-      title: "ยินดีด้วย! ใบสมัครนักเขียนได้รับการอนุมัติ",
-      body: `ใบสมัครในนาม "${application.penName}" ได้รับการอนุมัติแล้ว เข้าแดชบอร์ดเพื่อเริ่มสร้างผลงาน/เขียนนิยายได้ทันที`,
+      title: "ยินดีด้วย! ใบสมัครครีเอเตอร์ได้รับการอนุมัติ",
+      body: `ใบสมัครในนาม "${application.penName}" ได้รับการอนุมัติแล้ว เข้าแดชบอร์ดเพื่อเริ่มลงผลงาน (แปลมังงะ / เขียนนิยาย) ได้ทันที`,
       link: "/dashboard",
     });
 
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     await createNotification({
       userId: application.userId,
       type: "APPLICATION_REJECTED",
-      title: "ใบสมัครนักเขียนไม่ผ่านการพิจารณา",
+      title: "ใบสมัครไม่ผ่านการพิจารณา",
       body: note,
       link: "/apply",
     });
