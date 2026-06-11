@@ -22,8 +22,21 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+
+      # The committed android/ project references @capacitor/android from
+      # node_modules, which isn't committed — restore it, then wire it up.
+      - name: Install Capacitor + sync
+        working-directory: mobile
+        run: |
+          npm ci
+          npx cap sync android
 
       - name: Build debug APK
         working-directory: mobile/android
