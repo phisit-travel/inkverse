@@ -205,7 +205,6 @@ export default async function ProfilePage({ params }: Props) {
           level={frameLevel}
           avatarUrl={user.avatarUrl}
           username={user.username}
-          verified={isVerified}
           editSlot={isOwner ? <ProfileImageButton type="avatar" className="!px-1.5 !py-1.5" /> : null}
         />
 

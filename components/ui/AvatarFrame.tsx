@@ -75,7 +75,6 @@ export default function AvatarFrame({
   username,
   sizeClass = "w-28 h-28 sm:w-32 sm:h-32",
   editSlot,
-  verified = false,
 }: {
   kind: FrameKind;
   level: number;
@@ -83,10 +82,10 @@ export default function AvatarFrame({
   username: string;
   sizeClass?: string;
   editSlot?: ReactNode;
-  verified?: boolean;
 }) {
   const f = getFrame(kind, level);
-  const seal: Seal = f.seal ?? (verified ? "check" : null);
+  // Verified ticks live next to the name; the avatar only carries rank seals.
+  const seal: Seal = f.seal;
   const SealIcon = seal ? SEAL_ICON[seal] : null;
   // Inset the avatar more when a snake coils around it, to clear the body.
   const avInset = f.snake ? "inset-[9px]" : "inset-[5px]";
@@ -102,9 +101,13 @@ export default function AvatarFrame({
         <div className="absolute -inset-[2px] border border-[var(--text-primary)]/30 pointer-events-none" aria-hidden />
       )}
 
-      {/* avatar */}
-      <div className={`absolute ${avInset} overflow-hidden bg-[var(--bg-card)]`}>
-        {avatarUrl ? (
+      {/* avatar — admin (snake) shows the white "IV" brand mark */}
+      <div className={`absolute ${avInset} overflow-hidden ${f.snake ? "bg-[var(--text-primary)]" : "bg-[var(--bg-card)]"}`}>
+        {f.snake ? (
+          <div className="w-full h-full flex items-center justify-center font-bebas text-4xl tracking-tight text-[var(--bg-primary)]">
+            IV
+          </div>
+        ) : avatarUrl ? (
           <Image src={avatarUrl} alt={username} fill unoptimized className="object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center font-bebas text-5xl tracking-wider text-[var(--text-primary)]">
