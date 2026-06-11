@@ -12,7 +12,7 @@ import ContinueReading from "@/components/ui/ContinueReading";
 import DailyCheckIn from "@/components/ui/DailyCheckIn";
 import TranslatorRanking from "@/components/ui/TranslatorRanking";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Smartphone } from "lucide-react";
 import { unstable_cache } from "next/cache";
 
 export const revalidate = 300; // 5 minutes
@@ -137,6 +137,25 @@ export default async function HomePage() {
           latestChapter={featured.latestChapter}
         />
       )}
+
+      {/* App download banner */}
+      <Link
+        href="/download"
+        className="flex items-center justify-between gap-3 border border-[var(--text-primary)]/30 bg-[var(--bg-surface)] px-4 sm:px-5 py-3 my-6 hover:border-[var(--text-primary)] transition-colors"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 shrink-0 flex items-center justify-center bg-[var(--text-primary)] text-[var(--bg-primary)]">
+            <Smartphone className="w-5 h-5" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-[var(--text-primary)] truncate">โหลดแอป Android — อ่านแบบกันแคปหน้าจอ</p>
+            <p className="text-xs text-[var(--text-secondary)]">ลื่นกว่า · ปลอดภัยกว่า · ฟรี ไม่มีโฆษณา</p>
+          </div>
+        </div>
+        <span className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-widest text-[var(--text-primary)]">
+          โหลด <ChevronRight className="w-4 h-4" />
+        </span>
+      </Link>
 
       {/* Daily check-in (per-user, client-fetched so the page stays cached) */}
       <DailyCheckIn />
