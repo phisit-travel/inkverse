@@ -13,10 +13,16 @@ import DailyCheckIn from "@/components/ui/DailyCheckIn";
 import TranslatorRanking from "@/components/ui/TranslatorRanking";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { unstable_cache } from "next/cache";
 
 export const revalidate = 300; // 5 minutes
 
-async function getData() {
+// The root layout reads auth() (cookies), which forces every route to render
+// dynamically — so the page-level `revalidate` above can't statically cache the
+// home. Cache the heavy global queries at the data layer instead, so repeated
+// requests skip the ~10 DB round-trips. (UpdateRow accepts Date|string, so the
+// JSON (de)serialisation in the cache is safe.)
+const getData = unstable_cache(async () => {
   const [mangas, genres, latestChapters, weeklyRank, monthlyRank, allRank, topNovels] =
     await Promise.all([
       prisma.manga.findMany({
@@ -99,7 +105,7 @@ async function getData() {
   }));
 
   return { mangas, genres, latestChapters, weeklyRank, monthlyRank, allRank, translatorRanking, novels };
-}
+}, ["home-data"], { revalidate: 300 });
 
 export default async function HomePage() {
   const { mangas, genres, latestChapters, weeklyRank, monthlyRank, allRank, translatorRanking, novels } =
