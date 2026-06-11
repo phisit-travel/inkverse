@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShieldCheck, Smartphone, RefreshCw, Download, Lock, ArrowRight } from "lucide-react";
+import { ShieldCheck, Smartphone, RefreshCw, Download, Lock, ArrowRight, Gift } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -47,6 +47,9 @@ export default function DownloadPage() {
               <Download className="w-5 h-5" /> เปิดให้โหลดเร็วๆ นี้
             </span>
           )}
+          <p className="text-sm font-semibold text-[var(--text-primary)] flex items-center justify-center gap-1.5">
+            <Gift className="w-4 h-4" /> ติดตั้งแล้วล็อกอินครั้งแรก รับ 20 เหรียญฟรี
+          </p>
           <p className="text-xs text-[var(--text-muted)]">
             สำหรับ Android เท่านั้น{APK_VERSION ? ` · เวอร์ชัน ${APK_VERSION}` : ""} · ไฟล์ฟรี ไม่มีโฆษณา
           </p>

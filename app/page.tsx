@@ -148,8 +148,8 @@ export default async function HomePage() {
             <Smartphone className="w-5 h-5" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-[var(--text-primary)] truncate">โหลดแอป Android — อ่านแบบกันแคปหน้าจอ</p>
-            <p className="text-xs text-[var(--text-secondary)]">ลื่นกว่า · ปลอดภัยกว่า · ฟรี ไม่มีโฆษณา</p>
+            <p className="text-sm font-semibold text-[var(--text-primary)] truncate">โหลดแอป Android — ติดตั้งรับ 20 เหรียญฟรี</p>
+            <p className="text-xs text-[var(--text-secondary)]">กันแคปหน้าจอ · ลื่นกว่า · ฟรี ไม่มีโฆษณา</p>
           </div>
         </div>
         <span className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-widest text-[var(--text-primary)]">

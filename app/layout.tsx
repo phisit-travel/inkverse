@@ -11,6 +11,7 @@ import HelpChatbot from "@/components/ui/HelpChatbot";
 import ReadingProgressProvider from "@/components/ui/ReadingProgressProvider";
 import AchievementToaster from "@/components/ui/AchievementToaster";
 import TrafficBeacon from "@/components/ui/TrafficBeacon";
+import AppBonus from "@/components/ui/AppBonus";
 
 const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inkverse.com";
 
@@ -116,6 +117,7 @@ export default async function RootLayout({
         <HelpChatbot />
         <TrafficBeacon />
         {userId && <AchievementToaster />}
+        {userId && <AppBonus />}
       </body>
     </html>
   );
