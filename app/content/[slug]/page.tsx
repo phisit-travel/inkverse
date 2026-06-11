@@ -9,6 +9,8 @@ import BookmarkButton from "@/components/ui/BookmarkButton";
 import ChapterRow from "@/components/ui/ChapterRow";
 import AgeGate from "@/components/ui/AgeGate";
 import { getUserCoins } from "@/lib/coins";
+import { getUserRankBadge } from "@/lib/ranks";
+import RankChip from "@/components/ui/RankChip";
 import {
   BookOpen,
   Eye,
@@ -79,7 +81,7 @@ export default async function MangaProfilePage({ params }: Props) {
       bookmarks: userId
         ? { where: { userId }, take: 1 }
         : false,
-      translator: { include: { user: { select: { username: true, verifiedAt: true } } } },
+      translator: { include: { user: { select: { username: true, verifiedAt: true, role: true } } } },
     },
   });
 
@@ -136,6 +138,11 @@ export default async function MangaProfilePage({ params }: Props) {
   const isBookmarked = userId && Array.isArray(manga.bookmarks)
     ? manga.bookmarks.length > 0
     : false;
+
+  // Uploader's rank badge.
+  const translatorRank = manga.translator
+    ? await getUserRankBadge(manga.translator.userId, manga.translator.user.role)
+    : null;
 
   const latestChapter = manga.chapters[manga.chapters.length - 1];
   const firstChapter = manga.chapters[0];
@@ -327,6 +334,7 @@ export default async function MangaProfilePage({ params }: Props) {
                   {manga.translator.user.verifiedAt && (
                     <BadgeCheck className="w-4 h-4 text-[var(--text-primary)]" />
                   )}
+                  {translatorRank && <RankChip badge={translatorRank} />}
                 </Link>
                 <TipButton
                   translatorId={manga.translator.id}

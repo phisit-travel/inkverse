@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getRanking } from "@/lib/ranking";
+import { getRankBadges } from "@/lib/ranks";
 import MangaCard from "@/components/ui/MangaCard";
 import FeaturedSpotlight from "@/components/ui/FeaturedSpotlight";
 import UpdateRow from "@/components/ui/UpdateRow";
@@ -56,8 +57,9 @@ async function getData() {
   const tIds = agg.map((a) => a.translatorId).filter((x): x is string => !!x);
   const translators = await prisma.translator.findMany({
     where: { id: { in: tIds } },
-    select: { id: true, penName: true, user: { select: { username: true, avatarUrl: true } } },
+    select: { id: true, penName: true, user: { select: { id: true, username: true, avatarUrl: true } } },
   });
+  const tBadges = await getRankBadges(translators.map((t) => t.user.id));
   const tMap = new Map(translators.map((t) => [t.id, t]));
   const translatorRanking = agg
     .map((a) => {
@@ -69,6 +71,7 @@ async function getData() {
         avatarUrl: t.user.avatarUrl,
         views: a._sum.totalViews ?? 0,
         works: a._count._all,
+        rankBadge: tBadges.get(t.user.id) ?? null,
       };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null);

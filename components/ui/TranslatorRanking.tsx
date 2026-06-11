@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Eye } from "lucide-react";
+import RankChip from "./RankChip";
+import type { RankBadge } from "@/lib/ranks";
 
 export interface TranslatorRankEntry {
   penName: string;
@@ -7,6 +9,7 @@ export interface TranslatorRankEntry {
   avatarUrl: string | null;
   views: number;
   works: number;
+  rankBadge?: RankBadge | null;
 }
 
 const MEDAL = ["text-[var(--text-primary)]", "text-gray-300", "text-[var(--text-primary)]"];
@@ -41,7 +44,10 @@ export default function TranslatorRanking({ entries }: { entries: TranslatorRank
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{t.penName}</p>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{t.penName}</p>
+                {t.rankBadge && <RankChip badge={t.rankBadge} className="shrink-0" />}
+              </div>
               <p className="text-xs text-[var(--text-secondary)] flex items-center gap-2 mt-0.5">
                 <span className="inline-flex items-center gap-1">
                   <Eye className="w-3 h-3" />{t.views.toLocaleString()}

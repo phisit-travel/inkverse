@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import Image from "next/image";
-import { getReaderRank } from "@/lib/ranks";
+import { getRankBadges } from "@/lib/ranks";
+import RankChip from "@/components/ui/RankChip";
 import { BookOpen, Trophy, Medal, BadgeCheck } from "lucide-react";
 import type { Metadata } from "next";
 
@@ -25,27 +26,20 @@ export default async function LeaderboardPage() {
   });
   const ids = grouped.map((g) => g.userId);
 
-  const [users, spent] = await Promise.all([
+  const [users, badges] = await Promise.all([
     prisma.user.findMany({
       where: { id: { in: ids }, NOT: { email: { endsWith: SEED_SUFFIX } } },
       select: { id: true, username: true, avatarUrl: true, verifiedAt: true, role: true },
     }),
-    prisma.unlockedChapter.groupBy({
-      by: ["userId"],
-      where: { userId: { in: ids } },
-      _sum: { coinSpent: true },
-    }),
+    getRankBadges(ids),
   ]);
   const userMap = new Map(users.map((u) => [u.id, u]));
-  const spentMap = new Map(spent.map((s) => [s.userId, s._sum.coinSpent ?? 0]));
 
   const entries = grouped
     .map((g) => {
       const u = userMap.get(g.userId);
       if (!u) return null;
-      const chaptersRead = g._count.userId;
-      const rank = getReaderRank(chaptersRead, spentMap.get(g.userId) ?? 0);
-      return { ...u, chaptersRead, rankName: rank.current.nameEn, rankLevel: rank.current.level };
+      return { ...u, chaptersRead: g._count.userId, badge: badges.get(g.userId) ?? null };
     })
     .filter((e): e is NonNullable<typeof e> => e !== null)
     .slice(0, 50);
@@ -98,9 +92,11 @@ export default async function LeaderboardPage() {
                     <BadgeCheck className="w-3.5 h-3.5 shrink-0" />
                   )}
                 </p>
-                <p className="text-[11px] text-[var(--text-secondary)] uppercase tracking-wide">
-                  LV.{e.rankLevel} · {e.rankName}
-                </p>
+                {e.badge && (
+                  <div className="mt-0.5">
+                    <RankChip badge={e.badge} />
+                  </div>
+                )}
               </div>
               <span className="flex items-center gap-1 text-sm text-[var(--text-primary)] shrink-0">
                 <BookOpen className="w-4 h-4" /> {e.chaptersRead.toLocaleString()}

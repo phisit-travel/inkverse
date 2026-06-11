@@ -7,9 +7,10 @@ import MangaCard from "@/components/ui/MangaCard";
 import ProfileImageButton from "@/components/ui/ProfileImageButton";
 import VerificationCard from "@/components/ui/VerificationCard";
 import { VERIFY_FEE_COINS } from "@/lib/coins";
-import { getReaderRank, getTranslatorRank } from "@/lib/ranks";
+import { getReaderRank, getTranslatorRank, getRankBadges } from "@/lib/ranks";
 import { getUnlockedAchievements } from "@/lib/achievements";
 import AvatarFrame from "@/components/ui/AvatarFrame";
+import RankChip from "@/components/ui/RankChip";
 import {
   BookMarked, History, Star, Calendar, Eye, Layers,
   Shield, PenTool, User as UserIcon, BookOpen, Coins, Heart,
@@ -154,6 +155,7 @@ export default async function ProfilePage({ params }: Props) {
         .filter((f): f is NonNullable<typeof f> => !!f && f.coins > 0);
     }
   }
+  const fanBadges = await getRankBadges(topFans.map((f) => f.id));
 
   const stats = isCreator
     ? [
@@ -426,6 +428,11 @@ export default async function ProfilePage({ params }: Props) {
                   )}
                 </div>
                 <p className="text-xs text-[var(--text-primary)] truncate">@{fan.username}</p>
+                {fanBadges.get(fan.id) && (
+                  <div className="flex justify-center mt-1">
+                    <RankChip badge={fanBadges.get(fan.id)!} />
+                  </div>
+                )}
                 <p className="flex items-center justify-center gap-1 text-[10px] text-[var(--text-secondary)] mt-0.5">
                   <Coins className="w-3 h-3" /> {fan.coins.toLocaleString()}
                 </p>
