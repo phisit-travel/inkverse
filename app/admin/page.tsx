@@ -16,7 +16,10 @@ export default async function AdminPage() {
 
   const [userCount, mangaCount, chapterCount, commentCount, pendingApps, openContacts, pendingVerifs, recentMangas] =
     await Promise.all([
-      prisma.user.count(),
+      // Real users only — exclude seed/test accounts (rating bots etc.).
+      prisma.user.count({
+        where: { NOT: { email: { endsWith: "@seed.inkverse.local" } } },
+      }),
       prisma.manga.count(),
       prisma.chapter.count(),
       prisma.comment.count(),
