@@ -144,6 +144,24 @@
     animation: shimmer 1.5s infinite;
   }
 
+  /* Rotating monochrome "halo" ring for top-tier / admin avatar frames. */
+  @keyframes frame-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .frame-shimmer {
+    background: conic-gradient(
+      from 0deg,
+      transparent 0%,
+      var(--text-primary) 12%,
+      transparent 32%,
+      transparent 62%,
+      var(--text-primary) 82%,
+      transparent 100%
+    );
+    animation: frame-spin 4s linear infinite;
+  }
+
   /* Couture micro-label with a leading hairline rule. */
   .eyebrow {
     display: inline-flex;

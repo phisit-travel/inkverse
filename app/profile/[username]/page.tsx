@@ -7,19 +7,24 @@ import MangaCard from "@/components/ui/MangaCard";
 import ProfileImageButton from "@/components/ui/ProfileImageButton";
 import VerificationCard from "@/components/ui/VerificationCard";
 import { VERIFY_FEE_COINS } from "@/lib/coins";
-import { getReaderRank } from "@/lib/ranks";
+import { getReaderRank, getTranslatorRank } from "@/lib/ranks";
 import { getUnlockedAchievements } from "@/lib/achievements";
+import AvatarFrame from "@/components/ui/AvatarFrame";
 import {
   BookMarked, History, Star, Calendar, Eye, Layers,
   Shield, PenTool, User as UserIcon, BookOpen, Coins, Heart,
   LayoutDashboard, Wallet, Banknote, Settings, Plus, BadgeCheck,
   Sprout, Footprints, Swords, Flame, Gem, Crown, Trophy, ArrowRight,
+  Feather, Award,
 } from "lucide-react";
 import type { Metadata } from "next";
 import type { ComponentType } from "react";
 
 const RANK_ICONS: Record<string, ComponentType<{ className?: string }>> = {
   Sprout, Footprints, BookOpen, Swords, Flame, Shield, Gem, Crown,
+};
+const TRANK_ICONS: Record<string, ComponentType<{ className?: string }>> = {
+  PenTool, Feather, BookMarked, Award, Crown,
 };
 
 interface Props {
@@ -115,6 +120,15 @@ export default async function ProfilePage({ params }: Props) {
   const rank = getReaderRank(user._count.readHistory, coinsSpent);
   const RankIcon = RANK_ICONS[rank.current.icon] ?? BookOpen;
 
+  // Translator rank (creators) — published chapters + total reach.
+  const tRank = isCreator ? getTranslatorRank(totalChapters, totalViews) : null;
+  const TRankIcon = tRank ? TRANK_ICONS[tRank.current.icon] ?? PenTool : PenTool;
+
+  // Which avatar frame: admin > translator > reader.
+  const frameKind: "admin" | "translator" | "reader" =
+    user.role === "ADMIN" ? "admin" : isCreator ? "translator" : "reader";
+  const frameLevel = frameKind === "translator" ? tRank?.current.level ?? 1 : rank.current.level;
+
   // Top Fans — readers who spent the most coins on this creator's work (incl. tips).
   let topFans: { id: string; username: string; avatarUrl: string | null; coins: number }[] = [];
   if (user.translator) {
@@ -183,29 +197,15 @@ export default async function ProfilePage({ params }: Props) {
 
       {/* ── Identity ───────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-end gap-5 px-1 sm:px-4 -mt-14 sm:-mt-16 relative">
-        {/* Square avatar — double-framed for a couture, gallery feel */}
-        <div className="relative shrink-0">
-          <div className={`relative w-28 h-28 sm:w-32 sm:h-32 border-4 border-[var(--bg-primary)] bg-[var(--bg-card)] overflow-hidden ${isVerified ? "outline outline-1 outline-offset-[3px] outline-[var(--text-primary)]/40" : ""}`}>
-            {user.avatarUrl ? (
-              <Image src={user.avatarUrl} alt={user.username} fill unoptimized className="object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center font-bebas text-5xl tracking-wider text-[var(--text-primary)]">
-                {user.username[0]?.toUpperCase()}
-              </div>
-            )}
-            {isOwner && (
-              <div className="absolute bottom-1 right-1">
-                <ProfileImageButton type="avatar" className="!px-1.5 !py-1.5" />
-              </div>
-            )}
-          </div>
-          {/* Verified seal */}
-          {isVerified && !isOwner && (
-            <span className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-[var(--text-primary)] text-[var(--bg-primary)] flex items-center justify-center">
-              <BadgeCheck className="w-3.5 h-3.5" />
-            </span>
-          )}
-        </div>
+        {/* Square avatar with rank/admin frame */}
+        <AvatarFrame
+          kind={frameKind}
+          level={frameLevel}
+          avatarUrl={user.avatarUrl}
+          username={user.username}
+          verified={isVerified}
+          editSlot={isOwner ? <ProfileImageButton type="avatar" className="!px-1.5 !py-1.5" /> : null}
+        />
 
         <div className="pb-1 min-w-0 flex-1">
           {/* Eyebrow — couture micro-label */}
@@ -242,7 +242,45 @@ export default async function ProfilePage({ params }: Props) {
         ))}
       </div>
 
-      {/* ── Reader rank ────────────────────────────────────────────── */}
+      {/* ── Rank: translator for creators, reader for everyone else ── */}
+      {isCreator && tRank ? (
+        <section className="mb-10">
+          <SectionTitle><Trophy className="w-5 h-5" /> ยศนักแปล</SectionTitle>
+          <div className="flex items-center gap-4 border border-[var(--border)] bg-[var(--bg-surface)] p-5">
+            <div className="w-16 h-16 flex items-center justify-center bg-[var(--text-primary)] text-[var(--bg-primary)] shrink-0">
+              <TRankIcon className="w-8 h-8" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] uppercase tracking-[0.3em] text-[var(--text-muted)]">
+                LV.{tRank.current.level} · {tRank.current.nameEn}
+              </p>
+              <p className="font-bebas text-2xl text-[var(--text-primary)] tracking-wider">{tRank.current.name}</p>
+              {tRank.next ? (
+                <div className="mt-2">
+                  <div className="flex justify-between text-[11px] text-[var(--text-secondary)] mb-1">
+                    <span className="flex items-center gap-1">ยศถัดไป <ArrowRight className="w-3 h-3" /> {tRank.next.name}</span>
+                    <span>{tRank.percentToNext}%</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-[var(--bg-card)] border border-[var(--border)] overflow-hidden">
+                    <div className="h-full bg-[var(--text-primary)]" style={{ width: `${tRank.percentToNext}%` }} />
+                  </div>
+                  <p className="text-[11px] text-[var(--text-muted)] mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                    {tRank.chaptersToNext > 0 && (
+                      <span className="flex items-center gap-1"><Layers className="w-3 h-3" /> ลงอีก {tRank.chaptersToNext} ตอน</span>
+                    )}
+                    {tRank.viewsToNext > 0 && (
+                      <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> ยอดวิวอีก {tRank.viewsToNext.toLocaleString()}</span>
+                    )}
+                    {tRank.chaptersToNext === 0 && tRank.viewsToNext === 0 && <span>พร้อมเลื่อนยศ!</span>}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-[11px] text-[var(--text-primary)] mt-2 flex items-center gap-1"><Crown className="w-3.5 h-3.5" /> ยศสูงสุดแล้ว</p>
+              )}
+            </div>
+          </div>
+        </section>
+      ) : (
       <section className="mb-10">
         <SectionTitle><Trophy className="w-5 h-5" /> ยศนักอ่าน</SectionTitle>
         <div className="flex items-center gap-4 border border-[var(--border)] bg-[var(--bg-surface)] p-5">
@@ -289,6 +327,7 @@ export default async function ProfilePage({ params }: Props) {
           </div>
         </div>
       </section>
+      )}
 
       {/* ── Recent achievements ────────────────────────────────────── */}
       {unlockedAch.length > 0 && (

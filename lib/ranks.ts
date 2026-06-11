@@ -67,3 +67,62 @@ export function getReaderRank(chaptersRead: number, coinsSpent: number): RankInf
     percentToNext,
   };
 }
+
+/* ───────────────────────── Translator ranks ─────────────────────────
+ * A separate ladder for creators, earned by published work + total reach.
+ * To rank up you must meet BOTH thresholds (chapters AND total views). */
+
+export interface TranslatorRank {
+  level: number;
+  name: string;
+  nameEn: string;
+  icon: string;
+  minChapters: number;
+  minViews: number;
+}
+
+export const TRANSLATOR_RANKS: TranslatorRank[] = [
+  { level: 1, name: "นักแปลฝึกหัด",     nameEn: "Apprentice", icon: "PenTool",    minChapters: 0,    minViews: 0 },
+  { level: 2, name: "นักแปลมือใหม่",     nameEn: "Scribe",     icon: "Feather",    minChapters: 30,   minViews: 5000 },
+  { level: 3, name: "นักแปลชำนาญ",       nameEn: "Artisan",    icon: "BookMarked", minChapters: 150,  minViews: 50000 },
+  { level: 4, name: "นักแปลชั้นครู",      nameEn: "Maestro",    icon: "Award",      minChapters: 500,  minViews: 300000 },
+  { level: 5, name: "ปรมาจารย์นักแปล",   nameEn: "Grandmaster", icon: "Crown",     minChapters: 1200, minViews: 1000000 },
+];
+
+export interface TranslatorRankInfo {
+  current: TranslatorRank;
+  next: TranslatorRank | null;
+  index: number;
+  chaptersToNext: number;
+  viewsToNext: number;
+  percentToNext: number;
+}
+
+export function getTranslatorRank(chapters: number, views: number): TranslatorRankInfo {
+  let index = 0;
+  for (let i = 0; i < TRANSLATOR_RANKS.length; i++) {
+    const r = TRANSLATOR_RANKS[i];
+    if (chapters >= r.minChapters && views >= r.minViews) index = i;
+    else break;
+  }
+  const current = TRANSLATOR_RANKS[index];
+  const next = TRANSLATOR_RANKS[index + 1] ?? null;
+
+  let percentToNext = 100;
+  if (next) {
+    const chSpan = next.minChapters - current.minChapters;
+    const vSpan = next.minViews - current.minViews;
+    const chPct = chSpan > 0 ? (chapters - current.minChapters) / chSpan : 1;
+    const vPct = vSpan > 0 ? (views - current.minViews) / vSpan : 1;
+    percentToNext = Math.max(0, Math.min(100, Math.round(Math.min(chPct, vPct) * 100)));
+  }
+
+  return {
+    current,
+    next,
+    index,
+    chaptersToNext: next ? Math.max(0, next.minChapters - chapters) : 0,
+    viewsToNext: next ? Math.max(0, next.minViews - views) : 0,
+    percentToNext,
+  };
+}
