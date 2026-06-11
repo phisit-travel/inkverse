@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import MangaCard from "@/components/ui/MangaCard";
+import Pagination from "@/components/ui/Pagination";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 
@@ -86,26 +87,17 @@ async function MangaGrid({ searchParams }: { searchParams: SearchParams }) {
         })}
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center gap-2 mt-10">
-          {Array.from({ length: Math.min(totalPages, 10) }, (_, i) => i + 1).map(
-            (p) => (
-              <a
-                key={p}
-                href={`?page=${p}`}
-                className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-all ${
-                  p === page
-                    ? "bal-btn"
-                    : "bg-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)]"
-                }`}
-              >
-                {p}
-              </a>
-            )
-          )}
-        </div>
-      )}
+      {/* Pagination (preserves filters) */}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        params={{
+          genre: searchParams.genre,
+          status: searchParams.status,
+          type: searchParams.type,
+          sort: searchParams.sort,
+        }}
+      />
     </>
   );
 }

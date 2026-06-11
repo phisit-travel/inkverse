@@ -218,6 +218,15 @@ export default async function HomePage() {
                 </div>
               ))}
             </div>
+            {/* Browse more */}
+            <div className="flex justify-center mt-6">
+              <Link
+                href="/manga"
+                className="inline-flex items-center gap-2 px-6 py-3 border border-[var(--border)] text-[var(--text-primary)] text-sm font-semibold uppercase tracking-widest hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] hover:border-[var(--text-primary)] transition-colors"
+              >
+                ดูมังงะทั้งหมด <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
           </section>
         </div>
 
