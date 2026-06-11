@@ -7,7 +7,7 @@ const links = {
     { href: "/manga", label: "เรื่องทั้งหมด" },
     { href: "/discover", label: "ค้นหา" },
     { href: "/manga/action", label: "Action" },
-    { href: "/manga/romance", label: "Romance" },
+    { href: "/download", label: "แอป Android" },
   ],
   บัญชี: [
     { href: "/auth/signin", label: "เข้าสู่ระบบ" },
