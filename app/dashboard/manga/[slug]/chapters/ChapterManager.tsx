@@ -28,6 +28,11 @@ function fmtFree(iso: string): string {
   return new Date(iso).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
+// Format a timestamp as a <input type="datetime-local"> value in local time.
+function toLocalInput(ms: number): string {
+  return new Date(ms - new Date(ms).getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
 function ChapterRow({
   chapter,
   onUpdated,
@@ -49,21 +54,22 @@ function ChapterRow({
   const [numInput, setNumInput] = useState(String(chapter.chapterNum));
   const [numError, setNumError] = useState("");
   const [editingEarly, setEditingEarly] = useState(false);
-  const [earlyInput, setEarlyInput] = useState("2");
+  const [earlyDateTime, setEarlyDateTime] = useState(() =>
+    toLocalInput(chapter.freeAt ? new Date(chapter.freeAt).getTime() : Date.now() + 2 * 86400000)
+  );
   const [loading, setLoading] = useState(false);
 
   const earlyActive = !!chapter.freeAt && new Date(chapter.freeAt).getTime() > Date.now();
 
-  // days = number → free in N days; null → permanent premium (clear freeAt).
-  async function setEarly(days: number | null) {
-    const freeAt = days === null ? null : new Date(Date.now() + days * 86400000).toISOString();
-    await patchChapter({ isPremium: true, coinCost: parseInt(priceInput) || chapter.coinCost || 2, freeAt });
+  // Apply an exact free date+time (or null = permanent premium).
+  async function setEarlyAt(iso: string | null) {
+    await patchChapter({ isPremium: true, coinCost: parseInt(priceInput) || chapter.coinCost || 2, freeAt: iso });
     setEditingEarly(false);
   }
-  async function applyEarly() {
-    const d = parseInt(earlyInput);
-    if (!d || d < 1) return;
-    await setEarly(d);
+  function applyEarlyDateTime() {
+    const d = new Date(earlyDateTime);
+    if (isNaN(d.getTime())) return;
+    setEarlyAt(d.toISOString());
   }
 
   async function patchChapter(data: Partial<Chapter>): Promise<{ ok: boolean; error?: string }> {
@@ -258,19 +264,16 @@ function ChapterRow({
             <div className="flex items-center gap-1 flex-wrap">
               <input
                 autoFocus
-                type="number"
-                min="1"
-                value={earlyInput}
-                onChange={(e) => setEarlyInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") applyEarly(); if (e.key === "Escape") setEditingEarly(false); }}
-                placeholder="วัน"
-                className="w-14 bg-[var(--bg-surface)] border border-[var(--border)] rounded-lg px-2 py-1 text-xs text-[var(--text-primary)] text-center focus:outline-none"
+                type="datetime-local"
+                value={earlyDateTime}
+                onChange={(e) => setEarlyDateTime(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") applyEarlyDateTime(); if (e.key === "Escape") setEditingEarly(false); }}
+                className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-lg px-2 py-1 text-xs text-[var(--text-primary)] focus:outline-none"
               />
-              <span className="text-xs text-[var(--text-secondary)]">วัน</span>
-              <button onClick={applyEarly} disabled={loading} title="ตั้งอ่านล่วงหน้า" className="p-1 text-[var(--text-primary)]">
+              <button onClick={applyEarlyDateTime} disabled={loading} title="ตั้งให้ฟรีตามวัน-เวลานี้" className="p-1 text-[var(--text-primary)]">
                 {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
               </button>
-              <button onClick={() => setEarly(null)} disabled={loading}
+              <button onClick={() => setEarlyAt(null)} disabled={loading}
                 title="ติดเหรียญถาวร (ไม่ปลดฟรี)"
                 className="px-2 py-1 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
                 ถาวร
