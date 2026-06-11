@@ -45,10 +45,12 @@ export async function PATCH(
     isPremium?: boolean;
     coinCost?: number;
     chapterNum?: number;
+    content?: string;
   };
 
   const data: Record<string, unknown> = {};
   if (typeof body.title === "string") data.title = body.title || null;
+  if (typeof body.content === "string") data.content = body.content.slice(0, 200000);
   if (typeof body.isPremium === "boolean") {
     data.isPremium = body.isPremium;
     data.coinCost = body.isPremium ? (typeof body.coinCost === "number" ? Math.max(1, body.coinCost) : chapter.coinCost || 2) : 0;

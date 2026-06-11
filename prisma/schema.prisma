@@ -256,6 +256,7 @@ model Chapter {
   coinCost         Int               @default(0)
   publishedAt      DateTime          @default(now())
   viewCount        Int               @default(0)
+  content          String?           @db.Text // novel chapter body (markdown); null for image manga
   manga            Manga             @relation(fields: [mangaId], references: [id], onDelete: Cascade)
   pages            Page[]
   readHistory      ReadHistory[]

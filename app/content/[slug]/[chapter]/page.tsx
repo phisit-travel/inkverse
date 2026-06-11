@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import ReaderViewer from "@/components/ui/ReaderViewer";
+import TextReader from "@/components/ui/TextReader";
+import { renderNovel, novelStats } from "@/lib/markdown";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import CommentSection from "@/components/ui/CommentSection";
 import PremiumGate from "@/components/ui/PremiumGate";
@@ -47,7 +49,7 @@ export default async function ReaderPage({ params }: Props) {
 
   const manga = await prisma.manga.findUnique({
     where: { slug },
-    select: { id: true, title: true, slug: true, translator: { select: { userId: true } } },
+    select: { id: true, title: true, slug: true, type: true, translator: { select: { userId: true } } },
   });
   if (!manga) notFound();
 
@@ -145,20 +147,35 @@ export default async function ReaderPage({ params }: Props) {
     await evaluateAchievements(userId);
   }
 
+  const isNovel = manga.type === "NOVEL";
+
   return (
     <div>
-      <ReaderViewer
-        pages={chapterData.pages.map((p) => ({
-          pageNum: p.pageNum,
-          imageUrl: p.imageUrl,
-          width: p.width,
-          height: p.height,
-        }))}
-        chapterNum={chapterNum}
-        mangaSlug={slug}
-        prevChapter={prevChapter?.chapterNum ?? null}
-        nextChapter={nextChapter?.chapterNum ?? null}
-      />
+      {isNovel ? (
+        <TextReader
+          html={renderNovel(chapterData.content)}
+          chapterTitle={chapterData.title}
+          chapterNum={chapterNum}
+          mangaTitle={manga.title}
+          mangaSlug={slug}
+          prevChapter={prevChapter?.chapterNum ?? null}
+          nextChapter={nextChapter?.chapterNum ?? null}
+          minutes={novelStats(chapterData.content).minutes}
+        />
+      ) : (
+        <ReaderViewer
+          pages={chapterData.pages.map((p) => ({
+            pageNum: p.pageNum,
+            imageUrl: p.imageUrl,
+            width: p.width,
+            height: p.height,
+          }))}
+          chapterNum={chapterNum}
+          mangaSlug={slug}
+          prevChapter={prevChapter?.chapterNum ?? null}
+          nextChapter={nextChapter?.chapterNum ?? null}
+        />
+      )}
       <ScrollToTop />
 
       <div className="max-w-4xl mx-auto px-4 pb-16">

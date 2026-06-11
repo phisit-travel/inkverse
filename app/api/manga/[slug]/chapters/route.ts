@@ -32,7 +32,7 @@ export async function POST(
   }
 
   const body = await req.json();
-  const { chapterNum, title, isPremium = false, coinCost = 0 } = body;
+  const { chapterNum, title, isPremium = false, coinCost = 0, content } = body;
 
   if (typeof chapterNum !== "number" || isNaN(chapterNum)) {
     return NextResponse.json({ error: "Valid chapterNum required" }, { status: 400 });
@@ -52,6 +52,7 @@ export async function POST(
       title: title || null,
       isPremium,
       coinCost: isPremium ? coinCost : 0,
+      content: typeof content === "string" ? content.slice(0, 200000) : null,
     },
   });
 

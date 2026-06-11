@@ -17,6 +17,7 @@ interface Chapter {
   coinCost: number;
   viewCount: number;
   pageCount: number;
+  wordCount?: number;
   publishedAt: string;
 }
 
@@ -24,10 +25,14 @@ function ChapterRow({
   chapter,
   onUpdated,
   onDeleted,
+  isNovel,
+  mangaSlug,
 }: {
   chapter: Chapter;
   onUpdated: (updated: Chapter) => void;
   onDeleted: (id: string) => void;
+  isNovel: boolean;
+  mangaSlug: string;
 }) {
   const [editingPrice, setEditingPrice] = useState(false);
   const [priceInput, setPriceInput] = useState(String(chapter.coinCost || 2));
@@ -174,7 +179,7 @@ function ChapterRow({
           </div>
         )}
         <div className="flex items-center gap-3 text-xs text-[var(--text-muted)] mt-0.5">
-          <span>{chapter.pageCount} หน้า</span>
+          <span>{isNovel ? `${(chapter.wordCount ?? 0).toLocaleString()} คำ` : `${chapter.pageCount} หน้า`}</span>
           <span>{chapter.viewCount.toLocaleString()} ชม</span>
         </div>
       </div>
@@ -235,15 +240,26 @@ function ChapterRow({
           {chapter.isPremium ? "ล็อค" : "ฟรี"}
         </button>
 
-        {/* Reorder pages link */}
-        <Link
-          href={`/dashboard/chapters/${chapter.id}/reorder`}
-          title="จัดเรียงหน้า"
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs text-[var(--text-secondary)] bg-white/5 border border-[var(--border)] hover:bg-white/10 hover:text-[var(--text-primary)] transition-all"
-        >
-          <ArrowUpDown className="w-3.5 h-3.5" />
-          หน้า
-        </Link>
+        {/* Reorder pages (manga) / edit text (novel) */}
+        {isNovel ? (
+          <Link
+            href={`/dashboard/manga/${mangaSlug}/write?ch=${chapter.id}`}
+            title="แก้ไขเนื้อหา"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs text-[var(--text-secondary)] bg-white/5 border border-[var(--border)] hover:bg-white/10 hover:text-[var(--text-primary)] transition-all"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+            แก้ไข
+          </Link>
+        ) : (
+          <Link
+            href={`/dashboard/chapters/${chapter.id}/reorder`}
+            title="จัดเรียงหน้า"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs text-[var(--text-secondary)] bg-white/5 border border-[var(--border)] hover:bg-white/10 hover:text-[var(--text-primary)] transition-all"
+          >
+            <ArrowUpDown className="w-3.5 h-3.5" />
+            หน้า
+          </Link>
+        )}
 
         {/* Delete chapter */}
         <button
@@ -262,14 +278,17 @@ function ChapterRow({
 export default function ChapterManager({
   mangaTitle,
   mangaSlug,
+  mangaType = "MANGA",
   initialChapters,
 }: {
   mangaTitle: string;
   mangaSlug: string;
+  mangaType?: string;
   initialChapters: Chapter[];
 }) {
   const [chapters, setChapters] = useState(initialChapters);
   const router = useRouter();
+  const isNovel = mangaType === "NOVEL";
 
   const premiumCount = chapters.filter((c) => c.isPremium).length;
   const freeCount = chapters.length - premiumCount;
@@ -293,7 +312,11 @@ export default function ChapterManager({
       {/* Chapter list */}
       {chapters.length === 0 ? (
         <div className="text-center py-16 text-[var(--text-muted)] text-sm">
-          ยังไม่มีตอน — <Link href="/upload" className="text-[var(--text-primary)] hover:underline">อัปโหลดตอนแรก</Link>
+          ยังไม่มีตอน — {isNovel ? (
+            <Link href={`/dashboard/manga/${mangaSlug}/write`} className="text-[var(--text-primary)] hover:underline">เขียนตอนแรก</Link>
+          ) : (
+            <Link href="/upload" className="text-[var(--text-primary)] hover:underline">อัปโหลดตอนแรก</Link>
+          )}
         </div>
       ) : (
         <div className="space-y-2">
@@ -301,6 +324,8 @@ export default function ChapterManager({
             <ChapterRow
               key={ch.id}
               chapter={ch}
+              isNovel={isNovel}
+              mangaSlug={mangaSlug}
               onUpdated={(updated) =>
                 setChapters((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))
               }

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { ArrowLeft, BookOpen, Plus } from "lucide-react";
 import ChapterManager from "./ChapterManager";
 import MangaSettings from "./MangaSettings";
+import { novelStats } from "@/lib/markdown";
+import { Pencil } from "lucide-react";
 import type { Metadata } from "next";
 
 interface Props {
@@ -44,6 +46,7 @@ export default async function MangaChaptersPage({ params }: Props) {
     redirect("/dashboard");
   }
 
+  const isNovel = manga.type === "NOVEL";
   const chapters = manga.chapters.map((ch) => ({
     id: ch.id,
     chapterNum: ch.chapterNum,
@@ -52,6 +55,7 @@ export default async function MangaChaptersPage({ params }: Props) {
     coinCost: ch.coinCost,
     viewCount: ch.viewCount,
     pageCount: ch._count.pages,
+    wordCount: isNovel ? novelStats(ch.content).words : 0,
     publishedAt: ch.publishedAt.toISOString(),
   }));
 
@@ -74,12 +78,21 @@ export default async function MangaChaptersPage({ params }: Props) {
               </h1>
             </div>
           </div>
-          <Link
-            href={`/upload?manga=${slug}`}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bal-btn text-sm font-semibold hover:opacity-90 transition-colors shrink-0"
-          >
-            <Plus className="w-4 h-4" /> อัปโหลดตอนเพิ่ม
-          </Link>
+          {isNovel ? (
+            <Link
+              href={`/dashboard/manga/${slug}/write`}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bal-btn text-sm font-semibold hover:opacity-90 transition-colors shrink-0"
+            >
+              <Pencil className="w-4 h-4" /> เขียนตอนใหม่
+            </Link>
+          ) : (
+            <Link
+              href={`/upload?manga=${slug}`}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bal-btn text-sm font-semibold hover:opacity-90 transition-colors shrink-0"
+            >
+              <Plus className="w-4 h-4" /> อัปโหลดตอนเพิ่ม
+            </Link>
+          )}
         </div>
       </div>
 
@@ -98,6 +111,7 @@ export default async function MangaChaptersPage({ params }: Props) {
       <ChapterManager
         mangaTitle={manga.title}
         mangaSlug={slug}
+        mangaType={manga.type}
         initialChapters={chapters}
       />
     </div>
