@@ -86,17 +86,17 @@ export default function PromoCarousel() {
               strokeWidth={1}
             />
 
-            {/* framed focal icon on the right (desktop) */}
+            {/* framed focal icon on the right (desktop) — animated */}
             <div className="hidden md:flex absolute right-10 lg:right-20 top-1/2 -translate-y-1/2">
               <div className="relative w-40 h-40 lg:w-52 lg:h-52 flex items-center justify-center">
-                <div className="absolute inset-0 rounded-full border border-[var(--text-primary)]/20" />
-                <div className="absolute inset-5 rounded-full border border-[var(--text-primary)]/10" />
-                <s.icon className="w-20 h-20 lg:w-28 lg:h-28 text-[var(--text-primary)]" strokeWidth={1} />
+                <div className="absolute inset-0 rounded-full border border-dashed border-[var(--text-primary)]/25 iv-ring-spin" />
+                <div className="absolute inset-5 rounded-full border border-[var(--text-primary)]/10 iv-ring-spin-rev" />
+                <s.icon className="w-20 h-20 lg:w-28 lg:h-28 text-[var(--text-primary)] iv-float" strokeWidth={1} />
               </div>
             </div>
 
-            {/* text */}
-            <div className="relative z-10 max-w-md lg:max-w-lg">
+            {/* text — rises in each time its slide becomes active */}
+            <div className={`relative z-10 max-w-md lg:max-w-lg ${idx === i ? "iv-rise" : ""}`}>
               <p className="eyebrow mb-4">{s.tag}</p>
               <h2 className="font-bebas text-4xl sm:text-5xl lg:text-6xl text-[var(--text-primary)] tracking-[0.04em] leading-[0.95] mb-4 uppercase">
                 {s.title}

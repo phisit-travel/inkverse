@@ -279,3 +279,15 @@ html.native-app [role="button"] {
 html.native-app ::-webkit-scrollbar { width: 0; height: 0; }
 /* Already inside the app → no "download the app" buttons. */
 html.native-app .download-cta { display: none !important; }
+
+/* ===== Promo carousel animations (subtle, monochrome) ===== */
+@keyframes iv-spin { to { transform: rotate(360deg); } }
+@keyframes iv-float { 0%, 100% { transform: translateY(-7px); } 50% { transform: translateY(7px); } }
+@keyframes iv-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+.iv-float { animation: iv-float 5s ease-in-out infinite; }
+.iv-ring-spin { animation: iv-spin 24s linear infinite; }
+.iv-ring-spin-rev { animation: iv-spin 34s linear infinite reverse; }
+.iv-rise { animation: iv-rise 0.65s cubic-bezier(0.16, 1, 0.3, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .iv-float, .iv-ring-spin, .iv-ring-spin-rev, .iv-rise { animation: none; }
+}
