@@ -55,15 +55,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       url: `${BASE_URL}/content/${manga.slug}`,
       siteName: "INKVERSE",
-      ...(manga.coverUrl
-        ? { images: [{ url: manga.coverUrl, width: 300, height: 400, alt: manga.title }] }
-        : {}),
+      // No explicit image → Next uses the 1200×630 opengraph-image.tsx card.
     },
     twitter: {
       card: "summary_large_image",
       title: `${manga.title} | INKVERSE`,
       description,
-      ...(manga.coverUrl ? { images: [manga.coverUrl] } : {}),
     },
     alternates: { canonical: `${BASE_URL}/content/${manga.slug}` },
   };
