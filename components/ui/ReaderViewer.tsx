@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import Image from "next/image";
 import { ChevronLeft, ChevronRight, Settings, AlignJustify, BookOpen } from "lucide-react";
 import clsx from "clsx";
 import Link from "next/link";
 
 interface Page {
+  id: string;
   pageNum: number;
-  imageUrl: string;
   width?: number | null;
   height?: number | null;
 }
@@ -20,6 +19,83 @@ interface ReaderViewerProps {
   prevChapter?: number | null;
   nextChapter?: number | null;
   onPageChange?: (page: number) => void;
+  watermark?: string | null;
+}
+
+// Loads a manga page through the authenticated proxy as a blob, so the real
+// image URL never appears in the DOM/HTML (a script can't grab src=). Lazy by
+// default (loads ~1200px before it scrolls into view).
+function ProtectedImage({
+  id,
+  alt,
+  w,
+  h,
+  imgClassName,
+  priority,
+}: {
+  id: string;
+  alt: string;
+  w: number;
+  h: number;
+  imgClassName: string;
+  priority?: boolean;
+}) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [src, setSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    let objUrl: string | null = null;
+    let started = false;
+    const load = async () => {
+      if (started) return;
+      started = true;
+      try {
+        const res = await fetch(`/api/img/${id}`);
+        if (!res.ok) return;
+        const blob = await res.blob();
+        objUrl = URL.createObjectURL(blob);
+        setSrc(objUrl);
+      } catch {
+        /* ignore */
+      }
+    };
+
+    let io: IntersectionObserver | null = null;
+    if (priority) {
+      load();
+    } else {
+      io = new IntersectionObserver(
+        (entries) => {
+          if (entries[0]?.isIntersecting) {
+            io?.disconnect();
+            load();
+          }
+        },
+        { rootMargin: "1200px" }
+      );
+      if (wrapRef.current) io.observe(wrapRef.current);
+    }
+    return () => {
+      io?.disconnect();
+      if (objUrl) URL.revokeObjectURL(objUrl);
+    };
+  }, [id, priority]);
+
+  return (
+    <div ref={wrapRef} className="w-full" style={src ? undefined : { aspectRatio: `${w} / ${h}` }}>
+      {src ? (
+        <img
+          src={src}
+          alt={alt}
+          draggable={false}
+          onContextMenu={(e) => e.preventDefault()}
+          className={imgClassName}
+        />
+      ) : (
+        <div className="skeleton w-full h-full" />
+      )}
+    </div>
+  );
 }
 
 export default function ReaderViewer({
@@ -29,6 +105,7 @@ export default function ReaderViewer({
   prevChapter,
   nextChapter,
   onPageChange,
+  watermark,
 }: ReaderViewerProps) {
   const [mode, setMode] = useState<"webtoon" | "page">("webtoon");
   const [currentPage, setCurrentPage] = useState(0);
@@ -169,24 +246,34 @@ export default function ReaderViewer({
         </div>
       )}
 
+      {/* Traceable watermark — a leaked screenshot carries the reader's name */}
+      {watermark && (
+        <div className="pointer-events-none fixed inset-0 z-20 overflow-hidden select-none" aria-hidden="true">
+          <div className="absolute inset-0 flex flex-wrap gap-x-16 gap-y-20 -rotate-[24deg] scale-150 opacity-[0.05]">
+            {Array.from({ length: 80 }).map((_, i) => (
+              <span key={i} className="text-[11px] whitespace-nowrap text-[var(--text-primary)]">{watermark}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Content */}
       <div
         ref={containerRef}
         style={{ filter: `brightness(${brightness}%)` }}
-        className="max-w-4xl mx-auto"
+        className="max-w-4xl mx-auto select-none"
+        onContextMenu={(e) => e.preventDefault()}
       >
         {mode === "webtoon" ? (
           <div className="flex flex-col items-center">
             {pages.map((page) => (
-              <div key={page.pageNum} className="w-full relative">
-                <Image
-                  src={page.imageUrl}
+              <div key={page.id} className="w-full relative">
+                <ProtectedImage
+                  id={page.id}
                   alt={`Page ${page.pageNum}`}
-                  width={page.width || 800}
-                  height={page.height || 1200}
-                  className="w-full h-auto"
-                  loading="lazy"
-                  unoptimized
+                  w={page.width || 800}
+                  h={page.height || 1200}
+                  imgClassName="w-full h-auto select-none"
                 />
               </div>
             ))}
@@ -198,14 +285,13 @@ export default function ReaderViewer({
             onTouchEnd={handleTouchEnd}
           >
             {pages[currentPage] && (
-              <Image
-                src={pages[currentPage].imageUrl}
+              <ProtectedImage
+                id={pages[currentPage].id}
                 alt={`Page ${currentPage + 1}`}
-                width={pages[currentPage].width || 800}
-                height={pages[currentPage].height || 1200}
-                className="max-h-[calc(100vh-120px)] w-auto object-contain"
+                w={pages[currentPage].width || 800}
+                h={pages[currentPage].height || 1200}
+                imgClassName="max-h-[calc(100vh-120px)] w-auto object-contain mx-auto select-none"
                 priority
-                unoptimized
               />
             )}
 

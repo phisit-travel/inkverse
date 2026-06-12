@@ -179,8 +179,8 @@ export default async function ReaderPage({ params }: Props) {
       ) : (
         <ReaderViewer
           pages={chapterData.pages.map((p) => ({
+            id: p.id,
             pageNum: p.pageNum,
-            imageUrl: p.imageUrl,
             width: p.width,
             height: p.height,
           }))}
@@ -188,6 +188,7 @@ export default async function ReaderPage({ params }: Props) {
           mangaSlug={slug}
           prevChapter={prevChapter?.chapterNum ?? null}
           nextChapter={nextChapter?.chapterNum ?? null}
+          watermark={(session?.user as { username?: string; name?: string })?.username ?? session?.user?.name ?? "INKVERSE"}
         />
       )}
       <ScrollToTop />
