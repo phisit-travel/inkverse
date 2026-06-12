@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import { cookies } from "next/headers";
 import StarRating from "@/components/ui/StarRating";
 import BookmarkButton from "@/components/ui/BookmarkButton";
+import ShareButtons from "@/components/ui/ShareButtons";
 import ChapterRow from "@/components/ui/ChapterRow";
 import AgeGate from "@/components/ui/AgeGate";
 import { getUserCoins } from "@/lib/coins";
@@ -277,6 +278,11 @@ export default async function MangaProfilePage({ params }: Props) {
                   initialBookmarked={isBookmarked}
                 />
               )}
+            </div>
+
+            {/* Share — turns every reader into a distribution channel */}
+            <div className="mb-3">
+              <ShareButtons url={`${BASE_URL}/content/${manga.slug}`} title={manga.title} />
             </div>
 
             {/* Stats */}
