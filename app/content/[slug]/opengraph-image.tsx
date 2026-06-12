@@ -7,30 +7,45 @@ export const alt = "INKVERSE";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// Bundled Thai+Latin font (variable Noto Sans Thai) — reliable, no CDN dependency.
-// Loaded lazily (at request time, not build time) and cached per instance.
-let fontCache: ArrayBuffer | null = null;
-async function getFont(): Promise<ArrayBuffer> {
-  if (fontCache) return fontCache;
-  const data = await fetch(new URL("./noto-thai.ttf", import.meta.url)).then((r) => r.arrayBuffer());
-  fontCache = data;
-  return data;
+// Fonts must come over https (file:// fetch isn't supported on the runtime).
+// Thai + Latin so both Thai and English titles render. Cached per instance.
+let fontsCache: { name: string; data: ArrayBuffer; weight: 700; style: "normal" }[] | null = null;
+async function getFonts() {
+  if (fontsCache) return fontsCache;
+  async function fetchFont(url: string): Promise<ArrayBuffer | null> {
+    try {
+      const r = await fetch(url, { cache: "force-cache" });
+      return r.ok ? await r.arrayBuffer() : null;
+    } catch {
+      return null;
+    }
+  }
+  const [thai, latin] = await Promise.all([
+    fetchFont("https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-thai@5/files/noto-sans-thai-thai-700-normal.woff"),
+    fetchFont("https://cdn.jsdelivr.net/npm/@fontsource/noto-sans@5/files/noto-sans-latin-700-normal.woff"),
+  ]);
+  const fonts: { name: string; data: ArrayBuffer; weight: 700; style: "normal" }[] = [];
+  if (latin) fonts.push({ name: "NotoLatin", data: latin, weight: 700, style: "normal" });
+  if (thai) fonts.push({ name: "NotoThai", data: thai, weight: 700, style: "normal" });
+  fontsCache = fonts;
+  return fonts;
 }
 
 export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [manga, fontData] = await Promise.all([
+  const [manga, fonts] = await Promise.all([
     prisma.manga.findUnique({ where: { slug }, select: { title: true, coverUrl: true, type: true } }),
-    getFont(),
+    getFonts(),
   ]);
 
   const title = manga?.title || "INKVERSE";
   const type = manga?.type || "";
   const cover = manga?.coverUrl || null;
+  const family = "NotoThai, NotoLatin, sans-serif";
 
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", display: "flex", background: "#0a0a0a", color: "#ffffff", fontFamily: "NotoThai" }}>
+      <div style={{ width: "100%", height: "100%", display: "flex", background: "#0a0a0a", color: "#ffffff", fontFamily: family }}>
         {cover ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={cover} alt="" width={410} height={630} style={{ width: 410, height: 630, objectFit: "cover" }} />
@@ -57,6 +72,6 @@ export default async function Image({ params }: { params: Promise<{ slug: string
         </div>
       </div>
     ),
-    { ...size, fonts: [{ name: "NotoThai", data: fontData, weight: 700 as const, style: "normal" as const }] }
+    { ...size, fonts }
   );
 }
