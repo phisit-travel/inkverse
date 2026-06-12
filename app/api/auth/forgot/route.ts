@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
-import { sendEmail, passwordResetEmail } from "@/lib/email";
+import { sendEmail, passwordResetOtpEmail } from "@/lib/email";
 
 const schema = z.object({ email: z.string().email() });
 
@@ -28,17 +28,26 @@ export async function POST(req: NextRequest) {
   // Only credentials accounts (have a password) can reset.
   if (!user || !user.passwordHash) return ok;
 
-  const token = crypto.randomBytes(32).toString("hex");
-  await prisma.passwordResetToken.create({
-    data: { token, userId: user.id, expires: new Date(Date.now() + 60 * 60_000) },
-  });
-
-  const base = process.env.SITE_URL || process.env.NEXTAUTH_URL || "";
-  await sendEmail({
-    to: email,
-    subject: "รีเซ็ตรหัสผ่าน INKVERSE",
-    html: passwordResetEmail(`${base}/auth/reset?token=${token}`),
-  });
+  // Replace any previous OTP for this user, then issue a fresh 6-digit code.
+  await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
+  const expires = new Date(Date.now() + 10 * 60_000); // 10 minutes
+  // token is globally unique → retry on the (extremely rare) cross-user clash.
+  for (let i = 0; i < 5; i++) {
+    const otp = String(crypto.randomInt(0, 1_000_000)).padStart(6, "0");
+    try {
+      await prisma.passwordResetToken.create({
+        data: { token: otp, userId: user.id, expires },
+      });
+      await sendEmail({
+        to: email,
+        subject: "รหัส OTP รีเซ็ตรหัสผ่าน INKVERSE",
+        html: passwordResetOtpEmail(otp),
+      });
+      break;
+    } catch {
+      if (i === 4) break; // give up silently — response stays generic
+    }
+  }
 
   return ok;
 }

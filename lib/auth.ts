@@ -49,6 +49,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.role = (user as { role?: string }).role;
         token.id = user.id;
         token.username = (user as { username?: string }).username ?? user.name ?? undefined;
+        // Google sign-in has no `remember` field → default to "remembered".
+        token.remember = (user as { remember?: boolean }).remember !== false;
+        token.loginAt = Date.now();
       }
       // Refresh role + username from the DB on every token use, so changes made
       // server-side (e.g. a writer application being approved → role TRANSLATOR)
@@ -71,6 +74,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         (session.user as { id?: string }).id = token.id as string;
         (session.user as { username?: string }).username = token.username as string;
       }
+      // "Remember me" unticked → expire the session 1 day after login instead of
+      // the default 30 days. We shorten session.expires so the client treats the
+      // login as ended (the JWT cookie itself still falls back to the 30d max).
+      if (token.remember === false && typeof token.loginAt === "number") {
+        const shortExp = new Date(token.loginAt + 24 * 60 * 60_000);
+        if (shortExp < new Date(session.expires)) {
+          session.expires = shortExp.toISOString() as typeof session.expires;
+        }
+      }
       return session;
     },
   },
@@ -88,6 +100,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        remember: { label: "Remember", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
@@ -111,6 +124,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: user.username,
           image: user.avatarUrl,
           role: user.role,
+          // "Remember me" unticked → a short-lived session (see jwt/session below).
+          remember: credentials.remember !== "0" && credentials.remember !== "false",
         };
       },
     }),

@@ -15,6 +15,7 @@ export default function SignInPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
+  const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -25,6 +26,7 @@ export default function SignInPage() {
     const res = await signIn("credentials", {
       email,
       password,
+      remember: remember ? "1" : "0",
       redirect: false,
     });
     setLoading(false);
@@ -118,7 +120,16 @@ export default function SignInPage() {
               <p className="text-sm text-[var(--text-primary)] text-center">{error}</p>
             )}
 
-            <div className="text-right">
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-xs text-[var(--text-secondary)] cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                  className="w-4 h-4 accent-[var(--text-primary)] cursor-pointer"
+                />
+                จดจำการเข้าสู่ระบบ
+              </label>
               <Link href="/auth/forgot" className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
                 ลืมรหัสผ่าน?
               </Link>
