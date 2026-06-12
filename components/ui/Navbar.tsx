@@ -37,9 +37,6 @@ const applyLinks = [
   { href: "/apply?as=writer", label: "สมัครนักเขียน" },
 ];
 
-// Creator dropdown also surfaces the app download (hidden inside the app).
-const creatorLinks = [...applyLinks, { href: "/download", label: "โหลดแอป", cta: true }];
-
 // Hover dropdown used in the desktop nav to keep the bar uncluttered.
 function NavDropdown({
   label,
@@ -88,11 +85,19 @@ export default function Navbar({ user, userCoins = 0, rankBadge = null }: Navbar
         {/* Desktop nav — two dropdowns keep the bar clean */}
         <div className="hidden lg:flex items-center gap-8">
           <NavDropdown label="เรื่องทั้งหมด" items={typeLinks} />
-          <NavDropdown label="ครีเอเตอร์" items={creatorLinks} />
+          <NavDropdown label="ครีเอเตอร์" items={applyLinks} />
         </div>
 
         {/* Search + actions */}
         <div className="flex items-center gap-2">
+          {/* Download app — prominent + always visible (sm+); hidden inside the app */}
+          <Link
+            href="/download"
+            className="download-cta hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[var(--text-primary)]/30 text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)] hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            โหลดแอป
+          </Link>
           <ThemeToggle />
           {/* Desktop search with live suggestions */}
           <SearchBox className="hidden md:block" />
