@@ -76,5 +76,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -f public/downloads/inkverse.apk
-          git commit -m "chore(android): publish latest APK to /downloads [skip ci]" || { echo "no change"; exit 0; }
-          git push
+          git diff --cached --quiet && { echo "no change"; exit 0; }
+          git commit -m "chore(android): publish latest APK to /downloads [skip ci]"
+          # main may have advanced while we built — rebase + retry so the push
+          # doesn't get silently rejected (which left a stale APK published).
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push && exit 0
+            echo "push retry $i"; sleep 5
+          done
+          echo "::error::failed to publish APK after retries"; exit 1

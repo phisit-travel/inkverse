@@ -71,5 +71,7 @@ json-to-base64-converter.txt
 inkverse-android-apk/
 inkverse-android-apk.zip
 *.apk
+# Exception: the published app download MUST be tracked.
+!public/downloads/inkverse.apk
 mobile/.idea/
 .idea/
