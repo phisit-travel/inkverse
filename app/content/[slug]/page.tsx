@@ -71,40 +71,44 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 // Global, per-story profile data (no per-user fields) — cached so popular
 // titles don't re-hit Postgres on every visit. Dates are returned as ISO
 // strings so the shape is identical whether served from cache or a fresh miss.
-const getMangaProfile = unstable_cache(
-  async (slug: string) => {
-    const m = await prisma.manga.findUnique({
-      where: { slug },
-      include: {
-        genres: { include: { genre: true } },
-        chapters: {
-          where: liveChapterWhere(),
-          orderBy: { chapterNum: "asc" },
-          // List view only — never pull the chapter bodies (huge for novels).
-          select: {
-            id: true, chapterNum: true, title: true, isPremium: true,
-            coinCost: true, viewCount: true, publishedAt: true, freeAt: true,
+// Tagged per-slug (`manga:<slug>`) so publishing/editing a chapter can bust it
+// immediately (see revalidateMangaCache) instead of waiting out the TTL.
+function getMangaProfile(slug: string) {
+  return unstable_cache(
+    async () => {
+      const m = await prisma.manga.findUnique({
+        where: { slug },
+        include: {
+          genres: { include: { genre: true } },
+          chapters: {
+            where: liveChapterWhere(),
+            orderBy: { chapterNum: "asc" },
+            // List view only — never pull the chapter bodies (huge for novels).
+            select: {
+              id: true, chapterNum: true, title: true, isPremium: true,
+              coinCost: true, viewCount: true, publishedAt: true, freeAt: true,
+            },
           },
+          ratings: { select: { score: true } },
+          translator: { include: { user: { select: { username: true, verifiedAt: true, role: true } } } },
         },
-        ratings: { select: { score: true } },
-        translator: { include: { user: { select: { username: true, verifiedAt: true, role: true } } } },
-      },
-    });
-    if (!m) return null;
-    return {
-      ...m,
-      createdAt: m.createdAt.toISOString(),
-      updatedAt: m.updatedAt.toISOString(),
-      chapters: m.chapters.map((c) => ({
-        ...c,
-        publishedAt: c.publishedAt.toISOString(),
-        freeAt: c.freeAt ? c.freeAt.toISOString() : null,
-      })),
-    };
-  },
-  ["manga-profile"],
-  { revalidate: 120 }
-);
+      });
+      if (!m) return null;
+      return {
+        ...m,
+        createdAt: m.createdAt.toISOString(),
+        updatedAt: m.updatedAt.toISOString(),
+        chapters: m.chapters.map((c) => ({
+          ...c,
+          publishedAt: c.publishedAt.toISOString(),
+          freeAt: c.freeAt ? c.freeAt.toISOString() : null,
+        })),
+      };
+    },
+    ["manga-profile", slug],
+    { revalidate: 120, tags: [`manga:${slug}`] }
+  )();
+}
 
 export default async function MangaProfilePage({ params }: Props) {
   const { slug } = await params;

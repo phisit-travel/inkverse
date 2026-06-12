@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { renderNovel } from "@/lib/markdown";
 import { isChapterLive } from "@/lib/chapters";
 import { notifyNewChapter } from "@/lib/notifications";
+import { revalidateMangaCache } from "@/lib/revalidate";
 
 async function getOwnership(chapterId: string) {
   const session = await auth();
@@ -86,6 +87,8 @@ export async function PATCH(
   try {
     const wasLive = isChapterLive(chapter);
     const updated = await prisma.chapter.update({ where: { id }, data });
+    // Reflect the edit immediately on the story page + home feed.
+    revalidateMangaCache(chapter.manga.slug);
     // Notify bookmarkers only when a chapter first becomes live (not on draft saves).
     if (!wasLive && isChapterLive(updated)) {
       await notifyNewChapter({
@@ -115,5 +118,6 @@ export async function DELETE(
 
   // Cascades to pages, unlocked records, read history and comments.
   await prisma.chapter.delete({ where: { id } });
+  revalidateMangaCache(chapter.manga.slug);
   return NextResponse.json({ ok: true });
 }

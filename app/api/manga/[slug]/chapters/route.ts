@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { notifyNewChapter } from "@/lib/notifications";
 import { renderNovel } from "@/lib/markdown";
 import { isChapterLive } from "@/lib/chapters";
+import { revalidateMangaCache } from "@/lib/revalidate";
 
 export async function POST(
   req: NextRequest,
@@ -69,6 +70,9 @@ export async function POST(
     where: { id: manga.id },
     data: { updatedAt: new Date() },
   });
+
+  // Show the new chapter right away (bust the cached story page + home feed).
+  revalidateMangaCache(manga.slug);
 
   // Notify bookmarkers only if the chapter is live now (skip drafts/scheduled).
   if (isChapterLive(chapter)) {

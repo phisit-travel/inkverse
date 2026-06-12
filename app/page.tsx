@@ -105,7 +105,7 @@ const getData = unstable_cache(async () => {
   }));
 
   return { mangas, genres, latestChapters, weeklyRank, monthlyRank, allRank, translatorRanking, novels };
-}, ["home-data"], { revalidate: 300 });
+}, ["home-data"], { revalidate: 300, tags: ["home-feed"] });
 
 export default async function HomePage() {
   const { mangas, genres, latestChapters, weeklyRank, monthlyRank, allRank, translatorRanking, novels } =
