@@ -1,5 +1,22 @@
 import { ImageResponse } from "next/og";
 import { prisma } from "@/lib/prisma";
+import sharp from "sharp";
+
+// Covers are WebP, which Satori can't render — fetch + transcode to a PNG data URI.
+async function coverPng(url: string | null): Promise<string | null> {
+  if (!url) return null;
+  try {
+    const res = await fetch(url, { cache: "force-cache" });
+    if (!res.ok) return null;
+    const png = await sharp(Buffer.from(await res.arrayBuffer()))
+      .resize(410, 630, { fit: "cover" })
+      .png()
+      .toBuffer();
+    return `data:image/png;base64,${png.toString("base64")}`;
+  } catch {
+    return null;
+  }
+}
 
 // nodejs (NOT edge): Prisma uses the pg adapter which is not edge-compatible.
 export const runtime = "nodejs";
@@ -40,7 +57,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
 
   const title = manga?.title || "INKVERSE";
   const type = manga?.type || "";
-  const cover = manga?.coverUrl || null;
+  const cover = await coverPng(manga?.coverUrl || null);
   const family = "NotoThai, NotoLatin, sans-serif";
 
   return new ImageResponse(
@@ -53,7 +70,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
           <div style={{ width: 410, height: 630, background: "#161616" }} />
         )}
 
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 60 }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 60, overflow: "hidden" }}>
           <div style={{ display: "flex", flexDirection: "column" }}>
             {type ? (
               <div style={{ alignSelf: "flex-start", background: "#ffffff", color: "#0a0a0a", fontSize: 22, fontWeight: 700, padding: "6px 18px", letterSpacing: 3, marginBottom: 30, display: "flex" }}>
