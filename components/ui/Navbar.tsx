@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Search, Menu, X, LogIn } from "lucide-react";
+import { Search, Menu, X, LogIn, Download } from "lucide-react";
 import Logo from "./Logo";
 import CoinBadge from "./CoinBadge";
 import NotificationBell from "./NotificationBell";
@@ -59,6 +59,14 @@ export default function Navbar({ user, userCoins = 0, rankBadge = null }: Navbar
 
         {/* Search + actions */}
         <div className="flex items-center gap-2">
+          {/* Download app — always visible from sm up; hidden inside the app */}
+          <Link
+            href="/download"
+            className="download-cta hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--border)] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-primary)]/40 transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            โหลดแอป
+          </Link>
           <ThemeToggle />
           {/* Desktop search with live suggestions */}
           <SearchBox className="hidden md:block" />
@@ -108,6 +116,15 @@ export default function Navbar({ user, userCoins = 0, rankBadge = null }: Navbar
       {menuOpen && (
         <div className="lg:hidden border-t border-[var(--border)] bg-[var(--bg-primary)]">
           <div className="px-4 py-3 flex flex-col gap-1">
+            {/* Prominent app download — hidden when already inside the app */}
+            <Link
+              href="/download"
+              onClick={() => setMenuOpen(false)}
+              className="download-cta flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm bal-btn font-semibold mb-1"
+            >
+              <Download className="w-4 h-4" />
+              โหลดแอป Android
+            </Link>
             {navLinks.map((link) => (
               <Link
                 key={link.href}

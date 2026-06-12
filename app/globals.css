@@ -277,3 +277,5 @@ html.native-app [role="button"] {
 }
 /* Cleaner app surface — hide scrollbars. */
 html.native-app ::-webkit-scrollbar { width: 0; height: 0; }
+/* Already inside the app → no "download the app" buttons. */
+html.native-app .download-cta { display: none !important; }
