@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { unstable_cache } from "next/cache";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -66,32 +67,51 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+// Global, per-story profile data (no per-user fields) — cached so popular
+// titles don't re-hit Postgres on every visit. Dates are returned as ISO
+// strings so the shape is identical whether served from cache or a fresh miss.
+const getMangaProfile = unstable_cache(
+  async (slug: string) => {
+    const m = await prisma.manga.findUnique({
+      where: { slug },
+      include: {
+        genres: { include: { genre: true } },
+        chapters: {
+          where: liveChapterWhere(),
+          orderBy: { chapterNum: "asc" },
+          // List view only — never pull the chapter bodies (huge for novels).
+          select: {
+            id: true, chapterNum: true, title: true, isPremium: true,
+            coinCost: true, viewCount: true, publishedAt: true, freeAt: true,
+          },
+        },
+        ratings: { select: { score: true } },
+        translator: { include: { user: { select: { username: true, verifiedAt: true, role: true } } } },
+      },
+    });
+    if (!m) return null;
+    return {
+      ...m,
+      createdAt: m.createdAt.toISOString(),
+      updatedAt: m.updatedAt.toISOString(),
+      chapters: m.chapters.map((c) => ({
+        ...c,
+        publishedAt: c.publishedAt.toISOString(),
+        freeAt: c.freeAt ? c.freeAt.toISOString() : null,
+      })),
+    };
+  },
+  ["manga-profile"],
+  { revalidate: 120 }
+);
+
 export default async function MangaProfilePage({ params }: Props) {
   const { slug } = await params;
   const session = await auth();
 
   const userId = session?.user ? (session.user as { id: string }).id : null;
 
-  const manga = await prisma.manga.findUnique({
-    where: { slug },
-    include: {
-      genres: { include: { genre: true } },
-      chapters: {
-        where: liveChapterWhere(),
-        orderBy: { chapterNum: "asc" },
-        // List view only — never pull the chapter bodies (huge for novels).
-        select: {
-          id: true, chapterNum: true, title: true, isPremium: true,
-          coinCost: true, viewCount: true, publishedAt: true, freeAt: true,
-        },
-      },
-      ratings: { select: { score: true } },
-      bookmarks: userId
-        ? { where: { userId }, take: 1 }
-        : false,
-      translator: { include: { user: { select: { username: true, verifiedAt: true, role: true } } } },
-    },
-  });
+  const manga = await getMangaProfile(slug);
 
   if (!manga) notFound();
 
@@ -108,7 +128,7 @@ export default async function MangaProfilePage({ params }: Props) {
 
   // One parallel round-trip for everything that depends on the loaded manga:
   // balance, unlocked/read sets, work-level comments, uploader rank, view bump.
-  const [userCoins, unlockedSet, readSet, workComments, translatorRank] = await Promise.all([
+  const [userCoins, unlockedSet, readSet, workComments, translatorRank, , bookmarkRow] = await Promise.all([
     userId ? getUserCoins(userId) : Promise.resolve(0),
     userId
       ? prisma.unlockedChapter
@@ -143,6 +163,12 @@ export default async function MangaProfilePage({ params }: Props) {
     isOwner
       ? Promise.resolve(null)
       : prisma.manga.update({ where: { id: manga.id }, data: { totalViews: { increment: 1 } } }),
+    userId
+      ? prisma.bookmark.findUnique({
+          where: { userId_mangaId: { userId, mangaId: manga.id } },
+          select: { userId: true },
+        })
+      : Promise.resolve(null),
   ]);
 
   // Reading progress (chapters opened / total)
@@ -157,9 +183,7 @@ export default async function MangaProfilePage({ params }: Props) {
       ? manga.ratings.reduce((a, b) => a + b.score, 0) / manga.ratings.length
       : 0;
 
-  const isBookmarked = userId && Array.isArray(manga.bookmarks)
-    ? manga.bookmarks.length > 0
-    : false;
+  const isBookmarked = !!bookmarkRow;
 
   const latestChapter = manga.chapters[manga.chapters.length - 1];
   const firstChapter = manga.chapters[0];
@@ -511,14 +535,14 @@ export default async function MangaProfilePage({ params }: Props) {
                   title={ch.title}
                   isPremium={ch.isPremium}
                   coinCost={ch.coinCost}
-                  publishedAt={ch.publishedAt.toISOString()}
+                  publishedAt={ch.publishedAt}
                   viewCount={ch.viewCount}
                   isUnlocked={unlockedSet.has(ch.id)}
                   isRead={readSet.has(ch.id)}
                   mangaSlug={slug}
                   userCoins={userCoins}
                   isLoggedIn={!!userId}
-                  freeAt={ch.freeAt ? ch.freeAt.toISOString() : null}
+                  freeAt={ch.freeAt}
                 />
               ))}
             </div>

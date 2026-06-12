@@ -58,3 +58,18 @@ test-*.mjs
 /bal-audit/
 
 .vercel
+
+# SECRETS — never commit (Firebase keys live in Vercel env only)
+google-services.json
+**/google-services.json
+*firebase-adminsdk*.json
+serviceAccount*.json
+json-to-base64-converter.txt
+*service-account*.json
+
+# local build artifacts / IDE
+inkverse-android-apk/
+inkverse-android-apk.zip
+*.apk
+mobile/.idea/
+.idea/

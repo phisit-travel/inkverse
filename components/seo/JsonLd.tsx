@@ -7,7 +7,7 @@ interface MangaJsonLdProps {
     description: string;
     coverUrl?: string | null;
     status: string;
-    updatedAt: Date;
+    updatedAt: Date | string;
     genres: { genre: { name: string } }[];
     avgRating?: number;
     ratingCount?: number;
