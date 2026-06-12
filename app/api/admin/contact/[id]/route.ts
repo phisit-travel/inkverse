@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendEmail, contactReplyEmail } from "@/lib/email";
+import { createNotification } from "@/lib/notifications";
+import { sendPushToUsers } from "@/lib/push";
 
 export async function PATCH(
   req: NextRequest,
@@ -30,6 +32,20 @@ export async function PATCH(
       where: { id },
       data: { reply, repliedAt: new Date(), status: "RESOLVED" },
     });
+
+    // Notify the sender on-site (bell) + push, if they have an account.
+    if (msg.userId) {
+      const snippet = reply.length > 140 ? reply.slice(0, 140) + "…" : reply;
+      await createNotification({
+        userId: msg.userId,
+        type: "CONTACT_REPLY",
+        title: "ทีมงานตอบกลับข้อความของคุณแล้ว",
+        body: snippet,
+        link: "/contact",
+      });
+      await sendPushToUsers([msg.userId], "ทีมงานตอบกลับแล้ว", snippet, "/contact");
+    }
+
     return NextResponse.json({ ...updated, emailed });
   }
 
