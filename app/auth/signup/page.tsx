@@ -16,13 +16,16 @@ export default function SignUpPage() {
   const [sent, setSent] = useState(false);
   const [ref, setRef] = useState("");
   const [inApp, setInApp] = useState(false);
+  const [noGms, setNoGms] = useState(false);
+  const showGoogle = !inApp || !noGms; // web always; in-app only on GMS devices
 
   // Capture an invite code (?ref=username) without needing a Suspense boundary.
   useEffect(() => {
     const r = new URLSearchParams(window.location.search).get("ref");
     if (r) setRef(r);
-    // Google OAuth can't complete in the app's WebView → hide it in-app.
+    // In-app uses the native Google picker — but not on Huawei/Honor (no GMS).
     setInApp(!!(window as unknown as { Capacitor?: unknown }).Capacitor);
+    setNoGms(/huawei|honor/i.test(navigator.userAgent));
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -137,8 +140,8 @@ export default function SignUpPage() {
             </div>
           )}
 
-          {/* Google — web only for now; native in-app sign-in temporarily off. */}
-          {!inApp && (
+          {/* Google — native picker in-app (GMS), OAuth on web; off on Huawei/Honor. */}
+          {showGoogle && (
           <button
             onClick={handleGoogle}
             disabled={loading}
@@ -154,7 +157,7 @@ export default function SignUpPage() {
           </button>
           )}
 
-          {!inApp && (
+          {showGoogle && (
           <div className="flex items-center gap-3 mb-6">
             <div className="flex-1 h-px bg-white/10" />
             <span className="text-xs text-[var(--text-secondary)]">หรือ</span>

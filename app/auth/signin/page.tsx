@@ -18,12 +18,16 @@ export default function SignInPage() {
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  // Google OAuth can't complete inside the Android app's WebView (Google blocks
-  // WebView sign-in), so we hide it in-app and steer users to email/password.
+  // In the app we use the NATIVE Google picker. Hide it on Huawei/Honor, which
+  // ship without Google Play Services (native Google sign-in can't work — and
+  // would crash — there); those users use email/password.
   const [inApp, setInApp] = useState(false);
+  const [noGms, setNoGms] = useState(false);
   useEffect(() => {
     setInApp(!!(window as unknown as { Capacitor?: unknown }).Capacitor);
+    setNoGms(/huawei|honor/i.test(navigator.userAgent));
   }, []);
+  const showGoogle = !inApp || !noGms; // web always; in-app only on GMS devices
 
   const handleCredentials = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,9 +97,9 @@ export default function SignInPage() {
             เข้าสู่ระบบ
           </h1>
 
-          {/* Google — web only for now. Native in-app sign-in is temporarily
-              disabled (it can crash until the Android OAuth client is live). */}
-          {!inApp && (
+          {/* Google — native picker in the app (GMS devices), OAuth redirect on
+              the web. Hidden on Huawei/Honor (no Play Services). */}
+          {showGoogle && (
           <button
             onClick={handleGoogle}
             disabled={loading}
@@ -123,7 +127,7 @@ export default function SignInPage() {
           </button>
           )}
 
-          {!inApp && (
+          {showGoogle && (
           <div className="flex items-center gap-3 mb-6">
             <div className="flex-1 h-px bg-white/10" />
             <span className="text-xs text-[var(--text-secondary)]">หรือ</span>
@@ -131,9 +135,9 @@ export default function SignInPage() {
           </div>
           )}
 
-          {inApp && (
+          {inApp && noGms && (
             <p className="text-xs text-[var(--text-secondary)] text-center mb-6 leading-relaxed">
-              ในแอป กรุณาเข้าสู่ระบบด้วยอีเมล + รหัสผ่าน<br />
+              เครื่องนี้ไม่รองรับ Google ในแอป กรุณาใช้อีเมล + รหัสผ่าน<br />
               (เคยสมัครด้วย Google? กด &ldquo;ลืมรหัสผ่าน?&rdquo; เพื่อตั้งรหัสผ่านครั้งแรก)
             </p>
           )}
