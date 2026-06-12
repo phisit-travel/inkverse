@@ -66,7 +66,7 @@ export default function PromoteKit({ works, refCode }: { works: Work[]; refCode:
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{w.title}</p>
-                    <p className="text-[11px] text-[var(--text-secondary)] mb-2.5">{w.type === "NOVEL" ? "นิยาย" : "มังงะ"}</p>
+                    <p className="text-[11px] text-[var(--text-secondary)] mb-2.5 uppercase">{w.type}</p>
                     <div className="flex flex-wrap gap-2">
                       <CopyBtn text={url} label="คัดลอกลิงก์" done="คัดลอกแล้ว" />
                       {shares.map((s) => (

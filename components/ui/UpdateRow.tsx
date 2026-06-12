@@ -58,12 +58,12 @@ export default function UpdateRow({
             {title}
           </p>
           {type === "NOVEL" ? (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--text-primary)] text-[var(--bg-primary)] flex-shrink-0 font-bold">
-              นิยาย
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--text-primary)] text-[var(--bg-primary)] flex-shrink-0 font-bold uppercase">
+              NOVEL
             </span>
           ) : type ? (
-            <span className="text-[10px] px-1 py-0.5 rounded bg-white/10 text-[var(--text-secondary)] flex-shrink-0">
-              {type === "MANGA" ? "มังงะ" : type === "MANHWA" ? "มังฮวา" : type === "MANHUA" ? "มังฮัว" : type}
+            <span className="text-[10px] px-1 py-0.5 rounded bg-white/10 text-[var(--text-secondary)] flex-shrink-0 uppercase">
+              {type}
             </span>
           ) : null}
         </div>

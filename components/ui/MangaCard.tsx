@@ -95,12 +95,12 @@ export default function MangaCard({
         {/* Type badge — novels clearly flagged so readers don't mistake them for comics */}
         {contentRating !== "ADULT" && type === "NOVEL" && (
           <span className="absolute top-2 right-2 text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider bg-[var(--text-primary)] text-[var(--bg-primary)]">
-            นิยาย
+            NOVEL
           </span>
         )}
         {contentRating !== "ADULT" && type && type !== "NOVEL" && !isCompact && (
           <span className="absolute top-2 right-2 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-[var(--bg-card)]/90 text-[var(--text-primary)] border border-[var(--border)]">
-            {type === "MANGA" ? "มังงะ" : type === "MANHWA" ? "มังฮวา" : type === "MANHUA" ? "มังฮัว" : type}
+            {type}
           </span>
         )}
 

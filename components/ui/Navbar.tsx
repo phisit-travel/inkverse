@@ -26,10 +26,10 @@ interface NavbarProps {
 
 const navLinks = [
   { href: "/manga", label: "เรื่องทั้งหมด" },
-  { href: "/manga?type=MANGA", label: "มังงะ" },
-  { href: "/manga?type=MANHWA", label: "มังฮวา" },
-  { href: "/manga?type=MANHUA", label: "มังฮัว" },
-  { href: "/manga?type=NOVEL", label: "นิยาย" },
+  { href: "/manga?type=MANGA", label: "MANGA" },
+  { href: "/manga?type=MANHWA", label: "MANHWA" },
+  { href: "/manga?type=MANHUA", label: "MANHUA" },
+  { href: "/manga?type=NOVEL", label: "NOVEL" },
   { href: "/apply?as=translator", label: "สมัครนักแปล" },
   { href: "/apply?as=writer", label: "สมัครนักเขียน" },
 ];
