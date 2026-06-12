@@ -6,8 +6,8 @@ import clsx from "clsx";
 import Link from "next/link";
 
 interface Page {
-  id: string;
   pageNum: number;
+  src: string; // signed proxy URL (/api/img/<id>?e=&s=)
   width?: number | null;
   height?: number | null;
 }
@@ -26,14 +26,14 @@ interface ReaderViewerProps {
 // image URL never appears in the DOM/HTML (a script can't grab src=). Lazy by
 // default (loads ~1200px before it scrolls into view).
 function ProtectedImage({
-  id,
+  src: source,
   alt,
   w,
   h,
   imgClassName,
   priority,
 }: {
-  id: string;
+  src: string;
   alt: string;
   w: number;
   h: number;
@@ -50,7 +50,7 @@ function ProtectedImage({
       if (started) return;
       started = true;
       try {
-        const res = await fetch(`/api/img/${id}`);
+        const res = await fetch(source);
         if (!res.ok) return;
         const blob = await res.blob();
         objUrl = URL.createObjectURL(blob);
@@ -79,7 +79,7 @@ function ProtectedImage({
       io?.disconnect();
       if (objUrl) URL.revokeObjectURL(objUrl);
     };
-  }, [id, priority]);
+  }, [source, priority]);
 
   return (
     <div ref={wrapRef} className="w-full" style={src ? undefined : { aspectRatio: `${w} / ${h}` }}>
@@ -267,9 +267,9 @@ export default function ReaderViewer({
         {mode === "webtoon" ? (
           <div className="flex flex-col items-center">
             {pages.map((page) => (
-              <div key={page.id} className="w-full relative">
+              <div key={page.pageNum} className="w-full relative">
                 <ProtectedImage
-                  id={page.id}
+                  src={page.src}
                   alt={`Page ${page.pageNum}`}
                   w={page.width || 800}
                   h={page.height || 1200}
@@ -286,7 +286,7 @@ export default function ReaderViewer({
           >
             {pages[currentPage] && (
               <ProtectedImage
-                id={pages[currentPage].id}
+                src={pages[currentPage].src}
                 alt={`Page ${currentPage + 1}`}
                 w={pages[currentPage].width || 800}
                 h={pages[currentPage].height || 1200}

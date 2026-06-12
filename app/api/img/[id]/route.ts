@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
-import { isChapterLocked } from "@/lib/chapters";
-import { hasUnlockedChapter } from "@/lib/coins";
+import { verifyImageToken } from "@/lib/imageToken";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 
-// Authenticated image proxy. Manga page images are served through here instead of
-// exposing the raw R2 URL, so a scraper can't bulk-grab predictable URLs: every
-// request is access-checked (live + unlocked) and rate-limited. The reader loads
-// these as blobs, so the real source never appears in the page.
+// Authenticated, signed image proxy. Manga page images are served through here
+// instead of exposing the raw R2 URL. Each request must carry a valid, unexpired
+// signature (?e&s) minted by the chapter reader after it passed access control,
+// so URLs can't be forged or reused after the window — and a script can't bulk-
+// grab predictable URLs. Rate-limited per IP. The reader loads these as blobs.
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   // Throttle bulk scraping — a human turns pages far slower than this.
   if (!rateLimit(`img:${clientIp(req)}`, 200, 60_000).ok) {
@@ -16,39 +15,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   const { id } = await params;
-  const page = await prisma.page.findUnique({
-    where: { id },
-    select: {
-      imageUrl: true,
-      chapter: {
-        select: {
-          id: true,
-          isPremium: true,
-          freeAt: true,
-          status: true,
-          publishAt: true,
-          manga: { select: { translator: { select: { userId: true } } } },
-        },
-      },
-    },
-  });
-  if (!page?.chapter) return new NextResponse("Not found", { status: 404 });
-  const ch = page.chapter;
+  const e = req.nextUrl.searchParams.get("e");
+  const s = req.nextUrl.searchParams.get("s");
 
-  const session = await auth();
-  const userId = session?.user ? (session.user as { id?: string }).id : null;
-  const role = session?.user ? (session.user as { role?: string }).role : null;
-  const isOwner = !!userId && ch.manga?.translator?.userId === userId;
-  const isAdmin = role === "ADMIN";
-
-  if (!isOwner && !isAdmin) {
-    // Draft / scheduled chapters are not public.
-    const notLive = ch.status === "DRAFT" || (!!ch.publishAt && new Date(ch.publishAt).getTime() > Date.now());
-    if (notLive) return new NextResponse("Not found", { status: 404 });
-    // Premium / early-access lock.
-    const unlocked = userId ? await hasUnlockedChapter(userId, ch.id) : false;
-    if (isChapterLocked(ch, unlocked)) return new NextResponse("Locked", { status: 403 });
+  // Signed + unexpired token is the access grant (minted post-authorization).
+  if (!verifyImageToken(id, e, s)) {
+    return new NextResponse("Forbidden", { status: 403 });
   }
+
+  const page = await prisma.page.findUnique({ where: { id }, select: { imageUrl: true } });
+  if (!page) return new NextResponse("Not found", { status: 404 });
 
   const upstream = await fetch(page.imageUrl);
   if (!upstream.ok || !upstream.body) return new NextResponse("Bad gateway", { status: 502 });
