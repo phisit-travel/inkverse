@@ -77,35 +77,32 @@ export const proxy = auth((req) => {
   const blocked = floodGuard(req);
   if (blocked) return blocked;
 
-  // 2) Role-based access control for protected areas.
+  // 2) Access control for protected areas.
+  // NOTE: only the login check lives here. The ROLE check is intentionally done
+  // per-page (each /dashboard + /upload page calls auth() and re-checks role
+  // against the DB). The edge token's `role` can be stale right after a creator
+  // is approved (the DB refresh only happens in the Node auth callback), so
+  // gating on it here used to bounce freshly-approved creators away from their
+  // own dashboard. Pages self-gate with the fresh role, so this stays safe.
   const session = req.auth;
   const role = (session?.user as { role?: string } | null)?.role;
   const { pathname } = req.nextUrl;
 
-  if (pathname.startsWith("/dashboard")) {
-    if (!session) {
-      return NextResponse.redirect(
-        new URL(`/auth/signin?callbackUrl=/dashboard`, req.url)
-      );
-    }
-    if (role !== "TRANSLATOR" && role !== "ADMIN") {
-      return NextResponse.redirect(new URL("/apply", req.url));
-    }
+  if (pathname.startsWith("/dashboard") && !session) {
+    return NextResponse.redirect(
+      new URL(`/auth/signin?callbackUrl=/dashboard`, req.url)
+    );
   }
 
-  if (pathname.startsWith("/upload")) {
-    if (!session) {
-      return NextResponse.redirect(
-        new URL(`/auth/signin?callbackUrl=/upload`, req.url)
-      );
-    }
-    // Must be an approved translator to upload — otherwise send them to apply.
-    if (role !== "TRANSLATOR" && role !== "ADMIN") {
-      return NextResponse.redirect(new URL("/apply", req.url));
-    }
+  if (pathname.startsWith("/upload") && !session) {
+    return NextResponse.redirect(
+      new URL(`/auth/signin?callbackUrl=/upload`, req.url)
+    );
   }
 
   if (pathname.startsWith("/admin")) {
+    // Admin promotions are manual + rare, so the stale-role risk doesn't apply
+    // the same way; keep the strict edge gate as defence in depth.
     if (!session || role !== "ADMIN") {
       return NextResponse.redirect(new URL("/", req.url));
     }
