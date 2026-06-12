@@ -58,6 +58,41 @@ export default function SignUpPage() {
     router.push("/");
   };
 
+  // Google: native account picker inside the app, normal OAuth on the web.
+  const handleGoogle = async () => {
+    if (!inApp) {
+      signIn("google", { callbackUrl: "/" });
+      return;
+    }
+    const GA = (
+      window as unknown as {
+        Capacitor?: { Plugins?: { GoogleAuth?: {
+          initialize: (o?: Record<string, unknown>) => Promise<void>;
+          signIn: () => Promise<{ authentication?: { idToken?: string } }>;
+        } } };
+      }
+    ).Capacitor?.Plugins?.GoogleAuth;
+    if (!GA) {
+      setError("เปิดผ่านแอปเพื่อใช้ Google หรือสมัครด้วยอีเมล");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    try {
+      await GA.initialize();
+      const res = await GA.signIn();
+      const idToken = res?.authentication?.idToken;
+      if (!idToken) throw new Error("no-token");
+      const r = await signIn("google-native", { idToken, redirect: false });
+      if (r?.error) setError("เข้าสู่ระบบ Google ไม่สำเร็จ");
+      else router.push("/");
+    } catch {
+      setError("ยกเลิก หรือเข้าสู่ระบบ Google ไม่สำเร็จ");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const inputCls =
     "w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl py-3 text-sm text-[var(--text-primary)] placeholder-gray-500 focus:outline-none focus:border-[var(--text-primary)]/60 transition-colors";
 
@@ -102,10 +137,10 @@ export default function SignUpPage() {
             </div>
           )}
 
-          {!inApp && (
           <button
-            onClick={() => signIn("google", { callbackUrl: "/" })}
-            className="w-full flex items-center justify-center gap-3 py-3 rounded-xl bg-white text-gray-800 text-sm font-medium hover:bg-gray-100 transition-colors mb-6"
+            onClick={handleGoogle}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-3 py-3 rounded-xl bg-white text-gray-800 text-sm font-medium hover:bg-gray-100 transition-colors mb-6 disabled:opacity-60"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -115,15 +150,12 @@ export default function SignUpPage() {
             </svg>
             สมัครด้วย Google
           </button>
-          )}
 
-          {!inApp && (
           <div className="flex items-center gap-3 mb-6">
             <div className="flex-1 h-px bg-white/10" />
             <span className="text-xs text-[var(--text-secondary)]">หรือ</span>
             <div className="flex-1 h-px bg-white/10" />
           </div>
-          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="relative">

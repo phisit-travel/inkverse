@@ -43,6 +43,41 @@ export default function SignInPage() {
     }
   };
 
+  // Google: native account picker inside the app, normal OAuth on the web.
+  const handleGoogle = async () => {
+    if (!inApp) {
+      signIn("google", { callbackUrl });
+      return;
+    }
+    const GA = (
+      window as unknown as {
+        Capacitor?: { Plugins?: { GoogleAuth?: {
+          initialize: (o?: Record<string, unknown>) => Promise<void>;
+          signIn: () => Promise<{ authentication?: { idToken?: string } }>;
+        } } };
+      }
+    ).Capacitor?.Plugins?.GoogleAuth;
+    if (!GA) {
+      setError("เปิดผ่านแอปเพื่อใช้ Google หรือเข้าสู่ระบบด้วยอีเมล");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    try {
+      await GA.initialize();
+      const res = await GA.signIn();
+      const idToken = res?.authentication?.idToken;
+      if (!idToken) throw new Error("no-token");
+      const r = await signIn("google-native", { idToken, redirect: false });
+      if (r?.error) setError("เข้าสู่ระบบ Google ไม่สำเร็จ");
+      else window.location.href = callbackUrl;
+    } catch {
+      setError("ยกเลิก หรือเข้าสู่ระบบ Google ไม่สำเร็จ");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const inputCls =
     "w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl py-3 text-sm text-[var(--text-primary)] placeholder-gray-500 focus:outline-none focus:border-[var(--text-primary)]/60 transition-colors";
 
@@ -58,11 +93,11 @@ export default function SignInPage() {
             เข้าสู่ระบบ
           </h1>
 
-          {/* Google — hidden in the app (WebView can't complete Google OAuth) */}
-          {!inApp && (
+          {/* Google — native picker in the app, OAuth redirect on the web */}
           <button
-            onClick={() => signIn("google", { callbackUrl })}
-            className="w-full flex items-center justify-center gap-3 py-3 rounded-xl bg-white text-gray-800 text-sm font-medium hover:bg-gray-100 transition-colors mb-6"
+            onClick={handleGoogle}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-3 py-3 rounded-xl bg-white text-gray-800 text-sm font-medium hover:bg-gray-100 transition-colors mb-6 disabled:opacity-60"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -84,22 +119,12 @@ export default function SignInPage() {
             </svg>
             เข้าสู่ระบบด้วย Google
           </button>
-          )}
 
-          {!inApp && (
           <div className="flex items-center gap-3 mb-6">
             <div className="flex-1 h-px bg-white/10" />
             <span className="text-xs text-[var(--text-secondary)]">หรือ</span>
             <div className="flex-1 h-px bg-white/10" />
           </div>
-          )}
-
-          {inApp && (
-            <p className="text-xs text-[var(--text-secondary)] text-center mb-6 leading-relaxed">
-              ในแอปกรุณาเข้าสู่ระบบด้วยอีเมล + รหัสผ่าน<br />
-              (เคยสมัครด้วย Google? กด &ldquo;ลืมรหัสผ่าน?&rdquo; เพื่อตั้งรหัสผ่านก่อน)
-            </p>
-          )}
 
           <form onSubmit={handleCredentials} className="space-y-4">
             <div className="relative">

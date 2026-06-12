@@ -5,9 +5,45 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { OAuth2Client } from "google-auth-library";
 import { authConfig } from "./auth.config";
 import { rateLimit } from "@/lib/rate-limit";
 import { grantSignupBonus } from "@/lib/coins";
+
+const googleVerifier = new OAuth2Client();
+
+// Find (or first-time create) a user from a verified Google identity. Used by the
+// native-app Google sign-in, which can't go through the OAuth adapter flow. Keyed
+// by email so it lands on the same account as web Google sign-in.
+async function findOrCreateGoogleUser(p: {
+  email: string;
+  name?: string | null;
+  picture?: string | null;
+}) {
+  const email = p.email.toLowerCase();
+  let user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    const seed =
+      email.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "").slice(0, 20) || "user";
+    let username = seed;
+    while (await prisma.user.findUnique({ where: { username } })) {
+      username = `${seed}${Math.floor(1000 + Math.random() * 9000)}`;
+    }
+    user = await prisma.user.create({
+      data: {
+        email,
+        username,
+        name: p.name ?? null,
+        image: p.picture ?? null,
+        avatarUrl: p.picture ?? null,
+        emailVerified: new Date(), // Google already verified the inbox
+        role: "READER",
+      },
+    });
+    await grantSignupBonus(user.id);
+  }
+  return user;
+}
 
 // Our User model has a required, unique `username` that the default adapter
 // doesn't provide on OAuth sign-up. Wrap createUser to synthesise a unique
@@ -94,6 +130,41 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // links to an existing account with the same email instead of throwing
       // OAuthAccountNotLinked.
       allowDangerousEmailAccountLinking: true,
+    }),
+    // Native Google sign-in (Android app): the app does the Google account picker
+    // natively and posts the resulting idToken here. We verify it server-side and
+    // establish the same JWT session as any other login.
+    CredentialsProvider({
+      id: "google-native",
+      name: "Google",
+      credentials: { idToken: { label: "idToken", type: "text" } },
+      async authorize(credentials) {
+        const idToken = credentials?.idToken as string | undefined;
+        if (!idToken) return null;
+        try {
+          const ticket = await googleVerifier.verifyIdToken({
+            idToken,
+            audience: process.env.GOOGLE_CLIENT_ID,
+          });
+          const payload = ticket.getPayload();
+          if (!payload?.email || payload.email_verified === false) return null;
+          const user = await findOrCreateGoogleUser({
+            email: payload.email,
+            name: payload.name,
+            picture: payload.picture,
+          });
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.username,
+            image: user.avatarUrl,
+            role: user.role,
+            remember: true,
+          };
+        } catch {
+          return null;
+        }
+      },
     }),
     CredentialsProvider({
       name: "credentials",
