@@ -23,10 +23,12 @@ export async function POST(req: NextRequest) {
   const email = parsed.data.email.toLowerCase();
   const user = await prisma.user.findUnique({
     where: { email },
-    select: { id: true, passwordHash: true },
+    select: { id: true },
   });
-  // Only credentials accounts (have a password) can reset.
-  if (!user || !user.passwordHash) return ok;
+  // Any real account may request an OTP — including Google-only accounts that
+  // have no password yet, so they can SET one and log into the app (where Google
+  // sign-in isn't available). Email ownership is proven by the OTP itself.
+  if (!user) return ok;
 
   // Replace any previous OTP for this user, then issue a fresh 6-digit code.
   await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });

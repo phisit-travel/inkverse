@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Logo from "@/components/ui/Logo";
@@ -18,6 +18,12 @@ export default function SignInPage() {
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // Google OAuth can't complete inside the Android app's WebView (Google blocks
+  // WebView sign-in), so we hide it in-app and steer users to email/password.
+  const [inApp, setInApp] = useState(false);
+  useEffect(() => {
+    setInApp(!!(window as unknown as { Capacitor?: unknown }).Capacitor);
+  }, []);
 
   const handleCredentials = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +58,8 @@ export default function SignInPage() {
             เข้าสู่ระบบ
           </h1>
 
-          {/* Google */}
+          {/* Google — hidden in the app (WebView can't complete Google OAuth) */}
+          {!inApp && (
           <button
             onClick={() => signIn("google", { callbackUrl })}
             className="w-full flex items-center justify-center gap-3 py-3 rounded-xl bg-white text-gray-800 text-sm font-medium hover:bg-gray-100 transition-colors mb-6"
@@ -77,12 +84,22 @@ export default function SignInPage() {
             </svg>
             เข้าสู่ระบบด้วย Google
           </button>
+          )}
 
+          {!inApp && (
           <div className="flex items-center gap-3 mb-6">
             <div className="flex-1 h-px bg-white/10" />
             <span className="text-xs text-[var(--text-secondary)]">หรือ</span>
             <div className="flex-1 h-px bg-white/10" />
           </div>
+          )}
+
+          {inApp && (
+            <p className="text-xs text-[var(--text-secondary)] text-center mb-6 leading-relaxed">
+              ในแอปกรุณาเข้าสู่ระบบด้วยอีเมล + รหัสผ่าน<br />
+              (เคยสมัครด้วย Google? กด &ldquo;ลืมรหัสผ่าน?&rdquo; เพื่อตั้งรหัสผ่านก่อน)
+            </p>
+          )}
 
           <form onSubmit={handleCredentials} className="space-y-4">
             <div className="relative">

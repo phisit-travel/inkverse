@@ -15,11 +15,14 @@ export default function SignUpPage() {
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
   const [ref, setRef] = useState("");
+  const [inApp, setInApp] = useState(false);
 
   // Capture an invite code (?ref=username) without needing a Suspense boundary.
   useEffect(() => {
     const r = new URLSearchParams(window.location.search).get("ref");
     if (r) setRef(r);
+    // Google OAuth can't complete in the app's WebView → hide it in-app.
+    setInApp(!!(window as unknown as { Capacitor?: unknown }).Capacitor);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -99,6 +102,7 @@ export default function SignUpPage() {
             </div>
           )}
 
+          {!inApp && (
           <button
             onClick={() => signIn("google", { callbackUrl: "/" })}
             className="w-full flex items-center justify-center gap-3 py-3 rounded-xl bg-white text-gray-800 text-sm font-medium hover:bg-gray-100 transition-colors mb-6"
@@ -111,12 +115,15 @@ export default function SignUpPage() {
             </svg>
             สมัครด้วย Google
           </button>
+          )}
 
+          {!inApp && (
           <div className="flex items-center gap-3 mb-6">
             <div className="flex-1 h-px bg-white/10" />
             <span className="text-xs text-[var(--text-secondary)]">หรือ</span>
             <div className="flex-1 h-px bg-white/10" />
           </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="relative">
