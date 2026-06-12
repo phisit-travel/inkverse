@@ -37,6 +37,9 @@ const applyLinks = [
   { href: "/apply?as=writer", label: "สมัครนักเขียน" },
 ];
 
+// Creator dropdown leads with the how-to guide, then the apply links.
+const creatorMenu = [{ href: "/creator-101", label: "สอนสร้างเนื้อหา" }, ...applyLinks];
+
 // Hover dropdown used in the desktop nav to keep the bar uncluttered.
 function NavDropdown({
   label,
@@ -85,7 +88,7 @@ export default function Navbar({ user, userCoins = 0, rankBadge = null }: Navbar
         {/* Desktop nav — two dropdowns keep the bar clean */}
         <div className="hidden lg:flex items-center gap-8">
           <NavDropdown label="เรื่องทั้งหมด" items={typeLinks} />
-          <NavDropdown label="ครีเอเตอร์" items={applyLinks} />
+          <NavDropdown label="ครีเอเตอร์" items={creatorMenu} />
         </div>
 
         {/* Search + actions */}
@@ -156,7 +159,7 @@ export default function Navbar({ user, userCoins = 0, rankBadge = null }: Navbar
               <Download className="w-4 h-4" />
               โหลดแอป Android
             </Link>
-            {[...typeLinks, ...applyLinks].map((link) => (
+            {[...typeLinks, ...creatorMenu].map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
