@@ -13,6 +13,7 @@ export default function SignUpPage() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [sent, setSent] = useState(false);
   const [ref, setRef] = useState("");
 
   // Capture an invite code (?ref=username) without needing a Suspense boundary.
@@ -32,9 +33,16 @@ export default function SignUpPage() {
       body: JSON.stringify(ref ? { ...form, ref } : form),
     });
 
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const data = await res.json();
       setError(data.error || "เกิดข้อผิดพลาด");
+      setLoading(false);
+      return;
+    }
+
+    if (data.needsVerification) {
+      // Email sent — they must verify to activate the welcome bonus.
+      setSent(true);
       setLoading(false);
       return;
     }
@@ -49,6 +57,28 @@ export default function SignUpPage() {
 
   const inputCls =
     "w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl py-3 text-sm text-[var(--text-primary)] placeholder-gray-500 focus:outline-none focus:border-[var(--text-primary)]/60 transition-colors";
+
+  if (sent) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] px-4">
+        <div className="w-full max-w-md bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-8 text-center">
+          <div className="w-14 h-14 mx-auto mb-4 flex items-center justify-center bg-[var(--text-primary)] text-[var(--bg-primary)] rounded-full">
+            <Mail className="w-7 h-7" />
+          </div>
+          <h1 className="font-bebas text-3xl text-[var(--text-primary)] tracking-wider">ตรวจสอบอีเมลของคุณ</h1>
+          <p className="text-sm text-[var(--text-secondary)] mt-3 leading-relaxed">
+            เราส่งลิงก์ยืนยันไปที่<br />
+            <span className="text-[var(--text-primary)] font-semibold">{form.email}</span><br />
+            กดลิงก์ในอีเมลเพื่อยืนยัน แล้ว<span className="text-[var(--text-primary)]">รับ 20 เหรียญต้อนรับ</span>
+          </p>
+          <p className="text-xs text-[var(--text-muted)] mt-4">ไม่เห็นอีเมล? ลองเช็คในกล่อง Junk / Spam</p>
+          <Link href="/auth/signin" className="inline-block mt-6 px-6 py-3 bal-btn text-sm font-semibold uppercase tracking-widest">
+            ไปหน้าเข้าสู่ระบบ
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] px-4">

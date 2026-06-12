@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import crypto from "crypto";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { grantSignupBonus, recordReferral } from "@/lib/coins";
+import { sendEmail, verificationEmail } from "@/lib/email";
+
+const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inkverse-tau.vercel.app";
 
 const schema = z.object({
   username: z
@@ -51,11 +55,25 @@ export async function POST(req: NextRequest) {
     select: { id: true, username: true, email: true, role: true },
   });
 
-  // Welcome coins for new email/password sign-ups (idempotent).
-  await grantSignupBonus(user.id);
+  // Email verification gates the welcome bonus on a real, unique inbox — this
+  // stops re-signup coin farming. Bonus is granted on verify, not here.
+  const vToken = crypto.randomBytes(32).toString("hex");
+  await prisma.emailVerificationToken.create({
+    data: { token: vToken, userId: user.id, expires: new Date(Date.now() + 24 * 60 * 60_000) },
+  });
+  const sent = await sendEmail({
+    to: email,
+    subject: "ยืนยันอีเมล — INKVERSE",
+    html: verificationEmail(`${BASE_URL}/api/auth/verify?token=${vToken}`),
+  });
+  if (!sent) {
+    // Email isn't configured → can't verify; fall back to immediate bonus.
+    await grantSignupBonus(user.id);
+    await prisma.user.update({ where: { id: user.id }, data: { emailVerified: new Date() } });
+  }
 
   // Attribute the referral if they arrived via an invite link (best-effort).
   if (ref) await recordReferral(user.id, ref);
 
-  return NextResponse.json(user, { status: 201 });
+  return NextResponse.json({ ...user, needsVerification: sent }, { status: 201 });
 }

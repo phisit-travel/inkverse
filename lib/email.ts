@@ -52,6 +52,24 @@ export function passwordResetEmail(resetUrl: string) {
   );
 }
 
+export function verificationEmail(verifyUrl: string) {
+  return shell(
+    "ยืนยันอีเมล",
+    `<p>ขอบคุณที่สมัคร INKVERSE! คลิกปุ่มด้านล่างเพื่อยืนยันอีเมล แล้วรับ 20 เหรียญต้อนรับทันที (ลิงก์หมดอายุใน 24 ชั่วโมง)</p>
+     <p style="margin:24px 0"><a href="${verifyUrl}" style="background:#fff;color:#000;text-decoration:none;padding:12px 24px;text-transform:uppercase;letter-spacing:.1em;font-weight:bold;font-size:13px">ยืนยันอีเมล</a></p>
+     <p style="color:#888;font-size:12px">ถ้าคุณไม่ได้สมัคร สามารถละเว้นอีเมลนี้ได้</p>`
+  );
+}
+
+export function passwordResetOtpEmail(otp: string) {
+  return shell(
+    "รหัส OTP รีเซ็ตรหัสผ่าน",
+    `<p>ใช้รหัสนี้เพื่อยืนยันการตั้งรหัสผ่านใหม่ (หมดอายุใน 10 นาที)</p>
+     <p style="margin:24px 0;font-size:38px;font-weight:bold;letter-spacing:.35em;color:#fff">${otp}</p>
+     <p style="color:#888;font-size:12px">ถ้าคุณไม่ได้ขอ สามารถละเว้นอีเมลนี้ได้</p>`
+  );
+}
+
 export function topupReceiptEmail(coins: number, priceTHB: number) {
   return shell(
     "ใบเสร็จเติมเหรียญ",

@@ -47,6 +47,7 @@ model User {
   following               Follow[]          @relation("Following")
   followers               Follow[]          @relation("Followers")
   pushTokens              PushToken[]
+  emailVerificationTokens EmailVerificationToken[]
 }
 
 // A reader following a creator. followingId = the creator's user id.
@@ -94,10 +95,21 @@ model DailyStat {
 
 model PasswordResetToken {
   id        String   @id @default(cuid())
-  token     String   @unique // random, emailed to the user
+  token     String   @unique // 6-digit OTP emailed to the user
   userId    String
   expires   DateTime
   used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  token     String   @unique // random, emailed as a verification link
+  userId    String
+  expires   DateTime
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
