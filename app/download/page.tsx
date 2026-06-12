@@ -40,7 +40,7 @@ export default function DownloadPage() {
               download
               className="inline-flex items-center gap-2 px-8 py-4 bal-btn text-sm font-semibold uppercase tracking-widest"
             >
-              <Download className="w-5 h-5" /> ดาวน์โหลด .apk
+              <Download className="w-5 h-5" /> Download Application
             </a>
           ) : (
             <span className="inline-flex items-center gap-2 px-8 py-4 border border-[var(--border)] text-[var(--text-secondary)] text-sm font-semibold uppercase tracking-widest cursor-default">
@@ -75,7 +75,7 @@ export default function DownloadPage() {
       </h2>
       <div className="space-y-3 mb-12">
         {[
-          { n: "1", t: "กดดาวน์โหลด .apk", b: "บันทึกไฟล์ลงเครื่อง Android ของคุณ" },
+          { n: "1", t: "กดปุ่ม Download Application", b: "บันทึกไฟล์ลงเครื่อง Android ของคุณ" },
           { n: "2", t: "อนุญาตติดตั้งจากแหล่งอื่น", b: "ครั้งแรก Android จะถาม — กด 'ตั้งค่า' แล้วเปิดอนุญาตให้เบราว์เซอร์/ตัวจัดการไฟล์" },
           { n: "3", t: "เปิดไฟล์ แล้วกดติดตั้ง", b: "เสร็จแล้วเปิดแอป INKVERSE อ่านได้เลย — แคปหน้าจอไม่ได้" },
         ].map((s) => (
