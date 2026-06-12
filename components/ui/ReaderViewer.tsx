@@ -22,78 +22,116 @@ interface ReaderViewerProps {
   watermark?: string | null;
 }
 
-// Loads a manga page through the authenticated proxy as a blob, so the real
-// image URL never appears in the DOM/HTML (a script can't grab src=). Lazy by
-// default (loads ~1200px before it scrolls into view).
-function ProtectedImage({
-  src: source,
+// Renders a manga page onto a <canvas> instead of an <img>. The signed image is
+// fetched as a blob, decoded into an off-DOM Image, painted to the canvas, then
+// the blob URL is revoked — so there's no <img> element or usable URL to save,
+// drag, or scrape. Lazy-loads ~1200px before view and RELEASES the canvas buffer
+// when it scrolls far away, so long chapters stay light on memory.
+function MangaCanvas({
+  source,
   alt,
   w,
   h,
-  imgClassName,
+  full,
   priority,
 }: {
-  src: string;
+  source: string;
   alt: string;
   w: number;
   h: number;
-  imgClassName: string;
+  full: boolean;
   priority?: boolean;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
-  const [src, setSrc] = useState<string | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const drawn = useRef(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    let objUrl: string | null = null;
-    let started = false;
-    const load = async () => {
-      if (started) return;
-      started = true;
-      try {
-        const res = await fetch(source);
-        if (!res.ok) return;
-        const blob = await res.blob();
-        objUrl = URL.createObjectURL(blob);
-        setSrc(objUrl);
-      } catch {
-        /* ignore */
-      }
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    let cancelled = false;
+
+    const draw = () => {
+      if (drawn.current || cancelled) return;
+      drawn.current = true;
+      (async () => {
+        let url: string | null = null;
+        try {
+          const res = await fetch(source);
+          if (!res.ok || cancelled) {
+            drawn.current = false;
+            return;
+          }
+          const blob = await res.blob();
+          url = URL.createObjectURL(blob);
+          const img = new Image();
+          img.decoding = "async";
+          await new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = () => reject(new Error("decode"));
+            img.src = url as string;
+          });
+          const canvas = canvasRef.current;
+          if (cancelled || !canvas) return;
+          const maxW = 1280; // cap internal resolution to bound memory
+          const scale = img.naturalWidth > maxW ? maxW / img.naturalWidth : 1;
+          canvas.width = Math.round(img.naturalWidth * scale) || w;
+          canvas.height = Math.round(img.naturalHeight * scale) || h;
+          canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
+          if (!cancelled) setReady(true);
+        } catch {
+          drawn.current = false;
+        } finally {
+          if (url) URL.revokeObjectURL(url); // painted into the canvas now
+        }
+      })();
     };
 
-    let io: IntersectionObserver | null = null;
-    if (priority) {
-      load();
-    } else {
-      io = new IntersectionObserver(
-        (entries) => {
-          if (entries[0]?.isIntersecting) {
-            io?.disconnect();
-            load();
-          }
-        },
-        { rootMargin: "1200px" }
-      );
-      if (wrapRef.current) io.observe(wrapRef.current);
-    }
-    return () => {
-      io?.disconnect();
-      if (objUrl) URL.revokeObjectURL(objUrl);
+    const release = () => {
+      const canvas = canvasRef.current;
+      if (canvas) {
+        canvas.width = 0;
+        canvas.height = 0;
+      }
+      drawn.current = false;
+      setReady(false);
     };
-  }, [source, priority]);
+
+    if (priority) {
+      draw();
+      return () => {
+        cancelled = true;
+      };
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) (e.isIntersecting ? draw : release)();
+      },
+      { rootMargin: "1200px 0px" }
+    );
+    io.observe(wrap);
+    return () => {
+      cancelled = true;
+      io.disconnect();
+      release();
+    };
+  }, [source, priority, w, h]);
 
   return (
-    <div ref={wrapRef} className="w-full" style={src ? undefined : { aspectRatio: `${w} / ${h}` }}>
-      {src ? (
-        <img
-          src={src}
-          alt={alt}
-          draggable={false}
-          onContextMenu={(e) => e.preventDefault()}
-          className={imgClassName}
-        />
-      ) : (
-        <div className="skeleton w-full h-full" />
-      )}
+    <div
+      ref={wrapRef}
+      className={full ? "relative w-full" : "relative"}
+      style={full ? { aspectRatio: `${w} / ${h}` } : { aspectRatio: `${w} / ${h}`, height: "calc(100vh - 140px)" }}
+    >
+      <canvas
+        ref={canvasRef}
+        aria-label={alt}
+        onContextMenu={(e) => e.preventDefault()}
+        className="absolute inset-0 w-full h-full object-contain select-none"
+        style={{ visibility: ready ? "visible" : "hidden" }}
+      />
+      {!ready && <div className="skeleton absolute inset-0" />}
     </div>
   );
 }
@@ -267,15 +305,14 @@ export default function ReaderViewer({
         {mode === "webtoon" ? (
           <div className="flex flex-col items-center">
             {pages.map((page) => (
-              <div key={page.pageNum} className="w-full relative">
-                <ProtectedImage
-                  src={page.src}
-                  alt={`Page ${page.pageNum}`}
-                  w={page.width || 800}
-                  h={page.height || 1200}
-                  imgClassName="w-full h-auto select-none"
-                />
-              </div>
+              <MangaCanvas
+                key={page.pageNum}
+                source={page.src}
+                alt={`Page ${page.pageNum}`}
+                w={page.width || 800}
+                h={page.height || 1200}
+                full
+              />
             ))}
           </div>
         ) : (
@@ -285,12 +322,12 @@ export default function ReaderViewer({
             onTouchEnd={handleTouchEnd}
           >
             {pages[currentPage] && (
-              <ProtectedImage
-                src={pages[currentPage].src}
+              <MangaCanvas
+                source={pages[currentPage].src}
                 alt={`Page ${currentPage + 1}`}
                 w={pages[currentPage].width || 800}
                 h={pages[currentPage].height || 1200}
-                imgClassName="max-h-[calc(100vh-120px)] w-auto object-contain mx-auto select-none"
+                full={false}
                 priority
               />
             )}
