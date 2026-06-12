@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
+import { after } from "next/server";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -128,7 +129,7 @@ export default async function MangaProfilePage({ params }: Props) {
 
   // One parallel round-trip for everything that depends on the loaded manga:
   // balance, unlocked/read sets, work-level comments, uploader rank, view bump.
-  const [userCoins, unlockedSet, readSet, workComments, translatorRank, , bookmarkRow] = await Promise.all([
+  const [userCoins, unlockedSet, readSet, workComments, translatorRank, bookmarkRow] = await Promise.all([
     userId ? getUserCoins(userId) : Promise.resolve(0),
     userId
       ? prisma.unlockedChapter
@@ -160,9 +161,6 @@ export default async function MangaProfilePage({ params }: Props) {
     manga.translator
       ? getUserRankBadge(manga.translator.userId, manga.translator.user.role)
       : Promise.resolve(null),
-    isOwner
-      ? Promise.resolve(null)
-      : prisma.manga.update({ where: { id: manga.id }, data: { totalViews: { increment: 1 } } }),
     userId
       ? prisma.bookmark.findUnique({
           where: { userId_mangaId: { userId, mangaId: manga.id } },
@@ -170,6 +168,15 @@ export default async function MangaProfilePage({ params }: Props) {
         })
       : Promise.resolve(null),
   ]);
+
+  // Bump the view counter AFTER the response streams — never block TTFB on a write.
+  if (!isOwner) {
+    after(() =>
+      prisma.manga
+        .update({ where: { id: manga.id }, data: { totalViews: { increment: 1 } } })
+        .catch(() => {})
+    );
+  }
 
   // Reading progress (chapters opened / total)
   const readCount = manga.chapters.filter((ch) => readSet.has(ch.id)).length;
