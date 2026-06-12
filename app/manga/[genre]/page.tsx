@@ -4,6 +4,8 @@ import Pagination from "@/components/ui/Pagination";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
+const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inkverse.com";
+
 interface Props {
   params: Promise<{ genre: string }>;
   searchParams: Promise<{ page?: string }>;
@@ -12,7 +14,18 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { genre } = await params;
   const g = await prisma.genre.findUnique({ where: { slug: genre } });
-  return { title: g ? `${g.name} มังงะ` : "หมวดหมู่" };
+  if (!g) return { title: "หมวดหมู่" };
+  const name = g.name;
+  const title = `อ่าน${name} แปลไทย ออนไลน์ฟรี — มังงะ มังฮวา นิยาย`;
+  const description = `รวม${name}แปลไทยครบทุกเรื่อง อ่านฟรีไม่มีโฆษณา อัปเดตตอนใหม่ทุกวัน — มังงะ มังฮวา มันฮวา และนิยายแนว${name} ที่ INKVERSE`;
+  const url = `${BASE_URL}/manga/${genre}`;
+  return {
+    title,
+    description,
+    keywords: [name, `${name}แปลไทย`, `อ่าน${name}`, "แปลไทย", "อ่านฟรี", "มังงะ", "มังฮวา", "มันฮวา", "นิยาย", "webtoon"],
+    alternates: { canonical: url },
+    openGraph: { title: `${name} แปลไทย | INKVERSE`, description, url, siteName: "INKVERSE", type: "website" },
+  };
 }
 
 export default async function GenrePage({ params, searchParams }: Props) {
@@ -47,9 +60,12 @@ export default async function GenrePage({ params, searchParams }: Props) {
       <div className="mb-8">
         <p className="text-sm text-[var(--text-primary)] font-medium mb-1">หมวดหมู่</p>
         <h1 className="font-bebas text-5xl text-[var(--text-primary)] tracking-wider">
-          {genreRecord.name}
+          {genreRecord.name} แปลไทย
         </h1>
-        <p className="text-[var(--text-secondary)] mt-1">{total} เรื่อง</p>
+        <p className="text-[var(--text-secondary)] mt-2 max-w-2xl text-sm leading-relaxed">
+          รวมมังงะ มังฮวา มันฮวา และนิยายแนว{genreRecord.name} แปลไทยทั้งหมด {total} เรื่อง —
+          อ่านฟรีออนไลน์ ไม่มีโฆษณา อัปเดตตอนใหม่ทุกวันที่ INKVERSE
+        </p>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
