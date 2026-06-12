@@ -169,12 +169,16 @@ export default async function MangaProfilePage({ params }: Props) {
     .filter((ch) => isChapterLocked(ch, unlockedSet.has(ch.id)))
     .map((ch) => ({ id: ch.id, chapterNum: ch.chapterNum, coinCost: ch.coinCost }));
 
-  // Rank badges for everyone in the work-level thread (+ current user).
-  const commentRankMap = await getRankBadges([
+  // Rank badges for the thread — skip the (multi-query) lookup entirely when
+  // there are no comments yet (common, and the single biggest content-page cost).
+  const rankIds = [
     ...workComments.map((c) => c.user.id),
     ...workComments.flatMap((c) => c.replies.map((r) => r.user.id)),
-    ...(userId ? [userId] : []),
-  ]);
+  ];
+  const commentRankMap =
+    rankIds.length > 0
+      ? await getRankBadges([...rankIds, ...(userId ? [userId] : [])])
+      : new Map();
   const currentUserRank = userId ? commentRankMap.get(userId) ?? null : null;
   const workCommentData = workComments.map((c) => ({
     ...c,
