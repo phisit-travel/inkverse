@@ -35,10 +35,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const page = await prisma.page.findUnique({ where: { id }, select: { imageUrl: true } });
   if (!page) return new NextResponse("Not found", { status: 404 });
 
-  // Fetch from R2 via a short-lived presigned GET — works for both the private
-  // bucket (new objects: bare key) and legacy public objects (full URL), so the
-  // public bucket can be locked down without breaking already-uploaded pages.
-  const upstream = await fetch(await getPresignedDownloadUrl(page.imageUrl));
+  // Legacy public objects (full URL) load directly — no R2 credentials needed, so
+  // existing pages never depend on the API token. New private objects (bare key)
+  // are read via a short-lived presigned GET from the private bucket.
+  const isLegacyPublic = /^https?:\/\//i.test(page.imageUrl);
+  const src = isLegacyPublic ? page.imageUrl : await getPresignedDownloadUrl(page.imageUrl);
+  const upstream = await fetch(src);
   if (!upstream.ok || !upstream.body) return new NextResponse("Bad gateway", { status: 502 });
 
   return new NextResponse(upstream.body, {
