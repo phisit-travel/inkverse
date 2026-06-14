@@ -19,7 +19,6 @@ interface ReaderViewerProps {
   prevChapter?: number | null;
   nextChapter?: number | null;
   onPageChange?: (page: number) => void;
-  watermark?: string | null;
 }
 
 // Renders a manga page onto a <canvas> instead of an <img>. The signed image is
@@ -143,7 +142,6 @@ export default function ReaderViewer({
   prevChapter,
   nextChapter,
   onPageChange,
-  watermark,
 }: ReaderViewerProps) {
   const [mode, setMode] = useState<"webtoon" | "page">("webtoon");
   const [currentPage, setCurrentPage] = useState(0);
@@ -280,17 +278,6 @@ export default function ReaderViewer({
                 ))}
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Traceable watermark — a leaked screenshot carries the reader's name */}
-      {watermark && (
-        <div className="pointer-events-none fixed inset-0 z-20 overflow-hidden select-none" aria-hidden="true">
-          <div className="absolute inset-0 flex flex-wrap gap-x-16 gap-y-20 -rotate-[24deg] scale-150 opacity-[0.05]">
-            {Array.from({ length: 80 }).map((_, i) => (
-              <span key={i} className="text-[11px] whitespace-nowrap text-[var(--text-primary)]">{watermark}</span>
-            ))}
           </div>
         </div>
       )}
