@@ -3,7 +3,7 @@ import { getRanking } from "@/lib/ranking";
 import { getRankBadges } from "@/lib/ranks";
 import { liveChapterWhere } from "@/lib/chapters";
 import MangaCard from "@/components/ui/MangaCard";
-import FeaturedSpotlight from "@/components/ui/FeaturedSpotlight";
+import FeaturedTitles, { type FeaturedItem } from "@/components/ui/FeaturedTitles";
 import UpdateRow from "@/components/ui/UpdateRow";
 import RankingPanel from "@/components/ui/RankingPanel";
 import GenreFilterBar from "@/components/ui/GenreFilterBar";
@@ -121,7 +121,21 @@ export default async function HomePage() {
     genreNames: m.genres.map((g) => g.genre.name),
   }));
 
-  const [featured, ...rest] = withRating;
+  // Editorial "เรื่องเด่น" set — top titles with cover art for the showcase carousel.
+  const featuredTitles: FeaturedItem[] = withRating
+    .filter((m) => m.coverUrl)
+    .slice(0, 6)
+    .map((m) => ({
+      slug: m.slug,
+      title: m.title,
+      coverUrl: m.coverUrl,
+      description: m.description,
+      genres: m.genreNames,
+      type: m.type,
+      rating: m.avgRating,
+      views: m.totalViews,
+      latestChapter: m.latestChapter,
+    }));
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
@@ -144,25 +158,8 @@ export default async function HomePage() {
         />
       </section>
 
-      {/* Featured Spotlight */}
-      {withRating.length >= 3 && (
-        <FeaturedSpotlight
-          featured={{
-            ...withRating[1],
-            genres: withRating[1].genreNames,
-            rating: withRating[1].avgRating,
-            totalViews: withRating[1].totalViews,
-            latestChapter: withRating[1].latestChapter,
-          }}
-          secondary={withRating.slice(2, 4).map((m) => ({
-            ...m,
-            genres: m.genreNames,
-            rating: m.avgRating,
-            totalViews: m.totalViews,
-            latestChapter: m.latestChapter,
-          }))}
-        />
-      )}
+      {/* Featured titles — rotating cover-art showcase (เรื่องเด่น) */}
+      <FeaturedTitles items={featuredTitles} />
 
       {/* Translator ranking */}
       <TranslatorRanking entries={translatorRanking} />
