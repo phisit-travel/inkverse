@@ -20,10 +20,8 @@ const AVG_COINS_PER_CHAPTER = 10;
 
 export default function TopupClient({
   packages,
-  firstTopup = false,
 }: {
   packages: CoinPackage[];
-  firstTopup?: boolean;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
@@ -65,20 +63,10 @@ export default function TopupClient({
         </div>
       )}
 
-      {/* First-top-up promo banner */}
-      {firstTopup && (
-        <div className="mb-6 flex items-center justify-center gap-2 px-4 py-3 bg-[var(--text-primary)] text-[var(--bg-primary)] text-sm font-semibold uppercase tracking-widest">
-          <Zap className="w-4 h-4" />
-          เติมครั้งแรก รับเหรียญ 2 เท่าทันที
-        </div>
-      )}
-
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {packages.map((pkg) => {
           const total = pkg.coins + pkg.bonus;
-          // First top-up doubles the purchase: base coins are credited again.
-          const effectiveTotal = firstTopup ? total + pkg.coins : total;
-          const perChapter = pkg.price / (effectiveTotal / AVG_COINS_PER_CHAPTER);
+          const perChapter = pkg.price / (total / AVG_COINS_PER_CHAPTER);
           const isLoading = loading === pkg.id;
 
           const isVip = pkg.vipDays > 0;
@@ -114,26 +102,16 @@ export default function TopupClient({
                 <div className="flex items-center justify-center gap-2">
                   <Coins className="w-8 h-8 text-[var(--text-primary)]" />
                   <span className="font-bebas text-4xl text-[var(--text-primary)] tracking-wider">
-                    {effectiveTotal.toLocaleString()}
+                    {total.toLocaleString()}
                   </span>
                 </div>
-                {firstTopup ? (
+                {pkg.bonus > 0 && (
                   <div className="flex items-center justify-center gap-1 mt-1">
                     <Zap className="w-3.5 h-3.5 text-[var(--text-primary)]" />
                     <span className="text-xs text-[var(--text-primary)] font-medium">
-                      <span className="line-through text-[var(--text-muted)]">{total.toLocaleString()}</span>{" "}
-                      × 2 โบนัสครั้งแรก
+                      {pkg.coins} + โบนัส {pkg.bonus} เหรียญ
                     </span>
                   </div>
-                ) : (
-                  pkg.bonus > 0 && (
-                    <div className="flex items-center justify-center gap-1 mt-1">
-                      <Zap className="w-3.5 h-3.5 text-[var(--text-primary)]" />
-                      <span className="text-xs text-[var(--text-primary)] font-medium">
-                        {pkg.coins} + โบนัส {pkg.bonus} เหรียญ
-                      </span>
-                    </div>
-                  )
                 )}
               </div>
 

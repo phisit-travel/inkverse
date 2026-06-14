@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
-import { applyFirstTopupBonus, extendVipDays, rewardReferralOnFirstTopup } from "@/lib/coins";
+import { isFirstTopup, extendVipDays, rewardReferralOnFirstTopup } from "@/lib/coins";
 import { sendEmail, topupReceiptEmail, withdrawalEmail } from "@/lib/email";
 
 // Omise does not sign webhooks, so the POST body cannot be trusted: anyone who
@@ -60,7 +60,6 @@ export async function POST(req: NextRequest) {
 
     const totalCoins = order.coins + order.bonus;
     let credited = false;
-    let firstTopupBonus = 0;
     await prisma.$transaction(async (tx) => {
       // Idempotent: only the first PENDING → PAID flip credits coins.
       const flipped = await tx.coinOrder.updateMany({
@@ -70,12 +69,12 @@ export async function POST(req: NextRequest) {
       if (flipped.count === 0) return;
       credited = true;
 
-      firstTopupBonus = await applyFirstTopupBonus(tx, order.userId, order.coins);
+      const firstTopup = await isFirstTopup(tx, order.userId);
       if (order.vipDays > 0) await extendVipDays(tx, order.userId, order.vipDays);
-      if (firstTopupBonus > 0) await rewardReferralOnFirstTopup(tx, order.userId);
+      if (firstTopup) await rewardReferralOnFirstTopup(tx, order.userId);
       await tx.user.update({
         where: { id: order.userId },
-        data: { coins: { increment: totalCoins + firstTopupBonus } },
+        data: { coins: { increment: totalCoins } },
       });
       await tx.coinTransaction.create({
         data: {
@@ -90,20 +89,17 @@ export async function POST(req: NextRequest) {
 
     // Notify only on the delivery that actually credited (not on retries).
     if (credited) {
-      const granted = totalCoins + firstTopupBonus;
       await createNotification({
         userId: order.userId,
         type: "TOPUP_SUCCESS",
         title: "เติมเหรียญสำเร็จ!",
-        body: firstTopupBonus > 0
-          ? `คุณได้รับ ${granted} เหรียญ (รวมโบนัสเติมครั้งแรก 2 เท่า +${firstTopupBonus}) เรียบร้อยแล้ว`
-          : `คุณได้รับ ${totalCoins} เหรียญ (฿${order.price.toFixed(0)}) เรียบร้อยแล้ว`,
+        body: `คุณได้รับ ${totalCoins} เหรียญ (฿${order.price.toFixed(0)}) เรียบร้อยแล้ว`,
         link: "/topup",
       });
       // Email receipt (best-effort; no-op without RESEND_API_KEY).
       const buyer = await prisma.user.findUnique({ where: { id: order.userId }, select: { email: true } });
       if (buyer?.email)
-        await sendEmail({ to: buyer.email, subject: "ใบเสร็จเติมเหรียญ INKVERSE", html: topupReceiptEmail(granted, order.price) });
+        await sendEmail({ to: buyer.email, subject: "ใบเสร็จเติมเหรียญ INKVERSE", html: topupReceiptEmail(totalCoins, order.price) });
     }
     return NextResponse.json({ ok: true });
   }

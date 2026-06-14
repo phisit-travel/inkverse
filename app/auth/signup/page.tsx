@@ -144,7 +144,7 @@ export default function SignUpPage() {
           {ref && (
             <div className="flex items-center justify-center gap-2 mb-6 px-4 py-2 border border-[var(--border)] bg-[var(--bg-card)] text-xs text-[var(--text-secondary)] uppercase tracking-widest">
               <Gift className="w-3.5 h-3.5" />
-              ได้รับเชิญโดย @{ref} · รับ 50 เหรียญเมื่อเติมครั้งแรก
+              ได้รับเชิญโดย @{ref} · รับ 20 เหรียญเมื่อเติมครั้งแรก
             </div>
           )}
 

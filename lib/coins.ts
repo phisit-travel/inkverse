@@ -301,38 +301,23 @@ export async function grantSignupBonus(userId: string): Promise<void> {
 }
 
 /**
- * First-top-up "2x" promo. On a user's very first credited top-up, returns an
- * EXTRA coin amount equal to the package's base coins (doubling the purchase) and
- * records a one-time BONUS marker keyed by `firsttopup:<userId>`. Every later call
- * returns 0. Must be called INSIDE the same interactive transaction that credits
- * the top-up, so the extra coins and the marker commit atomically with it. The
- * caller is responsible for adding the returned amount to `user.coins`.
+ * Whether this is the user's FIRST top-up — true when no prior TOPUP transaction
+ * exists. Call INSIDE the crediting transaction, BEFORE inserting this order's
+ * TOPUP row, to drive one-time first-top-up perks (e.g. paying out referral
+ * rewards). No coin bonus is granted: the coin packages already include their own
+ * bonus, so a separate first-top-up bonus would double-dip and erode margin.
  */
-export async function applyFirstTopupBonus(
+export async function isFirstTopup(
   tx: Prisma.TransactionClient,
-  userId: string,
-  baseCoins: number
-): Promise<number> {
-  const already = await tx.coinTransaction.findFirst({
-    where: { userId, refId: `firsttopup:${userId}` },
-    select: { id: true },
-  });
-  if (already) return 0;
-  await tx.coinTransaction.create({
-    data: {
-      userId,
-      amount: baseCoins,
-      type: "BONUS",
-      description: `โบนัสเติมครั้งแรก รับ 2 เท่า (+${baseCoins})`,
-      refId: `firsttopup:${userId}`,
-    },
-  });
-  return baseCoins;
+  userId: string
+): Promise<boolean> {
+  const prior = await tx.coinTransaction.count({ where: { userId, type: "TOPUP" } });
+  return prior === 0;
 }
 
 // ── Daily check-in ──────────────────────────────────────────────────────────
 export const DAILY_CHECKIN_BASE = 2; // coins per day
-export const DAILY_CHECKIN_STREAK_BONUS = 10; // extra coins every 7th day in a row
+export const DAILY_CHECKIN_STREAK_BONUS = 5; // extra coins every 7th day in a row
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Midnight UTC of the given day — the canonical key for one check-in per day.
@@ -417,7 +402,7 @@ export async function claimDailyCheckIn(userId: string): Promise<CheckInResult> 
 }
 
 // ── Referral ─────────────────────────────────────────────────────────────────
-export const REFERRAL_REWARD_COINS = 50; // each side, paid on referee's first top-up
+export const REFERRAL_REWARD_COINS = 20; // each side, paid on referee's first top-up
 
 /**
  * Attribute a new user to a referrer (referrer identified by username `refCode`).

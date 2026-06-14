@@ -14,7 +14,7 @@ export default async function TopupPage() {
 
   const userId = (session.user as { id: string }).id;
 
-  const [userRow, packages, recentTx, topupCount] = await Promise.all([
+  const [userRow, packages, recentTx] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { coins: true, vipExpiresAt: true } }),
     prisma.coinPackage.findMany({ where: { isActive: true }, orderBy: { coins: "asc" } }),
     prisma.coinTransaction.findMany({
@@ -22,7 +22,6 @@ export default async function TopupPage() {
       orderBy: { createdAt: "desc" },
       take: 10,
     }),
-    prisma.coinTransaction.count({ where: { userId, type: "TOPUP" } }),
   ]);
 
   const userCoins = userRow?.coins ?? 0;
@@ -30,9 +29,6 @@ export default async function TopupPage() {
   const vipUntil = vipActive
     ? new Date(userRow!.vipExpiresAt!).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" })
     : null;
-
-  // First-top-up 2x promo applies until the user's first TOPUP is recorded.
-  const firstTopup = topupCount === 0;
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
@@ -63,7 +59,7 @@ export default async function TopupPage() {
       </div>
 
       {/* Packages */}
-      <TopupClient packages={packages} firstTopup={firstTopup} />
+      <TopupClient packages={packages} />
 
       {/* Transaction history */}
       {recentTx.length > 0 && (

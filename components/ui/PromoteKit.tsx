@@ -36,7 +36,7 @@ export default function PromoteKit({ works, refCode }: { works: Work[]; refCode:
       <section>
         <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-[0.15em] uppercase mb-1">ลิงก์ชวนแฟนของคุณ</h2>
         <p className="text-sm text-[var(--text-secondary)] mb-3">
-          แฟนสมัครผ่านลิงก์นี้ → เขารับ 20 เหรียญ · พอเขาเติมเงินครั้งแรก <span className="text-[var(--text-primary)]">คุณรับ 50 เหรียญ</span> (ได้คนอ่าน + ได้เหรียญ)
+          แฟนสมัครผ่านลิงก์นี้ → เขารับ 20 เหรียญ · พอเขาเติมเงินครั้งแรก <span className="text-[var(--text-primary)]">คุณรับ 20 เหรียญ</span> (ได้คนอ่าน + ได้เหรียญ)
         </p>
         <ReferralLink code={refCode} />
       </section>
