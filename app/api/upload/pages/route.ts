@@ -98,18 +98,12 @@ export async function POST(req: NextRequest) {
   );
 
   if (!isR2Ready) {
-    const placeholders = [];
-    for (let i = 0; i < files.length; i++) {
-      const pageNum = startPage + i;
-      const url = `https://picsum.photos/seed/${chapterId}-${pageNum}/800/1200`;
-      await prisma.page.upsert({
-        where: { chapterId_pageNum: { chapterId, pageNum } },
-        create: { chapterId, pageNum, imageUrl: url, width: 800, height: 1200 },
-        update: { imageUrl: url },
-      });
-      placeholders.push({ pageNum, imageUrl: url, width: 800, height: 1200 });
-    }
-    return NextResponse.json({ pages: placeholders, count: placeholders.length, note: "placeholder images (R2 not configured)" });
+    // Fail loudly instead of silently storing random placeholder images — a
+    // misconfigured R2 must never masquerade as a successful upload.
+    return NextResponse.json(
+      { error: "ระบบจัดเก็บรูป (R2) ยังไม่พร้อม — ตรวจสอบ env CLOUDFLARE_R2_* แล้ว redeploy" },
+      { status: 503 }
+    );
   }
 
   const results: { pageNum: number; imageUrl: string; width: number; height: number }[] = [];
