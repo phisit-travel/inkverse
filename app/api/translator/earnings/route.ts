@@ -20,11 +20,14 @@ export async function GET() {
       _count: true,
     }),
     prisma.withdrawalRequest.aggregate({
-      where: { translatorId: translator.id, status: { not: "REJECTED" } },
+      // Match the authoritative balance check in /api/translator/withdraw: a FAILED
+      // payout never left the account, so it must NOT count against the balance
+      // (otherwise the displayed available is lower than what can actually be withdrawn).
+      where: { translatorId: translator.id, status: { notIn: ["REJECTED", "FAILED"] } },
       _sum: { amount: true },
     }),
     prisma.withdrawalRequest.aggregate({
-      where: { translatorId: translator.id, status: { in: ["PENDING", "APPROVED"] } },
+      where: { translatorId: translator.id, status: { in: ["PENDING", "APPROVED", "PROCESSING"] } },
       _sum: { amount: true },
     }),
     prisma.translatorEarning.findMany({
