@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getPresignedUploadUrlPrivate } from "@/lib/r2";
+import { getPresignedUploadUrl } from "@/lib/r2";
 
 const EXT: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       const ct = EXT[f.contentType] ? f.contentType : "image/jpeg";
       const ext = EXT[ct] ?? "jpg";
       const key = `pages/${chapterId}/${f.pageNum}.${ext}`;
-      const uploadUrl = await getPresignedUploadUrlPrivate(key, ct);
+      const uploadUrl = await getPresignedUploadUrl(key, ct);
       return { pageNum: f.pageNum, key, contentType: ct, uploadUrl };
     })
   );
