@@ -11,9 +11,19 @@ type Slide = {
   cta: string;
   href: string;
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  platforms?: boolean; // render iOS + Android buttons instead of a single CTA
 };
 
 const SLIDES: Slide[] = [
+  {
+    tag: "อ่านออฟไลน์ได้แล้ววันนี้",
+    title: "โหลดเก็บไว้อ่านออฟไลน์",
+    sub: "ดาวน์โหลดตอนเก็บไว้อ่านตอนเน็ตไม่มี/บนเครื่องบิน — ลื่นกว่าเว็บ กันแคปหน้าจอ ใช้ได้ทั้ง iPhone และ Android ฟรี!",
+    cta: "โหลดแอป",
+    href: "/download",
+    icon: Smartphone,
+    platforms: true,
+  },
   {
     tag: "โปรโมชั่น",
     title: "เติมเหรียญ รับโบนัสทุกแพ็กเกจ",
@@ -31,14 +41,6 @@ const SLIDES: Slide[] = [
     icon: PenLine,
   },
   {
-    tag: "แอป ANDROID",
-    title: "โหลดแอปวันนี้ รับ 20 เหรียญฟรี",
-    sub: "อ่านลื่นกว่าเว็บ กันแคปหน้าจอ + แจ้งเตือนตอนใหม่ทันที — ติดตั้งแล้วรับเหรียญฟรีเลย",
-    cta: "โหลดแอป",
-    href: "/download",
-    icon: Smartphone,
-  },
-  {
     tag: "ชวนเพื่อน",
     title: "ชวนเพื่อนมาอ่าน รับเหรียญฟรีทั้งคู่",
     sub: "แชร์ลิงก์ชวนเพื่อนของคุณ เพื่อนสมัครแล้วเติมครั้งแรก = ได้เหรียญกันทั้งคู่ ยิ่งชวนยิ่งได้",
@@ -47,6 +49,45 @@ const SLIDES: Slide[] = [
     icon: Users,
   },
 ];
+
+function AppleLogo({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
+      <path d="M17.05 12.04c-.03-2.6 2.12-3.85 2.22-3.91-1.21-1.77-3.09-2.01-3.76-2.04-1.6-.16-3.12.94-3.93.94-.81 0-2.06-.92-3.39-.89-1.74.03-3.35 1.01-4.25 2.57-1.81 3.14-.46 7.79 1.3 10.34.86 1.25 1.88 2.65 3.22 2.6 1.29-.05 1.78-.83 3.34-.83 1.56 0 2 .83 3.37.81 1.39-.03 2.27-1.27 3.12-2.53.98-1.45 1.39-2.85 1.41-2.92-.03-.01-2.71-1.04-2.74-4.14M14.53 4.43c.71-.86 1.19-2.06 1.06-3.25-1.02.04-2.26.68-2.99 1.54-.66.76-1.23 1.98-1.08 3.15 1.14.09 2.3-.58 3.01-1.44" />
+    </svg>
+  );
+}
+
+function AndroidLogo({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
+      <path d="M6 18c0 .55.45 1 1 1h1v3.5a1.5 1.5 0 0 0 3 0V19h2v3.5a1.5 1.5 0 0 0 3 0V19h1c.55 0 1-.45 1-1V8H6v10M3.5 8A1.5 1.5 0 0 0 2 9.5v7a1.5 1.5 0 0 0 3 0v-7A1.5 1.5 0 0 0 3.5 8m17 0a1.5 1.5 0 0 0-1.5 1.5v7a1.5 1.5 0 0 0 3 0v-7A1.5 1.5 0 0 0 20.5 8m-4.97-5.84l1.3-1.3a.5.5 0 0 0-.71-.71l-1.48 1.48A6.5 6.5 0 0 0 12 1c-.96 0-1.86.23-2.66.63L7.85.15a.5.5 0 0 0-.71.71l1.31 1.3A6.5 6.5 0 0 0 6 7h12a6.5 6.5 0 0 0-2.47-4.84M10 5.25a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5m4 0a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5" />
+    </svg>
+  );
+}
+
+function PlatformButtons() {
+  const btn =
+    "flex items-center gap-3 px-5 py-2.5 rounded-xl bg-[var(--text-primary)] text-[var(--bg-primary)] hover:opacity-90 transition-opacity";
+  return (
+    <div className="flex flex-col sm:flex-row gap-3">
+      <Link href="/download" className={btn}>
+        <AppleLogo className="w-6 h-6 shrink-0" />
+        <span className="flex flex-col leading-none text-left">
+          <span className="text-[9px] uppercase tracking-wider opacity-70">iPhone / iPad</span>
+          <span className="text-sm font-semibold">เพิ่มลงหน้าจอโฮม</span>
+        </span>
+      </Link>
+      <Link href="/download" className={btn}>
+        <AndroidLogo className="w-6 h-6 shrink-0" />
+        <span className="flex flex-col leading-none text-left">
+          <span className="text-[9px] uppercase tracking-wider opacity-70">Android</span>
+          <span className="text-sm font-semibold">โหลด APK ฟรี</span>
+        </span>
+      </Link>
+    </div>
+  );
+}
 
 const INTERVAL = 5500;
 
@@ -104,13 +145,17 @@ export default function PromoCarousel() {
               <p className="text-sm sm:text-base text-[var(--text-secondary)] mb-6 leading-relaxed">
                 {s.sub}
               </p>
-              <Link
-                href={s.href}
-                className="inline-flex items-center gap-2 px-7 py-3 bal-btn font-semibold text-xs uppercase tracking-[0.2em] hover:opacity-90"
-              >
-                {s.cta}
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+              {s.platforms ? (
+                <PlatformButtons />
+              ) : (
+                <Link
+                  href={s.href}
+                  className="inline-flex items-center gap-2 px-7 py-3 bal-btn font-semibold text-xs uppercase tracking-[0.2em] hover:opacity-90"
+                >
+                  {s.cta}
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              )}
             </div>
           </div>
         </div>

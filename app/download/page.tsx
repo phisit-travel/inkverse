@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { ShieldCheck, Smartphone, RefreshCw, Download, Lock, ArrowRight, Gift } from "lucide-react";
+import { ShieldCheck, Smartphone, RefreshCw, Download, Gift, Share, WifiOff } from "lucide-react";
 import type { Metadata } from "next";
 import { LATEST_APK } from "@/lib/appVersion";
 
@@ -91,15 +90,35 @@ export default function DownloadPage() {
         ))}
       </div>
 
-      {/* iOS note */}
-      <div className="flex items-start gap-3 border border-[var(--border)] bg-[var(--bg-card)] p-4 text-sm text-[var(--text-secondary)]">
-        <Lock className="w-4 h-4 mt-0.5 shrink-0 text-[var(--text-primary)]" />
-        <p>
-          ใช้ <span className="text-[var(--text-primary)]">iPhone / iPad</span>? อ่านผ่านเว็บได้ตามปกติไปก่อน (เวอร์ชัน iOS กำลังพิจารณา) —{" "}
-          <Link href="/" className="text-[var(--text-primary)] underline inline-flex items-center gap-1">
-            กลับไปอ่านบนเว็บ <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
+      {/* iOS — install as a home-screen PWA */}
+      <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-[0.18em] uppercase flex items-center gap-3 mb-5 mt-14">
+        <span className="w-6 h-px bg-[var(--text-primary)]" /> สำหรับ iPhone / iPad
+      </h2>
+      <div className="border border-[var(--border)] bg-[var(--bg-surface)] p-5">
+        <p className="text-sm text-[var(--text-secondary)] leading-relaxed mb-5">
+          iPhone ไม่ต้องโหลดไฟล์ — <span className="text-[var(--text-primary)] font-semibold">เพิ่ม INKVERSE ลงหน้าจอโฮม</span> แล้วใช้ได้เหมือนแอปจริง: เปิดเต็มจอ และ{" "}
+          <span className="text-[var(--text-primary)] font-semibold inline-flex items-center gap-1">
+            <WifiOff className="w-3.5 h-3.5" /> โหลดตอนเก็บไว้อ่านออฟไลน์ได้
+          </span>
         </p>
+        <div className="space-y-3">
+          {[
+            { n: "1", t: "เปิด inksverse.com ใน Safari", b: "ต้องเป็น Safari เท่านั้น (ไม่ใช่ Chrome/แอปอื่น)" },
+            { n: "2", t: "แตะปุ่มแชร์ ด้านล่าง", b: "ไอคอนกล่องลูกศรชี้ขึ้น กลางแถบล่างของ Safari", share: true },
+            { n: "3", t: "เลือก “เพิ่มลงในหน้าจอโฮม”", b: "เลื่อนหาในเมนู → กด เพิ่ม → ไอคอน IV จะโผล่บนจอ เปิดได้เลย" },
+          ].map((s) => (
+            <div key={s.n} className="flex gap-4 border border-[var(--border)] bg-[var(--bg-card)] p-4">
+              <span className="font-bebas text-3xl text-[var(--text-primary)] leading-none shrink-0 w-8">{s.n}</span>
+              <div>
+                <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
+                  {s.t}
+                  {s.share && <Share className="w-4 h-4" />}
+                </h3>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-relaxed">{s.b}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
