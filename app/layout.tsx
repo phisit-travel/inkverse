@@ -3,6 +3,7 @@ import { Bebas_Neue, Noto_Sans_Thai } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/ui/Navbar";
 import AppInstallBanner from "@/components/ui/AppInstallBanner";
+import ServiceWorkerRegister from "@/components/ui/ServiceWorkerRegister";
 import Footer from "@/components/layout/Footer";
 import { auth } from "@/lib/auth";
 import { getUserCoins } from "@/lib/coins";
@@ -135,6 +136,7 @@ export default async function RootLayout({
         <Footer />
         <HelpChatbot />
         <NativeShell />
+        <ServiceWorkerRegister />
         <UpdateChecker />
         <CookieConsent />
         <TrafficBeacon />
