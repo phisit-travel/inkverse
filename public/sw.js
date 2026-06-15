@@ -8,7 +8,7 @@
 //        ?e&u&s signature); rebuilds a clean 200 so re-reads/offline work.
 //   - page navigations        → network-first, /offline fallback
 //   - other /api/* (auth/data)→ never cached
-const VERSION = "v3";
+const VERSION = "v4";
 const STATIC_CACHE = `ink-static-${VERSION}`;
 const IMAGE_CACHE = `ink-img-${VERSION}`;
 const PAGE_CACHE = `ink-pages-${VERSION}`;
@@ -20,7 +20,8 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(PAGE_CACHE)
-      .then((c) => c.addAll([OFFLINE_URL, "/downloads"]))
+      // allSettled so one failing precache doesn't drop the other (addAll is atomic).
+      .then((c) => Promise.allSettled([c.add(OFFLINE_URL), c.add("/downloads")]))
       .catch(() => {})
   );
 });
