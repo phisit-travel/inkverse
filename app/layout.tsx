@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Bebas_Neue, Noto_Sans_Thai } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/ui/Navbar";
+import AppInstallBanner from "@/components/ui/AppInstallBanner";
 import Footer from "@/components/layout/Footer";
 import { auth } from "@/lib/auth";
 import { getUserCoins } from "@/lib/coins";
@@ -123,6 +124,7 @@ export default async function RootLayout({
       <body className="min-h-screen flex flex-col bg-[var(--bg-primary)] text-[var(--text-primary)] font-[family-name:var(--font-noto)]">
         <WebsiteJsonLd />
         <Navbar user={session?.user} userCoins={userCoins} rankBadge={rankBadge} />
+        <AppInstallBanner />
         <main className="flex-1">
           {userId ? (
             <ReadingProgressProvider>{children}</ReadingProgressProvider>
