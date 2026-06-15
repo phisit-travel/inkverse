@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Trash2, BookOpen, Download, Smartphone, WifiOff } from "lucide-react";
 import ReaderViewer from "@/components/ui/ReaderViewer";
+import TextReader from "@/components/ui/TextReader";
 import { getDownloads, removeDownload, type OfflineChapter } from "@/lib/offline";
 
 export default function DownloadsPage() {
@@ -18,12 +19,25 @@ export default function DownloadsPage() {
     setReady(true);
   }, []);
 
-  // Offline reader — images come from the persistent download cache (no signature
-  // needed; the SW serves them from ink-downloads even with no connection).
+  // Offline reader — content comes from the persistent download cache /
+  // localStorage (no network needed; the SW serves images from ink-downloads).
   if (reading) {
-    return (
+    return reading.type === "novel" ? (
+      <TextReader
+        html={reading.html || ""}
+        chapterTitle={reading.chapterTitle}
+        chapterNum={reading.chapterNum}
+        mangaTitle={reading.mangaTitle}
+        mangaSlug={reading.mangaSlug}
+        prevChapter={null}
+        nextChapter={null}
+        minutes={reading.minutes}
+        authorNote={reading.authorNote}
+        onBack={() => setReading(null)}
+      />
+    ) : (
       <ReaderViewer
-        pages={reading.pages.map((p, i) => ({
+        pages={(reading.pages || []).map((p, i) => ({
           pageNum: i + 1,
           src: `/api/img/${p.id}`,
           width: p.w,
@@ -94,7 +108,10 @@ export default function DownloadsPage() {
                     {d.mangaTitle}
                   </span>
                   <span className="block text-xs text-[var(--text-secondary)]">
-                    ตอนที่ {d.chapterNum} · {d.pages.length} หน้า
+                    ตอนที่ {d.chapterNum} ·{" "}
+                    {d.type === "novel"
+                      ? `นิยาย${d.minutes ? ` · ~${d.minutes} นาที` : ""}`
+                      : `${d.pages?.length ?? 0} หน้า`}
                   </span>
                 </span>
               </button>

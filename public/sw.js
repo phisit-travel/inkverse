@@ -55,7 +55,12 @@ self.addEventListener("fetch", (event) => {
   } catch {
     return;
   }
-  if (url.origin !== self.location.origin) return; // leave cross-origin (R2) to the browser
+  if (url.origin !== self.location.origin) {
+    // Cross-origin images (e.g. novel illustrations on public R2) → serve from
+    // the downloads cache when saved, so offline novels keep their pictures.
+    if (req.destination === "image") event.respondWith(crossOriginImage(req));
+    return;
+  }
 
   if (url.pathname.startsWith("/_next/static/")) {
     event.respondWith(cacheFirst(req, STATIC_CACHE));
@@ -73,6 +78,17 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 });
+
+async function crossOriginImage(req) {
+  const downloads = await caches.open(DOWNLOADS_CACHE);
+  const hit = await downloads.match(req.url);
+  if (hit) return hit;
+  try {
+    return await fetch(req);
+  } catch {
+    return Response.error();
+  }
+}
 
 async function cacheFirst(req, cacheName) {
   const cache = await caches.open(cacheName);

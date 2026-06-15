@@ -3,25 +3,37 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Download, Check, Loader2, X, Smartphone } from "lucide-react";
-import { downloadChapter, removeDownload, isDownloaded } from "@/lib/offline";
+import { downloadChapter, downloadNovel, removeDownload, isDownloaded } from "@/lib/offline";
 
 interface Props {
   chapterId: string;
   mangaSlug: string;
   chapterNum: number;
   mangaTitle: string;
-  pages: { src: string; width?: number | null; height?: number | null }[];
+  kind: "manga" | "novel";
+  // manga
+  pages?: { src: string; width?: number | null; height?: number | null }[];
+  // novel
+  html?: string;
+  chapterTitle?: string | null;
+  minutes?: number;
+  authorNote?: string | null;
 }
 
-// In the app: downloads the chapter for offline reading. On the web: the button
-// still shows, but tapping it gently invites the visitor to get the app — a soft,
-// non-blocking nudge to install (the offline feature is app-exclusive).
+// In the app: saves the chapter for offline reading (manga images or novel text).
+// On the web: the button still shows, but tapping invites the visitor to get the
+// app — a soft, non-blocking nudge to install (offline is app-exclusive).
 export default function DownloadChapterButton({
   chapterId,
   mangaSlug,
   chapterNum,
   mangaTitle,
+  kind,
   pages,
+  html,
+  chapterTitle,
+  minutes,
+  authorNote,
 }: Props) {
   const [inApp, setInApp] = useState(false);
   const [state, setState] = useState<"idle" | "downloading" | "done">("idle");
@@ -49,11 +61,24 @@ export default function DownloadChapterButton({
     setState("downloading");
     setProgress(0);
     try {
-      await downloadChapter(
-        { chapterId, mangaSlug, chapterNum, mangaTitle },
-        pages,
-        (d, t) => setProgress(Math.round((d / t) * 100))
-      );
+      if (kind === "novel") {
+        await downloadNovel({
+          chapterId,
+          mangaSlug,
+          chapterNum,
+          mangaTitle,
+          html: html || "",
+          chapterTitle,
+          minutes,
+          authorNote,
+        });
+      } else {
+        await downloadChapter(
+          { chapterId, mangaSlug, chapterNum, mangaTitle },
+          pages || [],
+          (d, t) => setProgress(Math.round((d / t) * 100))
+        );
+      }
       setState("done");
     } catch {
       setState("idle");
@@ -66,15 +91,15 @@ export default function DownloadChapterButton({
       <button
         onClick={onClick}
         title={state === "done" ? "ดาวน์โหลดแล้ว (แตะเพื่อลบ)" : "ดาวน์โหลดไว้อ่านออฟไลน์"}
-        className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg hover:bg-white/10 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors text-xs"
+        className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg hover:bg-current/10 transition-colors text-xs opacity-70 hover:opacity-100"
       >
         {state === "downloading" ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span>{progress}%</span>
+            {kind === "manga" && <span>{progress}%</span>}
           </>
         ) : state === "done" ? (
-          <Check className="w-4 h-4 text-[var(--text-primary)]" />
+          <Check className="w-4 h-4" />
         ) : (
           <Download className="w-4 h-4" />
         )}
@@ -87,7 +112,7 @@ export default function DownloadChapterButton({
           onClick={() => setInvite(false)}
         >
           <div
-            className="w-full max-w-sm bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl p-6 text-center relative"
+            className="w-full max-w-sm bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl p-6 text-center relative text-[var(--text-primary)]"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -100,9 +125,7 @@ export default function DownloadChapterButton({
             <div className="w-14 h-14 mx-auto mb-4 flex items-center justify-center rounded-full bg-[var(--text-primary)] text-[var(--bg-primary)]">
               <Smartphone className="w-7 h-7" />
             </div>
-            <h3 className="font-bebas text-2xl tracking-wider text-[var(--text-primary)]">
-              อ่านออฟไลน์ได้ในแอป
-            </h3>
+            <h3 className="font-bebas text-2xl tracking-wider">อ่านออฟไลน์ได้ในแอป</h3>
             <p className="text-sm text-[var(--text-secondary)] mt-2 leading-relaxed">
               ดาวน์โหลดตอนเก็บไว้อ่านตอนเน็ตไม่มี/บนเครื่องบิน — ใช้ได้เฉพาะในแอป INKVERSE
               บน Android (ฟรี)

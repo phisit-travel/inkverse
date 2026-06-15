@@ -151,7 +151,8 @@ export default async function ReaderPage({ params }: Props) {
           prevChapter={prevChapter?.chapterNum ?? null}
           nextChapter={nextChapter?.chapterNum ?? null}
           minutes={novelStats(chapterData.content).minutes}
-          authorNote={chapterData.authorNote}        />
+          authorNote={chapterData.authorNote}
+          chapterId={chapterData.id}        />
       ) : (
         <ReaderViewer
           pages={chapterData.pages.map((p) => ({

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Settings, X, BookOpen } from "lucide-react";
+import DownloadChapterButton from "./DownloadChapterButton";
 
 interface Props {
   html: string;
@@ -14,6 +15,10 @@ interface Props {
   nextChapter?: number | null;
   minutes?: number;
   authorNote?: string | null;
+  // When set, shows the "download for offline" button.
+  chapterId?: string;
+  // When set, the back control calls this instead of linking out (offline reader).
+  onBack?: () => void;
 }
 
 type Settings = {
@@ -36,7 +41,7 @@ const THEMES: Record<Settings["theme"], { bg: string; fg: string; label: string 
 const WIDTHS = { narrow: "max-w-xl", normal: "max-w-2xl", wide: "max-w-3xl" };
 
 export default function TextReader({
-  html, chapterTitle, chapterNum, mangaTitle, mangaSlug, prevChapter, nextChapter, minutes, authorNote,
+  html, chapterTitle, chapterNum, mangaTitle, mangaSlug, prevChapter, nextChapter, minutes, authorNote, chapterId, onBack,
 }: Props) {
   const [s, setS] = useState<Settings>(DEFAULT);
   const [open, setOpen] = useState(false);
@@ -63,12 +68,33 @@ export default function TextReader({
       {/* top bar */}
       <div className="sticky top-0 z-30 backdrop-blur-sm border-b border-black/10" style={{ background: t.bg }}>
         <div className={`mx-auto ${WIDTHS[s.width]} px-4 py-3 flex items-center justify-between gap-3`}>
-          <Link href={`/content/${mangaSlug}`} className="text-sm truncate hover:opacity-70 transition-opacity" style={{ color: t.fg }}>
-            ← {mangaTitle}
-          </Link>
-          <button onClick={() => setOpen((o) => !o)} aria-label="ตั้งค่าการอ่าน" className="shrink-0 p-1.5 hover:opacity-70">
-            <Settings className="w-5 h-5" />
-          </button>
+          {onBack ? (
+            <button onClick={onBack} className="text-sm truncate hover:opacity-70 transition-opacity" style={{ color: t.fg }}>
+              ← คลัง
+            </button>
+          ) : (
+            <Link href={`/content/${mangaSlug}`} className="text-sm truncate hover:opacity-70 transition-opacity" style={{ color: t.fg }}>
+              ← {mangaTitle}
+            </Link>
+          )}
+          <div className="flex items-center gap-1 shrink-0">
+            {chapterId && (
+              <DownloadChapterButton
+                kind="novel"
+                chapterId={chapterId}
+                mangaSlug={mangaSlug}
+                chapterNum={chapterNum}
+                mangaTitle={mangaTitle}
+                html={html}
+                chapterTitle={chapterTitle}
+                minutes={minutes}
+                authorNote={authorNote}
+              />
+            )}
+            <button onClick={() => setOpen((o) => !o)} aria-label="ตั้งค่าการอ่าน" className="p-1.5 hover:opacity-70">
+              <Settings className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </div>
 

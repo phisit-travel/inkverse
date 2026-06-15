@@ -238,6 +238,7 @@ export default function ReaderViewer({
           <div className="flex items-center gap-2">
             {chapterId && (
               <DownloadChapterButton
+                kind="manga"
                 chapterId={chapterId}
                 mangaSlug={mangaSlug}
                 chapterNum={chapterNum}
