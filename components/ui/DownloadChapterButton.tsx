@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { Download, Check, Loader2, X, Smartphone } from "lucide-react";
-import { downloadChapter, downloadNovel, removeDownload, isDownloaded, OFFLINE_ENABLED } from "@/lib/offline";
+import { Download, Check, Loader2, X, Smartphone, Share } from "lucide-react";
+import { downloadChapter, downloadNovel, removeDownload, isDownloaded, OFFLINE_ENABLED, isAppContext } from "@/lib/offline";
 
 interface Props {
   chapterId: string;
@@ -37,12 +37,14 @@ export default function DownloadChapterButton({
   authorNote,
 }: Props) {
   const [inApp, setInApp] = useState(false);
+  const [ios, setIos] = useState(false);
   const [state, setState] = useState<"idle" | "downloading" | "done">("idle");
   const [progress, setProgress] = useState(0);
   const [invite, setInvite] = useState(false);
 
   useEffect(() => {
-    setInApp(!!(window as unknown as { Capacitor?: unknown }).Capacitor);
+    setInApp(isAppContext());
+    setIos(/iphone|ipad|ipod/i.test(navigator.userAgent));
     try {
       if (isDownloaded(chapterId)) setState("done");
     } catch {}
@@ -131,17 +133,30 @@ export default function DownloadChapterButton({
               <Smartphone className="w-7 h-7" />
             </div>
             <h3 className="font-bebas text-2xl tracking-wider">อ่านออฟไลน์ได้ในแอป</h3>
-            <p className="text-sm text-[var(--text-secondary)] mt-2 leading-relaxed">
-              ดาวน์โหลดตอนเก็บไว้อ่านตอนเน็ตไม่มี/บนเครื่องบิน — ใช้ได้เฉพาะในแอป INKVERSE
-              บน Android (ฟรี)
-            </p>
-            <Link
-              href="/download"
-              className="inline-flex items-center justify-center gap-2 mt-5 w-full py-3 rounded-xl bal-btn text-sm font-semibold uppercase tracking-widest"
-            >
-              <Download className="w-4 h-4" />
-              โหลดแอป
-            </Link>
+            {ios ? (
+              <>
+                <p className="text-sm text-[var(--text-secondary)] mt-2 leading-relaxed">
+                  เพิ่ม INKVERSE ลงหน้าจอโฮมก่อน แล้วโหลดตอนเก็บไว้อ่านออฟไลน์ได้เลย — ฟรี
+                </p>
+                <div className="mt-5 w-full py-3 px-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-sm text-[var(--text-primary)] flex items-center justify-center gap-1.5 flex-wrap">
+                  แตะ <Share className="w-4 h-4" /> ด้านล่าง → “เพิ่มลงในหน้าจอโฮม”
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-[var(--text-secondary)] mt-2 leading-relaxed">
+                  ดาวน์โหลดตอนเก็บไว้อ่านตอนเน็ตไม่มี/บนเครื่องบิน — ใช้ได้เฉพาะในแอป INKVERSE
+                  บน Android (ฟรี)
+                </p>
+                <Link
+                  href="/download"
+                  className="inline-flex items-center justify-center gap-2 mt-5 w-full py-3 rounded-xl bal-btn text-sm font-semibold uppercase tracking-widest"
+                >
+                  <Download className="w-4 h-4" />
+                  โหลดแอป
+                </Link>
+              </>
+            )}
           </div>
           </div>,
           document.body

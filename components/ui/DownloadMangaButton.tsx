@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Download, X, Check, Lock, Loader2 } from "lucide-react";
-import { downloadById, getDownloads, OFFLINE_ENABLED } from "@/lib/offline";
+import { downloadById, getDownloads, OFFLINE_ENABLED, isAppContext } from "@/lib/offline";
 
 interface Ch {
   id: string;
@@ -37,7 +37,7 @@ export default function DownloadMangaButton({ chapters }: Props) {
   };
 
   useEffect(() => {
-    setInApp(!!(window as unknown as { Capacitor?: unknown }).Capacitor);
+    setInApp(isAppContext());
     refreshDone();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

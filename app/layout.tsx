@@ -44,6 +44,13 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
+  // Lets iOS "Add to Home Screen" launch INKVERSE full-screen (standalone, no
+  // Safari chrome) — the legit way to get an app-like experience on iPhone.
+  appleWebApp: {
+    capable: true,
+    title: "INKVERSE",
+    statusBarStyle: "black",
+  },
   title: {
     default: "INKVERSE — อ่านมังงะออนไลน์ฟรี มังฮวา มันฮวา แปลไทย",
     template: "%s | INKVERSE",

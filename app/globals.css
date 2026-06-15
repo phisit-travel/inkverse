@@ -277,11 +277,12 @@ html.native-app [role="button"] {
 }
 /* Cleaner app surface — hide scrollbars. */
 html.native-app ::-webkit-scrollbar { width: 0; height: 0; }
-/* Already inside the app → no "download the app" buttons. */
-html.native-app .download-cta { display: none !important; }
-/* Shown ONLY inside the app (the inverse of .download-cta) — e.g. the offline library link. */
+/* Installed-app context (Capacitor app OR PWA, flagged `app-mode` by
+   ServiceWorkerRegister) → no "download the app" buttons. */
+html.app-mode .download-cta { display: none !important; }
+/* Shown ONLY in an installed-app context (the inverse) — e.g. the offline library link. */
 .app-only { display: none !important; }
-html.native-app .app-only { display: flex !important; }
+html.app-mode .app-only { display: flex !important; }
 
 /* ===== Promo carousel animations (subtle, monochrome) ===== */
 @keyframes iv-spin { to { transform: rotate(360deg); } }

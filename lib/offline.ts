@@ -31,6 +31,25 @@ export interface OfflineChapter {
 // false to instantly hide it everywhere if the service worker must be disabled.
 export const OFFLINE_ENABLED = true;
 
+// True in an "installed app" context where the service worker runs and offline
+// makes sense: the Capacitor Android app, an iOS "Add to Home Screen" PWA, or an
+// Android/desktop installed PWA. Used to decide whether to register the SW and
+// show the download UI (vs. the web "get the app" upsell).
+export function isAppContext(): boolean {
+  if (typeof window === "undefined") return false;
+  const w = window as unknown as {
+    Capacitor?: unknown;
+    navigator?: { standalone?: boolean };
+    matchMedia?: (q: string) => { matches: boolean };
+  };
+  if (w.Capacitor) return true; // Capacitor app
+  if (w.navigator?.standalone) return true; // iOS PWA
+  try {
+    if (w.matchMedia?.("(display-mode: standalone)")?.matches) return true; // Android/desktop PWA
+  } catch {}
+  return false;
+}
+
 const KEY = "ink-downloads-v1";
 const CACHE = "ink-downloads";
 

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Trash2, BookOpen, Download, Smartphone, WifiOff } from "lucide-react";
 import ReaderViewer from "@/components/ui/ReaderViewer";
 import TextReader from "@/components/ui/TextReader";
-import { getDownloads, removeDownload, type OfflineChapter } from "@/lib/offline";
+import { getDownloads, removeDownload, isAppContext, type OfflineChapter } from "@/lib/offline";
 
 export default function DownloadsPage() {
   const [list, setList] = useState<OfflineChapter[]>([]);
@@ -14,7 +14,7 @@ export default function DownloadsPage() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setInApp(!!(window as unknown as { Capacitor?: unknown }).Capacitor);
+    setInApp(isAppContext());
     setList(getDownloads());
     setReady(true);
   }, []);
