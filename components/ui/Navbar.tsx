@@ -75,9 +75,43 @@ function NavDropdown({
   );
 }
 
+// Collapsible group for the mobile (☰) menu — mirrors the avatar dropdown's
+// Section so the two surfaces share one design language.
+function MobileSection({
+  label,
+  open,
+  onToggle,
+  children,
+}: {
+  label: string;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="border-t border-[var(--border)]/40">
+      <button
+        onClick={onToggle}
+        className="flex items-center justify-between w-full px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+      >
+        {label}
+        <ChevronDown className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && <div className="pb-1">{children}</div>}
+    </div>
+  );
+}
+
 export default function Navbar({ user, userCoins = 0, rankBadge = null }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  // One section open at a time, like the avatar dropdown.
+  const [navSection, setNavSection] = useState<string | null>(null);
+  const toggleNav = (key: string) => setNavSection((s) => (s === key ? null : key));
+  const isStaff = user?.role === "TRANSLATOR" || user?.role === "ADMIN";
+  const closeMenu = () => setMenuOpen(false);
+  const mobileSubCls =
+    "block pl-6 pr-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 rounded-lg transition-colors";
 
   return (
     <nav className="sticky top-0 z-50 bg-[var(--bg-primary)]/95 backdrop-blur-md border-b border-[var(--border)]">
@@ -152,15 +186,15 @@ export default function Navbar({ user, userCoins = 0, rankBadge = null }: Navbar
         </div>
       )}
 
-      {/* Mobile nav menu */}
+      {/* Mobile nav menu — collapsible sections matching the avatar dropdown */}
       {menuOpen && (
         <div className="lg:hidden border-t border-[var(--border)] bg-[var(--bg-primary)]">
-          <div className="px-4 py-3 flex flex-col gap-1">
+          <div className="px-4 py-3 flex flex-col">
             {/* Prominent app download — hidden when already inside the app */}
             <Link
               href="/download"
-              onClick={() => setMenuOpen(false)}
-              className="download-cta flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm bal-btn font-semibold mb-1"
+              onClick={closeMenu}
+              className="download-cta flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm bal-btn font-semibold mb-2"
             >
               <Download className="w-4 h-4" />
               โหลดแอป Android
@@ -169,45 +203,37 @@ export default function Navbar({ user, userCoins = 0, rankBadge = null }: Navbar
                 anchor so it still opens when offline (served from the SW page cache). */}
             <a
               href="/downloads"
-              className="app-only items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-[var(--text-primary)] hover:bg-white/5 transition-colors font-medium"
+              className="app-only items-center gap-2 px-3 py-2.5 mb-1 rounded-lg text-sm text-[var(--text-primary)] hover:bg-white/5 transition-colors font-medium"
             >
               <WifiOff className="w-4 h-4" />
               คลังออฟไลน์
             </a>
-            {[...typeLinks, ...creatorMenu].map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setMenuOpen(false)}
-                className="px-3 py-2.5 rounded-lg text-sm text-[var(--text-primary)] hover:text-[var(--text-primary)] hover:bg-white/5 transition-colors"
-              >
-                {link.label}
-              </Link>
-            ))}
-            {user && (user.role === "TRANSLATOR" || user.role === "ADMIN") && (
-              <>
-                <Link
-                  href="/dashboard/new-novel"
-                  onClick={() => setMenuOpen(false)}
-                  className="px-3 py-2.5 rounded-lg text-sm bal-btn text-center font-semibold"
-                >
-                  เขียนนิยาย
+
+            <MobileSection label="เรื่องทั้งหมด" open={navSection === "browse"} onToggle={() => toggleNav("browse")}>
+              {typeLinks.map((link) => (
+                <Link key={link.href} href={link.href} onClick={closeMenu} className={mobileSubCls}>
+                  {link.label}
                 </Link>
-                <Link
-                  href="/dashboard"
-                  onClick={() => setMenuOpen(false)}
-                  className="px-3 py-2.5 rounded-lg text-sm text-[var(--text-primary)] hover:bg-white/5 transition-colors font-medium"
-                >
-                  Creator Dashboard
+              ))}
+            </MobileSection>
+
+            <MobileSection label="ครีเอเตอร์" open={navSection === "creator"} onToggle={() => toggleNav("creator")}>
+              {creatorMenu.map((link) => (
+                <Link key={link.href} href={link.href} onClick={closeMenu} className={mobileSubCls}>
+                  {link.label}
                 </Link>
-                <Link
-                  href={user.role === "ADMIN" ? "/admin" : "/upload"}
-                  onClick={() => setMenuOpen(false)}
-                  className="px-3 py-2.5 rounded-lg text-sm text-[var(--text-primary)] hover:bg-white/5 transition-colors font-medium"
-                >
-                  {user.role === "ADMIN" ? "แอดมิน" : "อัปโหลด"}
-                </Link>
-              </>
+              ))}
+            </MobileSection>
+
+            {isStaff && (
+              <MobileSection label="บัญชีของฉัน" open={navSection === "account"} onToggle={() => toggleNav("account")}>
+                <Link href="/dashboard" onClick={closeMenu} className={mobileSubCls}>แดชบอร์ด</Link>
+                <Link href="/dashboard/new-novel" onClick={closeMenu} className={mobileSubCls}>เขียนนิยาย</Link>
+                <Link href="/upload" onClick={closeMenu} className={mobileSubCls}>อัปโหลดมังงะ</Link>
+                {user?.role === "ADMIN" && (
+                  <Link href="/admin" onClick={closeMenu} className={mobileSubCls}>แอดมิน</Link>
+                )}
+              </MobileSection>
             )}
           </div>
         </div>
