@@ -4,16 +4,17 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { sendEmail, passwordResetOtpEmail } from "@/lib/email";
+import { apiError } from "@/lib/apiError";
 
 const schema = z.object({ email: z.string().email() });
 
 export async function POST(req: NextRequest) {
   const rl = rateLimit(`forgot:${clientIp(req)}`, 5, 15 * 60_000);
   if (!rl.ok)
-    return NextResponse.json(
-      { error: "ขอบ่อยเกินไป กรุณาลองใหม่ภายหลัง" },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
-    );
+    return apiError("RATE-001", 429, {
+      message: "ขอบ่อยเกินไป กรุณาลองใหม่ภายหลัง",
+      headers: { "Retry-After": String(rl.retryAfter) },
+    });
 
   const parsed = schema.safeParse(await req.json().catch(() => null));
   // Always return the same response — never reveal whether an email exists.

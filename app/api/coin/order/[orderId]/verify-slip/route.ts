@@ -203,11 +203,10 @@ export async function POST(
         ? String((err as { code?: string }).code)
         : "";
     if (code === "P2002")
-      return NextResponse.json({ error: "สลิปนี้ถูกใช้ไปแล้ว" }, { status: 409 });
-    return NextResponse.json(
-      { error: "บันทึกการชำระเงินไม่สำเร็จ กรุณาติดต่อผู้ดูแลระบบ" },
-      { status: 500 }
-    );
+      return apiError("COIN-003", 409, { message: "สลิปนี้ถูกใช้ไปแล้ว" });
+    return apiError("NET-001", 500, {
+      message: "บันทึกการชำระเงินไม่สำเร็จ กรุณาติดต่อผู้ดูแลระบบ",
+    });
   }
 
   await createNotification({

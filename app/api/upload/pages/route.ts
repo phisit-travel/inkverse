@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     const pages: { pageNum: number; key: string; width?: number; height?: number }[] =
       Array.isArray(body.pages) ? body.pages : [];
     if (!chapterId || pages.length === 0) {
-      return NextResponse.json({ error: "chapterId and pages required" }, { status: 400 });
+      return apiError("VAL-001", 400, { message: "ต้องระบุ chapterId และ pages" });
     }
     const chapter = await prisma.chapter.findUnique({
       where: { id: chapterId },
@@ -67,10 +67,7 @@ export async function POST(req: NextRequest) {
   const startPage = Number(formData.get("startPage")) || 1;
 
   if (!chapterId || files.length === 0) {
-    return NextResponse.json(
-      { error: "chapterId and files required" },
-      { status: 400 }
-    );
+    return apiError("VAL-001", 400, { message: "ต้องระบุ chapterId และ files" });
   }
 
   const chapter = await prisma.chapter.findUnique({
