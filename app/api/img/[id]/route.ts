@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyImageToken } from "@/lib/imageToken";
 import { getPresignedDownloadUrl } from "@/lib/r2";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { apiError } from "@/lib/apiError";
 
 // Authenticated, signed image proxy. Manga page images are served through here
 // instead of exposing the raw R2 URL. Each request must carry a valid, unexpired
@@ -12,7 +13,7 @@ import { rateLimit, clientIp } from "@/lib/rate-limit";
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   // Throttle bulk scraping — a human turns pages far slower than this.
   if (!rateLimit(`img:${clientIp(req)}`, 200, 60_000).ok) {
-    return new NextResponse("Too Many Requests", { status: 429 });
+    return apiError("IMG-003", 429);
   }
 
   const { id } = await params;
@@ -22,18 +23,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   // Signed + unexpired token is the access grant (minted post-authorization).
   if (!verifyImageToken(id, e, u, s)) {
-    return new NextResponse("Forbidden", { status: 403 });
+    return apiError("IMG-001", 403);
   }
 
   // Behavioral throttle: the token binds the reader's id, so we can cap sustained
   // per-user volume. A human reading never pulls this many pages over 10 minutes;
   // a ripper grabbing whole series does. (Per-IP burst limit above still applies.)
   if (u && u !== "anon" && !rateLimit(`img:u:${u}`, 1200, 600_000).ok) {
-    return new NextResponse("Too Many Requests", { status: 429 });
+    return apiError("IMG-003", 429);
   }
 
   const page = await prisma.page.findUnique({ where: { id }, select: { imageUrl: true } });
-  if (!page) return new NextResponse("Not found", { status: 404 });
+  if (!page) return apiError("IMG-002", 404);
 
   // Proxy the bytes through this function (same-origin response). We tried a 302
   // redirect to a presigned R2 URL for speed, but a cross-origin redirect that the
@@ -44,7 +45,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const isLegacyPublic = /^https?:\/\//i.test(page.imageUrl);
   const src = isLegacyPublic ? page.imageUrl : await getPresignedDownloadUrl(page.imageUrl);
   const upstream = await fetch(src);
-  if (!upstream.ok || !upstream.body) return new NextResponse("Bad gateway", { status: 502 });
+  if (!upstream.ok || !upstream.body) return apiError("IMG-004", 502);
 
   return new NextResponse(upstream.body, {
     status: 200,

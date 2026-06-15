@@ -28,6 +28,7 @@ export default function Error({
           <WifiOff className="w-7 h-7 text-[var(--text-secondary)]" />
         </div>
         <h1 className="font-bebas text-4xl tracking-wider text-[var(--text-primary)]">ออฟไลน์อยู่</h1>
+        <p className="text-[11px] font-mono text-[var(--text-muted)] mt-1">รหัส: NET-003</p>
         <p className="text-sm text-[var(--text-secondary)] mt-2 max-w-sm leading-relaxed">
           เปิดอ่านตอนที่ดาวน์โหลดเก็บไว้ได้ที่คลังออฟไลน์ หรือเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่
         </p>
@@ -55,11 +56,14 @@ export default function Error({
         <AlertTriangle className="w-8 h-8 text-[var(--text-primary)]" />
       </div>
       <h1 className="text-xl font-semibold text-[var(--text-primary)]">เกิดข้อผิดพลาด</h1>
-      <p className="text-sm text-[var(--text-secondary)] mt-2 max-w-md">
-        ระบบขัดข้องชั่วคราว กรุณาลองใหม่อีกครั้ง หากยังเป็นอยู่กรุณาติดต่อผู้ดูแลระบบ
+      <p className="mt-2 inline-block px-2.5 py-1 rounded-md bg-[var(--bg-card)] border border-[var(--border)] text-xs font-mono text-[var(--text-primary)]">
+        รหัส: NET-001
+      </p>
+      <p className="text-sm text-[var(--text-secondary)] mt-3 max-w-md">
+        ระบบขัดข้องชั่วคราว กรุณาลองใหม่อีกครั้ง หากยังเป็นอยู่ แจ้งรหัสนี้ให้ผู้ดูแลระบบ
       </p>
       {error.digest && (
-        <p className="text-xs text-[var(--text-muted)] mt-2 font-mono">รหัสอ้างอิง: {error.digest}</p>
+        <p className="text-[11px] text-[var(--text-muted)] mt-2 font-mono">อ้างอิง: {error.digest}</p>
       )}
       <div className="flex flex-wrap justify-center gap-3 mt-7">
         <button

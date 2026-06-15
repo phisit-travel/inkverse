@@ -59,7 +59,8 @@ export default function SignUpPage() {
     if (!res.ok) {
       // Guard: only strings are safe to render. A non-string error (e.g. a
       // validation object) would crash the page if passed to <p>{error}</p>.
-      setError(typeof data.error === "string" ? data.error : "เกิดข้อผิดพลาด ลองใหม่อีกครั้ง");
+      const msg = typeof data.error === "string" ? data.error : "เกิดข้อผิดพลาด ลองใหม่อีกครั้ง";
+      setError(data.code ? `[${data.code}] ${msg}` : msg);
       setLoading(false);
       return;
     }

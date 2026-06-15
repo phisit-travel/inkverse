@@ -7,6 +7,7 @@ import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { grantSignupBonus, recordReferral } from "@/lib/coins";
 import { sendEmail, verificationEmail } from "@/lib/email";
 import { verifyTurnstile } from "@/lib/turnstile";
+import { apiError } from "@/lib/apiError";
 
 const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inksverse.com";
 
@@ -25,26 +26,21 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   const rl = rateLimit(`register:${clientIp(req)}`, 5, 10 * 60_000);
   if (!rl.ok)
-    return NextResponse.json(
-      { error: "พยายามสมัครบ่อยเกินไป กรุณาลองใหม่ภายหลัง" },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
-    );
+    return apiError("RATE-001", 429, {
+      message: "พยายามสมัครบ่อยเกินไป กรุณาลองใหม่ภายหลัง",
+      headers: { "Retry-After": String(rl.retryAfter) },
+    });
 
   const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);
 
   if (!parsed.success) {
-    // Return a readable Thai message (not the raw zod object — the client
-    // renders `error` directly, and an object child crashes React).
     const f = parsed.error.flatten().fieldErrors;
-    const msg = f.username
-      ? "ชื่อผู้ใช้ใช้ได้เฉพาะ a-z, 0-9 และ _ ความยาว 3–30 ตัว"
-      : f.email
-        ? "อีเมลไม่ถูกต้อง"
-        : f.password
-          ? "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร"
-          : "ข้อมูลไม่ถูกต้อง";
-    return NextResponse.json({ error: msg }, { status: 400 });
+    if (f.username)
+      return apiError("AUTH-004", 400, { message: "ชื่อผู้ใช้ใช้ได้เฉพาะ a-z, 0-9 และ _ ความยาว 3–30 ตัว" });
+    if (f.email) return apiError("VAL-001", 400, { message: "อีเมลไม่ถูกต้อง" });
+    if (f.password) return apiError("VAL-001", 400, { message: "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร" });
+    return apiError("VAL-001", 400);
   }
 
   const { username, email, password, ref, turnstileToken } = parsed.data;
@@ -55,7 +51,7 @@ export async function POST(req: NextRequest) {
   // signups gain nothing. The IP rate-limit above still applies to everyone.
   const isApp = req.headers.get("x-inkverse-app") === "1";
   if (!isApp && !(await verifyTurnstile(turnstileToken, clientIp(req)))) {
-    return NextResponse.json({ error: "กรุณายืนยันว่าคุณไม่ใช่บอท" }, { status: 400 });
+    return apiError("AUTH-001", 400, { message: "กรุณายืนยันว่าคุณไม่ใช่บอท" });
   }
 
   const existing = await prisma.user.findFirst({
@@ -63,10 +59,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (existing) {
-    return NextResponse.json(
-      { error: existing.email === email ? "อีเมลนี้ถูกใช้แล้ว" : "ชื่อผู้ใช้นี้ถูกใช้แล้ว" },
-      { status: 409 }
-    );
+    return existing.email === email ? apiError("AUTH-003", 409) : apiError("AUTH-004", 409);
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
