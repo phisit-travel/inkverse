@@ -22,14 +22,23 @@ export default async function WriteNovelPage({ params, searchParams }: Props) {
   const { ch } = await searchParams;
   const userId = (session.user as { id: string }).id;
 
-  const manga = await prisma.manga.findUnique({
-    where: { slug },
-    select: {
-      id: true, type: true,
-      translator: { select: { userId: true } },
-      chapters: { orderBy: { chapterNum: "desc" }, take: 1, select: { chapterNum: true } },
-    },
-  });
+  // The novel-create flow redirects here the instant /api/manga returns. If the
+  // pooled read momentarily races the just-committed write, a single findUnique
+  // can miss and 404 a brand-new novel — retry once briefly before giving up.
+  const findManga = () =>
+    prisma.manga.findUnique({
+      where: { slug },
+      select: {
+        id: true, type: true,
+        translator: { select: { userId: true } },
+        chapters: { orderBy: { chapterNum: "desc" }, take: 1, select: { chapterNum: true } },
+      },
+    });
+  let manga = await findManga();
+  if (!manga) {
+    await new Promise((r) => setTimeout(r, 600));
+    manga = await findManga();
+  }
   if (!manga) notFound();
   if (role !== "ADMIN" && manga.translator?.userId !== userId) redirect("/dashboard");
 

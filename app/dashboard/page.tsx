@@ -150,7 +150,7 @@ export default async function DashboardPage() {
 
   return (
     <DashboardClient
-      translator={{ penName: translator.penName, bio: translator.bio ?? "" }}
+      translator={{ penName: translator.penName, bio: translator.bio ?? "", kind: translator.kind }}
       stats={{
         totalViews,
         totalChapters,

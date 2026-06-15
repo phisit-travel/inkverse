@@ -52,7 +52,7 @@ interface UnlockEvent {
 }
 
 interface Props {
-  translator: { penName: string; bio: string };
+  translator: { penName: string; bio: string; kind?: string };
   stats: {
     totalViews: number;
     totalChapters: number;
@@ -140,6 +140,14 @@ export default function DashboardClient({
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("works");
 
+  // Writers create NOVELS (the text editor); translators upload MANGA pages.
+  // Route the "create / upload" CTAs by the creator's kind so a writer never
+  // lands on the manga page-image uploader.
+  const isWriter = translator.kind === "WRITER";
+  const createHref = isWriter ? "/dashboard/new-novel" : "/upload";
+  const createLabel = isWriter ? "เขียนนิยายเรื่องใหม่" : "อัปโหลดมังงะใหม่";
+  const createCta = isWriter ? "เขียนนิยาย" : "อัปโหลดเลย";
+
   const maxViews = Math.max(...mangaStats.map((m) => m.totalViews), 1);
   const maxChapterViews = Math.max(...topChapters.map((c) => c.viewCount), 1);
 
@@ -168,11 +176,11 @@ export default function DashboardClient({
             รายได้ & ถอนเงิน
           </Link>
           <Link
-            href="/upload"
+            href={createHref}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bal-btn text-sm font-medium hover:opacity-90 transition-colors"
           >
             <BookOpen className="w-4 h-4" />
-            อัปโหลดผลงานใหม่
+            {createLabel}
           </Link>
         </div>
       </div>
@@ -287,9 +295,9 @@ export default function DashboardClient({
             {mangaStats.length === 0 ? (
               <EmptyState
                 label="ยังไม่มีผลงาน"
-                sub="เริ่มอัปโหลดผลงานแรกของคุณ"
-                href="/upload"
-                cta="อัปโหลดเลย"
+                sub={isWriter ? "เริ่มเขียนนิยายเรื่องแรกของคุณ" : "เริ่มอัปโหลดผลงานแรกของคุณ"}
+                href={createHref}
+                cta={createCta}
               />
             ) : (
               <div className="space-y-3">
@@ -390,9 +398,9 @@ export default function DashboardClient({
             {topChapters.length === 0 ? (
               <EmptyState
                 label="ยังไม่มีตอน"
-                sub="อัปโหลดตอนแรกเพื่อดูสถิติ"
-                href="/upload"
-                cta="อัปโหลดเลย"
+                sub={isWriter ? "เขียนตอนแรกเพื่อดูสถิติ" : "อัปโหลดตอนแรกเพื่อดูสถิติ"}
+                href={createHref}
+                cta={createCta}
               />
             ) : (
               <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] overflow-hidden">
