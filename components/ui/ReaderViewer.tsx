@@ -111,7 +111,9 @@ function MangaCanvas({
       (entries) => {
         for (const e of entries) (e.isIntersecting ? draw : release)();
       },
-      { rootMargin: "1200px 0px" }
+      // Preload ~2.5 screens ahead so pages are ready before they scroll into
+      // view (less skeleton / perceived lag). Still releases far-away canvases.
+      { rootMargin: "2400px 0px" }
     );
     io.observe(wrap);
     return () => {
