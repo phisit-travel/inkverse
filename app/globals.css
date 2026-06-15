@@ -279,6 +279,9 @@ html.native-app [role="button"] {
 html.native-app ::-webkit-scrollbar { width: 0; height: 0; }
 /* Already inside the app → no "download the app" buttons. */
 html.native-app .download-cta { display: none !important; }
+/* Shown ONLY inside the app (the inverse of .download-cta) — e.g. the offline library link. */
+.app-only { display: none !important; }
+html.native-app .app-only { display: flex !important; }
 
 /* ===== Promo carousel animations (subtle, monochrome) ===== */
 @keyframes iv-spin { to { transform: rotate(360deg); } }

@@ -4,23 +4,26 @@
 //
 // Strategy is deliberately safe (no stale-content risk):
 //   - hashed build assets (/_next/static)  → cache-first (immutable)
-//   - manga page images (/api/img/<id>)    → cache-first, keyed by id only
-//        (drops the rotating ?e&u&s signature) → re-reads are instant + work
-//        offline; access is still gated on the network by the signed request
-//        that first populated the cache.
+//   - manga page images (/api/img/<id>)    → DOWNLOADS cache first (explicit,
+//        never auto-evicted), then a passive cache, keyed by id only (drops the
+//        rotating ?e&u&s signature) → re-reads/downloads are instant + offline.
 //   - page navigations                     → network-first (always fresh),
 //        cache only as an offline fallback.
 //   - every other /api/* (auth/data)       → never cached, always network.
-const VERSION = "v1";
+const VERSION = "v2";
 const STATIC_CACHE = `ink-static-${VERSION}`;
 const IMAGE_CACHE = `ink-img-${VERSION}`;
 const PAGE_CACHE = `ink-pages-${VERSION}`;
+const DOWNLOADS_CACHE = "ink-downloads"; // version-independent: holds explicitly saved chapters
 const OFFLINE_URL = "/offline";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(PAGE_CACHE).then((c) => c.add(OFFLINE_URL)).catch(() => {})
+    caches
+      .open(PAGE_CACHE)
+      .then((c) => c.addAll([OFFLINE_URL, "/downloads"]))
+      .catch(() => {})
   );
 });
 
@@ -30,7 +33,8 @@ self.addEventListener("activate", (event) => {
       const keys = await caches.keys();
       await Promise.all(
         keys
-          .filter((k) => k.startsWith("ink-") && !k.endsWith(VERSION))
+          // never delete the explicit-downloads cache, only stale versioned ones
+          .filter((k) => k.startsWith("ink-") && k !== DOWNLOADS_CACHE && !k.endsWith(VERSION))
           .map((k) => caches.delete(k))
       );
       await self.clients.claim();
@@ -51,8 +55,7 @@ self.addEventListener("fetch", (event) => {
   } catch {
     return;
   }
-  // Leave cross-origin (R2 image bytes, Google, etc.) to the browser default.
-  if (url.origin !== self.location.origin) return;
+  if (url.origin !== self.location.origin) return; // leave cross-origin (R2) to the browser
 
   if (url.pathname.startsWith("/_next/static/")) {
     event.respondWith(cacheFirst(req, STATIC_CACHE));
@@ -84,14 +87,20 @@ async function cacheFirst(req, cacheName) {
   }
 }
 
-// Cache page images by id only (ignore the rotating signature) so the same page
-// hits cache across sessions / offline. Rebuild a clean 200 to avoid caching a
-// redirected response (the request follows /api/img's 302 → R2).
+// Page images keyed by id only (ignore the rotating signature). Explicitly
+// downloaded chapters live in DOWNLOADS_CACHE and win; otherwise fall back to a
+// passive cache, then the network (rebuilding a clean 200 to avoid caching the
+// /api/img 302 redirect).
 async function imageCache(req, url) {
-  const cache = await caches.open(IMAGE_CACHE);
   const key = url.origin + url.pathname;
+  const downloads = await caches.open(DOWNLOADS_CACHE);
+  const saved = await downloads.match(key);
+  if (saved) return saved;
+
+  const cache = await caches.open(IMAGE_CACHE);
   const hit = await cache.match(key);
   if (hit) return hit;
+
   try {
     const res = await fetch(req);
     if (res && res.ok) {

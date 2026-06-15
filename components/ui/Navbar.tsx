@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Search, Menu, X, LogIn, Download, ChevronDown } from "lucide-react";
+import { Search, Menu, X, LogIn, Download, ChevronDown, WifiOff } from "lucide-react";
 import Logo from "./Logo";
 import CoinBadge from "./CoinBadge";
 import NotificationBell from "./NotificationBell";
@@ -159,6 +159,15 @@ export default function Navbar({ user, userCoins = 0, rankBadge = null }: Navbar
               <Download className="w-4 h-4" />
               โหลดแอป Android
             </Link>
+            {/* Offline library — only shows inside the app (.app-only); a full-nav
+                anchor so it still opens when offline (served from the SW page cache). */}
+            <a
+              href="/downloads"
+              className="app-only items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-[var(--text-primary)] hover:bg-white/5 transition-colors font-medium"
+            >
+              <WifiOff className="w-4 h-4" />
+              คลังออฟไลน์
+            </a>
             {[...typeLinks, ...creatorMenu].map((link) => (
               <Link
                 key={link.href}

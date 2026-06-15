@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Settings, AlignJustify, BookOpen } from "luc
 import clsx from "clsx";
 import Link from "next/link";
 import { isLikelyAutomated } from "@/lib/botCheck";
+import DownloadChapterButton from "./DownloadChapterButton";
 
 interface Page {
   pageNum: number;
@@ -20,6 +21,12 @@ interface ReaderViewerProps {
   prevChapter?: number | null;
   nextChapter?: number | null;
   onPageChange?: (page: number) => void;
+  // When set, shows the "download for offline" button in the top bar.
+  chapterId?: string;
+  mangaTitle?: string;
+  // When set, the top-bar back control calls this instead of linking out
+  // (used by the offline library reader, which has no server route to go to).
+  onBack?: () => void;
 }
 
 // Renders a manga page onto a <canvas> instead of an <img>. The signed image is
@@ -148,6 +155,9 @@ export default function ReaderViewer({
   prevChapter,
   nextChapter,
   onPageChange,
+  chapterId,
+  mangaTitle,
+  onBack,
 }: ReaderViewerProps) {
   const [mode, setMode] = useState<"webtoon" | "page">("webtoon");
   const [currentPage, setCurrentPage] = useState(0);
@@ -200,13 +210,23 @@ export default function ReaderViewer({
       {/* Top bar */}
       <div className="sticky top-0 z-40 bg-[var(--bg-primary)]/95 backdrop-blur border-b border-[var(--border)]">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link
-            href={`/content/${mangaSlug}`}
-            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors text-sm flex items-center gap-1"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            กลับ
-          </Link>
+          {onBack ? (
+            <button
+              onClick={onBack}
+              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors text-sm flex items-center gap-1"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              คลัง
+            </button>
+          ) : (
+            <Link
+              href={`/content/${mangaSlug}`}
+              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors text-sm flex items-center gap-1"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              กลับ
+            </Link>
+          )}
 
           <div className="flex items-center gap-2">
             <span className="text-sm text-[var(--text-secondary)]">
@@ -216,6 +236,15 @@ export default function ReaderViewer({
           </div>
 
           <div className="flex items-center gap-2">
+            {chapterId && (
+              <DownloadChapterButton
+                chapterId={chapterId}
+                mangaSlug={mangaSlug}
+                chapterNum={chapterNum}
+                mangaTitle={mangaTitle || mangaSlug}
+                pages={pages.map((p) => ({ src: p.src, width: p.width, height: p.height }))}
+              />
+            )}
             <button
               onClick={() => setMode(mode === "webtoon" ? "page" : "webtoon")}
               className="p-2 rounded-lg hover:bg-white/10 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"

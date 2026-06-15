@@ -162,6 +162,8 @@ export default async function ReaderPage({ params }: Props) {
           }))}
           chapterNum={chapterNum}
           mangaSlug={slug}
+          chapterId={chapterData.id}
+          mangaTitle={manga.title}
           prevChapter={prevChapter?.chapterNum ?? null}
           nextChapter={nextChapter?.chapterNum ?? null}        />
       )}
