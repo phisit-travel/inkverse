@@ -5,10 +5,8 @@ import Link from "next/link";
 import { Download, Check, Loader2, X, Smartphone } from "lucide-react";
 import { downloadChapter, downloadNovel, removeDownload, isDownloaded } from "@/lib/offline";
 
-// Offline downloads need the service worker, which is currently disabled (it
-// broke cover images in the app). Hide the button entirely until the SW is
-// reintroduced behind on-device testing, so nothing promises a broken feature.
-const OFFLINE_ENABLED = false;
+// Offline downloads need the app service worker (v3, same-origin only).
+const OFFLINE_ENABLED = true;
 
 interface Props {
   chapterId: string;
