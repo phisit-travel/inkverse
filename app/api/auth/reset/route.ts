@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { apiError } from "@/lib/apiError";
 
 const schema = z.object({
   email: z.string().email(),
@@ -13,26 +14,25 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   const rl = rateLimit(`reset:${clientIp(req)}`, 10, 15 * 60_000);
   if (!rl.ok)
-    return NextResponse.json(
-      { error: "ลองบ่อยเกินไป กรุณาลองใหม่ภายหลัง" },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
-    );
+    return apiError("RATE-001", 429, {
+      message: "ลองบ่อยเกินไป กรุณาลองใหม่ภายหลัง",
+      headers: { "Retry-After": String(rl.retryAfter) },
+    });
 
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success)
-    return NextResponse.json({ error: "ข้อมูลไม่ถูกต้อง (รหัสผ่านอย่างน้อย 8 ตัว)" }, { status: 400 });
+    return apiError("VAL-001", 400, { message: "ข้อมูลไม่ถูกต้อง (รหัสผ่านอย่างน้อย 8 ตัว)" });
 
   const email = parsed.data.email.toLowerCase();
 
   // Throttle OTP guesses per account — 6-digit codes need brute-force protection.
   if (!rateLimit(`resetotp:${email}`, 8, 15 * 60_000).ok)
-    return NextResponse.json({ error: "ลองบ่อยเกินไป กรุณาขอรหัสใหม่" }, { status: 429 });
+    return apiError("RATE-001", 429, { message: "ลองบ่อยเกินไป กรุณาขอรหัสใหม่" });
 
   const user = await prisma.user.findUnique({ where: { email }, select: { id: true } });
-  const invalid = NextResponse.json(
-    { error: "รหัส OTP ไม่ถูกต้องหรือหมดอายุ กรุณาขอใหม่" },
-    { status: 400 }
-  );
+  const invalid = apiError("VAL-001", 400, {
+    message: "รหัส OTP ไม่ถูกต้องหรือหมดอายุ กรุณาขอใหม่",
+  });
   if (!user) return invalid;
 
   const row = await prisma.passwordResetToken.findFirst({

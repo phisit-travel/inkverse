@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/apiError";
 
 export async function GET() {
   const session = await auth();
   const role = (session?.user as { role?: string })?.role;
   if (!session?.user || (role !== "TRANSLATOR" && role !== "ADMIN")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiError("AUTH-007", 401);
   }
   const userId = (session.user as { id: string }).id;
 
   const translator = await prisma.translator.findUnique({ where: { userId } });
-  if (!translator) return NextResponse.json({ error: "Not a translator" }, { status: 403 });
+  if (!translator) return apiError("AUTH-008", 403, { message: "ไม่ใช่ครีเอเตอร์" });
 
   const [earningsAgg, withdrawn, pendingAgg, recentEarnings, byManga] = await Promise.all([
     prisma.translatorEarning.aggregate({

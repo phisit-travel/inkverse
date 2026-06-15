@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notifyAdmins, createNotification } from "@/lib/notifications";
+import { apiError } from "@/lib/apiError";
 
 // TEMP growth mode: auto-approve creators to recruit fast. Flip off later by
 // setting AUTO_APPROVE_CREATORS="false" in the env (no redeploy needed).
@@ -25,20 +26,20 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiError("AUTH-007", 401);
   }
 
   const userId = (session.user as { id: string }).id;
   const role = (session.user as { role?: string }).role;
 
   if (role === "TRANSLATOR" || role === "ADMIN") {
-    return NextResponse.json({ error: "Already a translator" }, { status: 400 });
+    return apiError("VAL-003", 400, { message: "คุณเป็นครีเอเตอร์อยู่แล้ว" });
   }
 
   // Check if already applied
   const existing = await prisma.translatorApplication.findUnique({ where: { userId } });
   if (existing && existing.status !== "REJECTED") {
-    return NextResponse.json({ error: "Already applied" }, { status: 400 });
+    return apiError("VAL-003", 400, { message: "คุณส่งใบสมัครไปแล้ว" });
   }
 
   const body = await req.json().catch(() => null);
@@ -46,10 +47,10 @@ export async function POST(req: NextRequest) {
   const appKind = kind === "WRITER" ? "WRITER" : "TRANSLATOR";
 
   if (!penName?.trim() || !experience?.trim() || !sampleWork?.trim() || !motivation?.trim()) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    return apiError("VAL-001", 400, { message: "กรอกข้อมูลไม่ครบ" });
   }
   if (acceptedTerms !== true) {
-    return NextResponse.json({ error: "กรุณายอมรับเงื่อนไขก่อนส่งใบสมัคร" }, { status: 400 });
+    return apiError("VAL-001", 400, { message: "กรุณายอมรับเงื่อนไขก่อนส่งใบสมัคร" });
   }
 
   // Upsert (allow re-apply after rejection)

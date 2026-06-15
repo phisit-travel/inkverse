@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { uploadToR2 } from "@/lib/r2";
 import { rateLimit } from "@/lib/rate-limit";
 import sharp from "sharp";
+import { apiError } from "@/lib/apiError";
 
 const MAX_SIZE = 8 * 1024 * 1024; // 8 MB
 
@@ -23,25 +24,25 @@ function looksLikeImage(b: Buffer): boolean {
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiError("AUTH-007", 401);
 
   const userId = (session.user as { id: string }).id;
 
   const rl = rateLimit(`profile-image:${userId}`, 10, 60_000);
   if (!rl.ok)
-    return NextResponse.json(
-      { error: "ดำเนินการบ่อยเกินไป กรุณาลองใหม่" },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
-    );
+    return apiError("RATE-001", 429, {
+      message: "ดำเนินการบ่อยเกินไป กรุณาลองใหม่",
+      headers: { "Retry-After": String(rl.retryAfter) },
+    });
 
   const form = await req.formData();
   const file = form.get("file") as File | null;
   const type = form.get("type") as string | null;
 
   if (!file || (type !== "avatar" && type !== "cover"))
-    return NextResponse.json({ error: "file and type (avatar|cover) required" }, { status: 400 });
+    return apiError("VAL-001", 400, { message: "ต้องระบุไฟล์ + ประเภท (avatar|cover)" });
   if (file.size > MAX_SIZE)
-    return NextResponse.json({ error: "ไฟล์ใหญ่เกินไป (สูงสุด 8MB)" }, { status: 413 });
+    return apiError("UP-003", 413, { message: "ไฟล์ใหญ่เกินไป (สูงสุด 8MB)" });
 
   const r2Ready = !!(
     process.env.CLOUDFLARE_R2_ACCOUNT_ID &&
@@ -51,11 +52,11 @@ export async function POST(req: NextRequest) {
     process.env.CLOUDFLARE_R2_PUBLIC_URL
   );
   if (!r2Ready)
-    return NextResponse.json({ error: "ยังไม่ได้ตั้งค่าที่เก็บไฟล์ (R2)" }, { status: 503 });
+    return apiError("UP-001", 503);
 
   const buffer = Buffer.from(await file.arrayBuffer());
   if (!looksLikeImage(buffer))
-    return NextResponse.json({ error: "ไฟล์ไม่ใช่รูปภาพที่รองรับ" }, { status: 400 });
+    return apiError("UP-005", 400, { message: "ไฟล์ไม่ใช่รูปภาพที่รองรับ" });
 
   let processed: Buffer;
   let key: string;
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
       key = `profile-covers/${userId}.webp`;
     }
   } catch {
-    return NextResponse.json({ error: "ประมวลผลรูปไม่สำเร็จ" }, { status: 400 });
+    return apiError("UP-005", 400, { message: "ประมวลผลรูปไม่สำเร็จ" });
   }
 
   const base = await uploadToR2(key, processed, "image/webp");

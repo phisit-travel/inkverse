@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
+import { apiError } from "@/lib/apiError";
 
 const APP_BONUS = 20;
 
 // One-time coin bonus for installing + signing in on the Android app.
 export async function POST() {
   const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user) return apiError("AUTH-007", 401);
   const userId = (session.user as { id: string }).id;
 
   // Atomic: only the first request (where appBonusAt is still null) grants coins.

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
 import { tipTranslator } from "@/lib/coins";
 import { createNotification } from "@/lib/notifications";
+import { apiError } from "@/lib/apiError";
 
 export async function POST(
   req: NextRequest,
@@ -11,7 +12,7 @@ export async function POST(
 ) {
   const session = await auth();
   if (!session?.user)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiError("AUTH-007", 401);
 
   const userId = (session.user as { id: string; username?: string }).id;
   const username = (session.user as { username?: string }).username ?? "ผู้อ่าน";
@@ -19,18 +20,20 @@ export async function POST(
 
   const rl = rateLimit(`tip:${userId}`, 10, 60_000);
   if (!rl.ok)
-    return NextResponse.json(
-      { error: "ดำเนินการบ่อยเกินไป กรุณาลองใหม่" },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
-    );
+    return apiError("RATE-001", 429, {
+      message: "ดำเนินการบ่อยเกินไป กรุณาลองใหม่",
+      headers: { "Retry-After": String(rl.retryAfter) },
+    });
 
   const body = await req.json().catch(() => ({}));
   const coins = Number(body?.coins);
 
   const result = await tipTranslator(userId, translatorId, coins);
   if (!result.success) {
+    // Keep the machine error for the client; attach a code.
     const status = result.error === "TRANSLATOR_NOT_FOUND" ? 404 : 400;
-    return NextResponse.json({ error: result.error }, { status });
+    const code = result.error === "TRANSLATOR_NOT_FOUND" ? "VAL-002" : "COIN-001";
+    return NextResponse.json({ error: result.error, code }, { status });
   }
 
   // Notify the translator (best-effort).

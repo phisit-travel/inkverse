@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { createBankPayout, BANK_OPTIONS } from "@/lib/omise-payout";
 import { rateLimit } from "@/lib/rate-limit";
 import { sendEmail, withdrawalEmail } from "@/lib/email";
+import { apiError } from "@/lib/apiError";
 
 // Earnings (TranslatorEarning.amount) are ALREADY net of the 20% platform fee
 // taken at unlock time. Withdrawals therefore pay out the full available balance
@@ -17,11 +18,11 @@ export async function GET() {
   const session = await auth();
   const role = (session?.user as { role?: string })?.role;
   if (!session?.user || (role !== "TRANSLATOR" && role !== "ADMIN")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiError("AUTH-007", 401);
   }
   const userId = (session.user as { id: string }).id;
   const translator = await prisma.translator.findUnique({ where: { userId } });
-  if (!translator) return NextResponse.json({ error: "Not a translator" }, { status: 403 });
+  if (!translator) return apiError("AUTH-008", 403, { message: "ไม่ใช่ครีเอเตอร์" });
 
   const requests = await prisma.withdrawalRequest.findMany({
     where: { translatorId: translator.id },
@@ -41,23 +42,23 @@ export async function POST(req: NextRequest) {
   const session = await auth();
   const role = (session?.user as { role?: string })?.role;
   if (!session?.user || (role !== "TRANSLATOR" && role !== "ADMIN")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiError("AUTH-007", 401);
   }
   const userId = (session.user as { id: string }).id;
 
   // Throttle: at most a few withdrawal attempts per hour per user.
   const rl = rateLimit(`withdraw:${userId}`, 5, 60 * 60_000);
   if (!rl.ok)
-    return NextResponse.json(
-      { error: "ขอถอนเงินบ่อยเกินไป กรุณาลองใหม่ภายหลัง" },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
-    );
+    return apiError("RATE-001", 429, {
+      message: "ขอถอนเงินบ่อยเกินไป กรุณาลองใหม่ภายหลัง",
+      headers: { "Retry-After": String(rl.retryAfter) },
+    });
 
   const [user, translator] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { email: true } }),
     prisma.translator.findUnique({ where: { userId } }),
   ]);
-  if (!translator) return NextResponse.json({ error: "Not a translator" }, { status: 403 });
+  if (!translator) return apiError("AUTH-008", 403, { message: "ไม่ใช่ครีเอเตอร์" });
 
   const body = (await req.json().catch(() => ({}))) as {
     amount?: number;
@@ -74,16 +75,13 @@ export async function POST(req: NextRequest) {
 
   // Validation — bank transfer only (Omise cannot auto-pay PromptPay-to-phone).
   if (!Number.isFinite(amount) || amount < MIN_WITHDRAW) {
-    return NextResponse.json(
-      { error: `ยอดถอนขั้นต่ำ ฿${MIN_WITHDRAW}` },
-      { status: 400 }
-    );
+    return apiError("COIN-006", 400, { message: `ยอดถอนขั้นต่ำ ฿${MIN_WITHDRAW}` });
   }
-  if (!accountName) return NextResponse.json({ error: "กรุณากรอกชื่อบัญชี" }, { status: 400 });
+  if (!accountName) return apiError("VAL-001", 400, { message: "กรุณากรอกชื่อบัญชี" });
   if (!/^\d{5,20}$/.test(accountNumber))
-    return NextResponse.json({ error: "เลขบัญชีไม่ถูกต้อง" }, { status: 400 });
+    return apiError("VAL-001", 400, { message: "เลขบัญชีไม่ถูกต้อง" });
   if (!VALID_BANKS.has(bankCode))
-    return NextResponse.json({ error: "กรุณาเลือกธนาคาร" }, { status: 400 });
+    return apiError("VAL-001", 400, { message: "กรุณาเลือกธนาคาร" });
 
   // ── Atomic balance check + request creation (prevents double-withdraw race) ──
   // Serializable isolation + an in-flight guard make concurrent over-withdrawal
@@ -130,11 +128,11 @@ export async function POST(req: NextRequest) {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "";
     if (msg === "INFLIGHT")
-      return NextResponse.json({ error: "มีคำขอถอนที่กำลังดำเนินการอยู่แล้ว" }, { status: 409 });
+      return apiError("VAL-003", 409, { message: "มีคำขอถอนที่กำลังดำเนินการอยู่แล้ว" });
     if (msg === "INSUFFICIENT")
-      return NextResponse.json({ error: "ยอดเงินคงเหลือไม่เพียงพอ" }, { status: 400 });
+      return apiError("COIN-006", 400, { message: "ยอดเงินคงเหลือไม่เพียงพอ" });
     // Serialization conflict (P2034) or other transient error → ask to retry.
-    return NextResponse.json({ error: "ระบบไม่ว่าง กรุณาลองใหม่อีกครั้ง" }, { status: 409 });
+    return apiError("NET-001", 409, { message: "ระบบไม่ว่าง กรุณาลองใหม่อีกครั้ง" });
   }
 
   // Email acknowledgement (best-effort).
