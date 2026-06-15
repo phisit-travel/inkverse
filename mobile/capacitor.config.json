@@ -3,7 +3,7 @@
   "appName": "INKVERSE",
   "webDir": "www",
   "server": {
-    "url": "https://inkverse-tau.vercel.app",
+    "url": "https://inksverse.com",
     "androidScheme": "https",
     "cleartext": false
   },
