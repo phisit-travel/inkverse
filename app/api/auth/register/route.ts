@@ -34,7 +34,17 @@ export async function POST(req: NextRequest) {
   const parsed = schema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    // Return a readable Thai message (not the raw zod object — the client
+    // renders `error` directly, and an object child crashes React).
+    const f = parsed.error.flatten().fieldErrors;
+    const msg = f.username
+      ? "ชื่อผู้ใช้ใช้ได้เฉพาะ a-z, 0-9 และ _ ความยาว 3–30 ตัว"
+      : f.email
+        ? "อีเมลไม่ถูกต้อง"
+        : f.password
+          ? "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร"
+          : "ข้อมูลไม่ถูกต้อง";
+    return NextResponse.json({ error: msg }, { status: 400 });
   }
 
   const { username, email, password, ref, turnstileToken } = parsed.data;

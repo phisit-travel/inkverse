@@ -57,7 +57,9 @@ export default function SignUpPage() {
 
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      setError(data.error || "เกิดข้อผิดพลาด");
+      // Guard: only strings are safe to render. A non-string error (e.g. a
+      // validation object) would crash the page if passed to <p>{error}</p>.
+      setError(typeof data.error === "string" ? data.error : "เกิดข้อผิดพลาด ลองใหม่อีกครั้ง");
       setLoading(false);
       return;
     }
