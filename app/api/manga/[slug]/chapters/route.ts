@@ -6,6 +6,7 @@ import { renderNovel } from "@/lib/markdown";
 import { isChapterLive } from "@/lib/chapters";
 import { revalidateMangaCache } from "@/lib/revalidate";
 import { decodeSlug } from "@/lib/slug";
+import { apiError } from "@/lib/apiError";
 
 export async function POST(
   req: NextRequest,
@@ -13,26 +14,26 @@ export async function POST(
 ) {
   const session = await auth();
   if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiError("AUTH-007", 401);
   }
 
   const role = (session.user as { role?: string }).role;
   if (role !== "TRANSLATOR" && role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiError("AUTH-008", 403);
   }
 
   const { slug: rawSlug } = await params;
   const slug = decodeSlug(rawSlug);
   const manga = await prisma.manga.findUnique({ where: { slug } });
   if (!manga) {
-    return NextResponse.json({ error: "Manga not found" }, { status: 404 });
+    return apiError("READ-004", 404);
   }
 
   if (role === "TRANSLATOR") {
     const userId = (session.user as { id: string }).id;
     const translator = await prisma.translator.findUnique({ where: { userId } });
     if (!translator || manga.translatorId !== translator.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return apiError("UP-004", 403);
     }
   }
 
@@ -40,14 +41,14 @@ export async function POST(
   const { chapterNum, title, isPremium = false, coinCost = 0, content, status, publishAt, authorNote, freeAt } = body;
 
   if (typeof chapterNum !== "number" || isNaN(chapterNum)) {
-    return NextResponse.json({ error: "Valid chapterNum required" }, { status: 400 });
+    return apiError("VAL-001", 400, { message: "ต้องระบุเลขตอนที่ถูกต้อง" });
   }
 
   const existing = await prisma.chapter.findUnique({
     where: { mangaId_chapterNum: { mangaId: manga.id, chapterNum } },
   });
   if (existing) {
-    return NextResponse.json({ error: "Chapter number already exists" }, { status: 409 });
+    return apiError("CREATE-002", 409);
   }
 
   const publishDate =

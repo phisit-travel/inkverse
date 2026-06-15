@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { liveChapterWhere } from "@/lib/chapters";
 import { cleanTags } from "@/lib/tags";
+import { apiError } from "@/lib/apiError";
 
 // Returns the manga only if the signed-in user owns it (translator) or is admin.
 async function getMangaOwnership(slug: string) {
@@ -40,7 +41,7 @@ export async function GET(
   });
 
   if (!manga) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return apiError("READ-004", 404);
   }
 
   const avgRating =
@@ -66,7 +67,7 @@ export async function PATCH(
 ) {
   const { slug } = await params;
   const manga = await getMangaOwnership(slug);
-  if (!manga) return NextResponse.json({ error: "Not found or forbidden" }, { status: 404 });
+  if (!manga) return apiError("CREATE-003", 404);
 
   const body = await req.json().catch(() => ({}));
   const data: Record<string, unknown> = {};
@@ -102,7 +103,7 @@ export async function DELETE(
 ) {
   const { slug } = await params;
   const manga = await getMangaOwnership(slug);
-  if (!manga) return NextResponse.json({ error: "Not found or forbidden" }, { status: 404 });
+  if (!manga) return apiError("CREATE-003", 404);
 
   await prisma.$transaction([
     // TranslatorEarning has no FK to manga (scalar mangaId) — clean it manually.
