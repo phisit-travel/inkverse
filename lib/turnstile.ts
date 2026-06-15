@@ -13,9 +13,16 @@ export async function verifyTurnstile(token: string | undefined, ip?: string): P
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body,
     });
-    const data = (await res.json()) as { success?: boolean };
+    const data = (await res.json()) as { success?: boolean; "error-codes"?: string[] };
+    if (!data.success) {
+      // e.g. ["invalid-input-secret"] = wrong/swapped secret key,
+      //      ["timeout-or-duplicate"] = token reused/expired,
+      //      ["invalid-input-response"] = bad token / domain mismatch.
+      console.error("[turnstile] verify failed:", data["error-codes"]);
+    }
     return !!data.success;
-  } catch {
+  } catch (e) {
+    console.error("[turnstile] verify error:", e);
     return false; // fail closed while protection is on
   }
 }
