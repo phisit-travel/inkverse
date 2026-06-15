@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
+import { apiError } from "@/lib/apiError";
 
 const commentSchema = z
   .object({
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest) {
   const mangaId = searchParams.get("mangaId");
 
   if (!chapterId && !mangaId) {
-    return NextResponse.json({ error: "chapterId or mangaId required" }, { status: 400 });
+    return apiError("VAL-001", 400, { message: "ต้องระบุ chapterId หรือ mangaId" });
   }
 
   const comments = await prisma.comment.findMany({
@@ -43,21 +44,21 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiError("AUTH-007", 401);
   }
   const userId = (session.user as { id: string }).id;
 
   const rl = rateLimit(`comment:${userId}`, 10, 60_000);
   if (!rl.ok)
-    return NextResponse.json(
-      { error: "คอมเมนต์บ่อยเกินไป กรุณารอสักครู่" },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
-    );
+    return apiError("RATE-001", 429, {
+      message: "คอมเมนต์บ่อยเกินไป กรุณารอสักครู่",
+      headers: { "Retry-After": String(rl.retryAfter) },
+    });
 
   const body = await req.json().catch(() => null);
   const parsed = commentSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return apiError("VAL-001", 400, { message: "คอมเมนต์ไม่ถูกต้อง (1–2000 ตัวอักษร)" });
   }
 
   const { chapterId, mangaId, content, isSpoiler, parentId } = parsed.data;

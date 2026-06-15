@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
+import { apiError } from "@/lib/apiError";
 
 const ratingSchema = z.object({
   mangaId: z.string().min(1),
@@ -11,14 +12,14 @@ const ratingSchema = z.object({
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiError("AUTH-007", 401);
   }
   const userId = (session.user as { id: string }).id;
 
   const body = await req.json();
   const parsed = ratingSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return apiError("VAL-001", 400, { message: "ให้คะแนนได้ 1–5 ดาวเท่านั้น" });
   }
 
   const { mangaId, score } = parsed.data;

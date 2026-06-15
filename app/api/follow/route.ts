@@ -2,16 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
+import { apiError } from "@/lib/apiError";
 
 // Toggle following a creator. Body: { targetUserId }.
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user) return apiError("AUTH-007", 401);
 
   const followerId = (session.user as { id: string }).id;
   const { targetUserId } = await req.json().catch(() => ({}));
   if (!targetUserId || typeof targetUserId !== "string" || targetUserId === followerId) {
-    return NextResponse.json({ error: "Invalid target" }, { status: 400 });
+    return apiError("VAL-001", 400, { message: "เป้าหมายไม่ถูกต้อง" });
   }
 
   const key = { followerId_followingId: { followerId, followingId: targetUserId } };
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
     try {
       await prisma.follow.create({ data: { followerId, followingId: targetUserId } });
     } catch {
-      return NextResponse.json({ error: "Target not found" }, { status: 404 });
+      return apiError("VAL-002", 404, { message: "ไม่พบผู้ใช้เป้าหมาย" });
     }
     following = true;
     const followerName = (session.user as { username?: string; name?: string }).username

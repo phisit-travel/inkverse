@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { notifyAdmins } from "@/lib/notifications";
+import { apiError } from "@/lib/apiError";
 
 const schema = z.object({
   name: z.string().min(1).max(80),
@@ -16,14 +17,14 @@ export async function POST(req: NextRequest) {
   // Throttle abuse — by IP, and tighter per-user if signed in.
   const rl = rateLimit(`contact:${clientIp(req)}`, 5, 10 * 60_000);
   if (!rl.ok)
-    return NextResponse.json(
-      { error: "ส่งข้อความบ่อยเกินไป กรุณาลองใหม่ภายหลัง" },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
-    );
+    return apiError("RATE-001", 429, {
+      message: "ส่งข้อความบ่อยเกินไป กรุณาลองใหม่ภายหลัง",
+      headers: { "Retry-After": String(rl.retryAfter) },
+    });
 
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success)
-    return NextResponse.json({ error: "กรุณากรอกข้อมูลให้ครบถ้วน" }, { status: 400 });
+    return apiError("VAL-001", 400, { message: "กรุณากรอกข้อมูลให้ครบถ้วน" });
 
   const session = await auth();
   const userId = session?.user ? (session.user as { id: string }).id : null;

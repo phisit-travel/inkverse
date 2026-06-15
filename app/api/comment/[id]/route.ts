@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { apiError } from "@/lib/apiError";
 
 // DELETE /api/comment/[id] — own comment or admin
 export async function DELETE(
@@ -8,16 +9,16 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user) return apiError("AUTH-007", 401);
 
   const { id } = await params;
   const userId = (session.user as { id: string }).id;
   const role = (session.user as { role?: string }).role;
 
   const comment = await prisma.comment.findUnique({ where: { id } });
-  if (!comment) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!comment) return apiError("VAL-002", 404, { message: "ไม่พบคอมเมนต์นี้" });
   if (comment.userId !== userId && role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiError("AUTH-009", 403);
   }
 
   // Delete replies first, then the comment
@@ -32,13 +33,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user) return apiError("AUTH-007", 401);
 
   const { id } = await params;
   const userId = (session.user as { id: string }).id;
 
   const comment = await prisma.comment.findUnique({ where: { id }, select: { id: true } });
-  if (!comment) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!comment) return apiError("VAL-002", 404, { message: "ไม่พบคอมเมนต์นี้" });
 
   // The CommentLike row is the source of truth; Comment.likes is the cached count.
   // Both sides of the toggle run in one transaction so the count never drifts.
