@@ -17,6 +17,7 @@ interface Props {
   authorNote?: string | null;
   // When set, shows the "download for offline" button.
   chapterId?: string;
+  coverUrl?: string;
   // When set, the back control calls this instead of linking out (offline reader).
   onBack?: () => void;
 }
@@ -41,7 +42,7 @@ const THEMES: Record<Settings["theme"], { bg: string; fg: string; label: string 
 const WIDTHS = { narrow: "max-w-xl", normal: "max-w-2xl", wide: "max-w-3xl" };
 
 export default function TextReader({
-  html, chapterTitle, chapterNum, mangaTitle, mangaSlug, prevChapter, nextChapter, minutes, authorNote, chapterId, onBack,
+  html, chapterTitle, chapterNum, mangaTitle, mangaSlug, prevChapter, nextChapter, minutes, authorNote, chapterId, coverUrl, onBack,
 }: Props) {
   const [s, setS] = useState<Settings>(DEFAULT);
   const [open, setOpen] = useState(false);
@@ -85,6 +86,7 @@ export default function TextReader({
                 mangaSlug={mangaSlug}
                 chapterNum={chapterNum}
                 mangaTitle={mangaTitle}
+                coverUrl={coverUrl}
                 html={html}
                 chapterTitle={chapterTitle}
                 minutes={minutes}

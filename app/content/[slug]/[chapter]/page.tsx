@@ -53,7 +53,7 @@ export default async function ReaderPage({ params }: Props) {
 
   const manga = await prisma.manga.findUnique({
     where: { slug },
-    select: { id: true, title: true, slug: true, type: true, translator: { select: { userId: true } } },
+    select: { id: true, title: true, slug: true, type: true, coverUrl: true, translator: { select: { userId: true } } },
   });
   if (!manga) notFound();
 
@@ -152,7 +152,8 @@ export default async function ReaderPage({ params }: Props) {
           nextChapter={nextChapter?.chapterNum ?? null}
           minutes={novelStats(chapterData.content).minutes}
           authorNote={chapterData.authorNote}
-          chapterId={chapterData.id}        />
+          chapterId={chapterData.id}
+          coverUrl={manga.coverUrl ?? undefined}        />
       ) : (
         <ReaderViewer
           pages={chapterData.pages.map((p) => ({
@@ -165,6 +166,7 @@ export default async function ReaderPage({ params }: Props) {
           mangaSlug={slug}
           chapterId={chapterData.id}
           mangaTitle={manga.title}
+          coverUrl={manga.coverUrl ?? undefined}
           prevChapter={prevChapter?.chapterNum ?? null}
           nextChapter={nextChapter?.chapterNum ?? null}        />
       )}

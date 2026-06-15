@@ -17,6 +17,7 @@ export interface OfflineChapter {
   mangaTitle: string;
   type: "manga" | "novel";
   savedAt: number;
+  coverUrl?: string;
   // manga
   pages?: OfflinePage[];
   // novel
@@ -79,7 +80,7 @@ const idOf = (src: string) => (src.match(/\/api\/img\/([^?]+)/) || [])[1];
 
 // ── Manga: fetch every page image, keyed by id only (survives signature rotation). ──
 export async function downloadChapter(
-  meta: { chapterId: string; mangaSlug: string; chapterNum: number; mangaTitle: string },
+  meta: { chapterId: string; mangaSlug: string; chapterNum: number; mangaTitle: string; coverUrl?: string },
   pages: { src: string; width?: number | null; height?: number | null }[],
   onProgress?: (done: number, total: number) => void
 ): Promise<void> {
@@ -110,6 +111,7 @@ export async function downloadNovel(meta: {
   mangaSlug: string;
   chapterNum: number;
   mangaTitle: string;
+  coverUrl?: string;
   html: string;
   chapterTitle?: string | null;
   minutes?: number;
@@ -134,6 +136,7 @@ export async function downloadNovel(meta: {
     mangaSlug: meta.mangaSlug,
     chapterNum: meta.chapterNum,
     mangaTitle: meta.mangaTitle,
+    coverUrl: meta.coverUrl,
     type: "novel",
     html: meta.html,
     chapterTitle: meta.chapterTitle ?? null,
@@ -159,6 +162,7 @@ export async function downloadById(
       mangaSlug: data.mangaSlug,
       chapterNum: data.chapterNum,
       mangaTitle: data.mangaTitle,
+      coverUrl: data.coverUrl,
       html: data.html,
       chapterTitle: data.chapterTitle,
       minutes: data.minutes,
@@ -171,6 +175,7 @@ export async function downloadById(
         mangaSlug: data.mangaSlug,
         chapterNum: data.chapterNum,
         mangaTitle: data.mangaTitle,
+        coverUrl: data.coverUrl,
       },
       data.pages,
       onPageProgress

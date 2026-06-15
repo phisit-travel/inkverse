@@ -24,6 +24,7 @@ interface ReaderViewerProps {
   // When set, shows the "download for offline" button in the top bar.
   chapterId?: string;
   mangaTitle?: string;
+  coverUrl?: string;
   // When set, the top-bar back control calls this instead of linking out
   // (used by the offline library reader, which has no server route to go to).
   onBack?: () => void;
@@ -157,6 +158,7 @@ export default function ReaderViewer({
   onPageChange,
   chapterId,
   mangaTitle,
+  coverUrl,
   onBack,
 }: ReaderViewerProps) {
   const [mode, setMode] = useState<"webtoon" | "page">("webtoon");
@@ -243,6 +245,7 @@ export default function ReaderViewer({
                 mangaSlug={mangaSlug}
                 chapterNum={chapterNum}
                 mangaTitle={mangaTitle || mangaSlug}
+                coverUrl={coverUrl}
                 pages={pages.map((p) => ({ src: p.src, width: p.width, height: p.height }))}
               />
             )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trash2, BookOpen, Download, Smartphone, WifiOff } from "lucide-react";
+import { Trash2, BookOpen, Download, Smartphone, WifiOff, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import ReaderViewer from "./ReaderViewer";
 import TextReader from "./TextReader";
@@ -16,6 +16,7 @@ export default function OfflineLibrary({ offlineNotice = false }: { offlineNotic
   const [reading, setReading] = useState<OfflineChapter | null>(null);
   const [inApp, setInApp] = useState(true);
   const [ready, setReady] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setInApp(isAppContext());
@@ -59,7 +60,35 @@ export default function OfflineLibrary({ offlineNotice = false }: { offlineNotic
     setList(getDownloads());
   };
 
+  const removeSeries = async (slug: string) => {
+    const ids = list.filter((d) => d.mangaSlug === slug).map((d) => d.chapterId);
+    for (const id of ids) await removeDownload(id);
+    setList(getDownloads());
+  };
+
+  const toggle = (slug: string) =>
+    setExpanded((s) => {
+      const n = new Set(s);
+      if (n.has(slug)) n.delete(slug);
+      else n.add(slug);
+      return n;
+    });
+
   if (!ready) return null;
+
+  // Group saved chapters by series (newest series first), chapters ascending.
+  const groups: { slug: string; title: string; cover?: string; chapters: OfflineChapter[] }[] = [];
+  const idxBySlug = new Map<string, number>();
+  for (const d of list) {
+    let i = idxBySlug.get(d.mangaSlug);
+    if (i === undefined) {
+      i = groups.length;
+      idxBySlug.set(d.mangaSlug, i);
+      groups.push({ slug: d.mangaSlug, title: d.mangaTitle, cover: d.coverUrl, chapters: [] });
+    }
+    groups[i].chapters.push(d);
+  }
+  groups.forEach((g) => g.chapters.sort((a, b) => a.chapterNum - b.chapterNum));
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
@@ -80,34 +109,72 @@ export default function OfflineLibrary({ offlineNotice = false }: { offlineNotic
 
       {list.length > 0 ? (
         <div className="space-y-2">
-          {list.map((d) => (
-            <div
-              key={d.chapterId}
-              className="flex items-center gap-3 p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)]"
-            >
-              <button onClick={() => setReading(d)} className="flex-1 flex items-center gap-3 text-left min-w-0">
-                <span className="w-10 h-10 rounded-lg bg-[var(--bg-surface)] flex items-center justify-center shrink-0">
-                  <BookOpen className="w-5 h-5 text-[var(--text-secondary)]" />
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold text-[var(--text-primary)] truncate">
-                    {d.mangaTitle}
+          {groups.map((g) => (
+            <div key={g.slug} className="rounded-xl border border-[var(--border)] overflow-hidden">
+              {/* Series header — cover (online) + title + count, tap to expand */}
+              <div className="flex items-center gap-3 p-2.5 bg-[var(--bg-card)]">
+                <button onClick={() => toggle(g.slug)} className="flex-1 flex items-center gap-3 text-left min-w-0">
+                  <span className="w-10 h-[3.25rem] rounded bg-[var(--bg-surface)] flex items-center justify-center shrink-0 overflow-hidden relative">
+                    <BookOpen className="w-5 h-5 text-[var(--text-secondary)]" />
+                    {g.cover && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={g.cover}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    )}
                   </span>
-                  <span className="block text-xs text-[var(--text-secondary)]">
-                    ตอนที่ {d.chapterNum} ·{" "}
-                    {d.type === "novel"
-                      ? `นิยาย${d.minutes ? ` · ~${d.minutes} นาที` : ""}`
-                      : `${d.pages?.length ?? 0} หน้า`}
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold text-[var(--text-primary)] truncate">
+                      {g.title}
+                    </span>
+                    <span className="block text-xs text-[var(--text-secondary)]">
+                      {g.chapters.length} ตอนที่โหลดไว้
+                    </span>
                   </span>
-                </span>
-              </button>
-              <button
-                onClick={() => remove(d.chapterId)}
-                className="p-2 rounded-lg hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors shrink-0"
-                aria-label="ลบ"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+                  <ChevronDown
+                    className={`w-4 h-4 text-[var(--text-secondary)] shrink-0 transition-transform ${
+                      expanded.has(g.slug) ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                <button
+                  onClick={() => removeSeries(g.slug)}
+                  className="p-2 rounded-lg hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors shrink-0"
+                  aria-label="ลบทั้งเรื่อง"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+
+              {expanded.has(g.slug) && (
+                <div className="divide-y divide-[var(--border)]/40 bg-[var(--bg-surface)]">
+                  {g.chapters.map((d) => (
+                    <div key={d.chapterId} className="flex items-center gap-2 px-3 py-2.5">
+                      <button onClick={() => setReading(d)} className="flex-1 text-left min-w-0 truncate text-sm text-[var(--text-primary)]">
+                        ตอนที่ {d.chapterNum}
+                        <span className="text-xs text-[var(--text-secondary)]">
+                          {" · "}
+                          {d.type === "novel"
+                            ? `นิยาย${d.minutes ? ` ~${d.minutes} นาที` : ""}`
+                            : `${d.pages?.length ?? 0} หน้า`}
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => remove(d.chapterId)}
+                        className="p-1.5 rounded-lg hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors shrink-0"
+                        aria-label="ลบ"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>

@@ -27,7 +27,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       content: true,
       authorNote: true,
       pages: { orderBy: { pageNum: "asc" }, select: { id: true, width: true, height: true } },
-      manga: { select: { type: true, title: true, slug: true, translator: { select: { userId: true } } } },
+      manga: { select: { type: true, title: true, slug: true, coverUrl: true, translator: { select: { userId: true } } } },
     },
   });
   if (!chapter) return NextResponse.json({ error: "ไม่พบตอน" }, { status: 404 });
@@ -50,6 +50,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     mangaSlug: chapter.manga.slug,
     chapterNum: chapter.chapterNum,
     mangaTitle: chapter.manga.title,
+    coverUrl: chapter.manga.coverUrl,
   };
 
   if (chapter.manga.type === "NOVEL") {

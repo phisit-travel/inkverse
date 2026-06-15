@@ -12,6 +12,7 @@ interface Props {
   chapterNum: number;
   mangaTitle: string;
   kind: "manga" | "novel";
+  coverUrl?: string;
   // manga
   pages?: { src: string; width?: number | null; height?: number | null }[];
   // novel
@@ -30,6 +31,7 @@ export default function DownloadChapterButton({
   chapterNum,
   mangaTitle,
   kind,
+  coverUrl,
   pages,
   html,
   chapterTitle,
@@ -72,6 +74,7 @@ export default function DownloadChapterButton({
           mangaSlug,
           chapterNum,
           mangaTitle,
+          coverUrl,
           html: html || "",
           chapterTitle,
           minutes,
@@ -79,7 +82,7 @@ export default function DownloadChapterButton({
         });
       } else {
         await downloadChapter(
-          { chapterId, mangaSlug, chapterNum, mangaTitle },
+          { chapterId, mangaSlug, chapterNum, mangaTitle, coverUrl },
           pages || [],
           (d, t) => setProgress(Math.round((d / t) * 100))
         );
