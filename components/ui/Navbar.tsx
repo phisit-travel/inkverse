@@ -81,9 +81,15 @@ export default function Navbar({ user, userCoins = 0, rankBadge = null }: Navbar
 
   return (
     <nav className="sticky top-0 z-50 bg-[var(--bg-primary)]/95 backdrop-blur-md border-b border-[var(--border)]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-        {/* Logo */}
-        <Logo size="md" />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4">
+        {/* Logo — icon-only on small screens so the bar never overflows
+            (logged-in nav: logo+theme+search+coins+bell+avatar+menu is wide). */}
+        <div className="sm:hidden shrink-0">
+          <Logo variant="icon" size="md" />
+        </div>
+        <div className="hidden sm:block shrink-0">
+          <Logo size="md" />
+        </div>
 
         {/* Desktop nav — two dropdowns keep the bar clean */}
         <div className="hidden lg:flex items-center gap-8">
@@ -92,7 +98,7 @@ export default function Navbar({ user, userCoins = 0, rankBadge = null }: Navbar
         </div>
 
         {/* Search + actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           {/* Download app — prominent + always visible (sm+); hidden inside the app */}
           <Link
             href="/download"
