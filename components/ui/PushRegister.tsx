@@ -3,6 +3,14 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+// Push needs a Firebase config (google-services.json) baked into the Android
+// build. Without it, the NATIVE PN.register() throws "Default FirebaseApp is
+// not initialized" on a native thread — the JS try/catch below CANNOT catch
+// it, so the whole app crashes ("INKVERSE keeps stopping") right after login
+// (this component only mounts once a user is signed in). Keep push OFF until
+// FCM is set up, then flip NEXT_PUBLIC_PUSH_ENABLED=1 and ship google-services.json.
+const PUSH_ENABLED = process.env.NEXT_PUBLIC_PUSH_ENABLED === "1";
+
 interface PushPlugin {
   checkPermissions(): Promise<{ receive: string }>;
   requestPermissions(): Promise<{ receive: string }>;
@@ -18,7 +26,7 @@ export default function PushRegister() {
   useEffect(() => {
     const cap = (window as unknown as { Capacitor?: { Plugins?: { PushNotifications?: PushPlugin } } }).Capacitor;
     const PN = cap?.Plugins?.PushNotifications;
-    if (!PN) return;
+    if (!PN || !PUSH_ENABLED) return;
 
     (async () => {
       try {
