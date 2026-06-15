@@ -35,8 +35,8 @@ export default async function WriteNovelPage({ params, searchParams }: Props) {
       },
     });
   let manga = await findManga();
-  if (!manga) {
-    await new Promise((r) => setTimeout(r, 600));
+  for (let i = 0; i < 3 && !manga; i++) {
+    await new Promise((r) => setTimeout(r, 400));
     manga = await findManga();
   }
   if (!manga) notFound();
