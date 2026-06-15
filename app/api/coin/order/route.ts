@@ -1,20 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/apiError";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiError("AUTH-007", 401);
 
   const body = await req.json().catch(() => null);
   const packageId = body?.packageId as string | undefined;
   if (!packageId)
-    return NextResponse.json({ error: "packageId required" }, { status: 400 });
+    return apiError("VAL-001", 400, { message: "ต้องระบุแพ็กเกจ" });
 
   const pkg = await prisma.coinPackage.findUnique({ where: { id: packageId } });
   if (!pkg || !pkg.isActive)
-    return NextResponse.json({ error: "Package not found" }, { status: 404 });
+    return apiError("VAL-002", 404, { message: "ไม่พบแพ็กเกจนี้ หรือปิดใช้งานแล้ว" });
 
   const userId = (session.user as { id: string }).id;
 

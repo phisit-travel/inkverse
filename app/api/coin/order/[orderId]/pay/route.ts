@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isFirstTopup, extendVipDays, rewardReferralOnFirstTopup } from "@/lib/coins";
+import { apiError } from "@/lib/apiError";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const omise = process.env.OMISE_SECRET_KEY
@@ -14,7 +15,7 @@ export async function POST(
 ) {
   const session = await auth();
   if (!session?.user)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiError("AUTH-007", 401);
 
   const { orderId } = await params;
   const body = await req.json().catch(() => ({}));
@@ -25,16 +26,16 @@ export async function POST(
   const order = await prisma.coinOrder.findUnique({ where: { id: orderId } });
 
   if (!order || order.userId !== userId)
-    return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    return apiError("COIN-005", 404);
   if (order.status !== "PENDING")
-    return NextResponse.json({ error: "Order already processed" }, { status: 409 });
+    return apiError("VAL-003", 409, { message: "คำสั่งซื้อนี้ดำเนินการไปแล้ว" });
 
   // This endpoint handles CARD charges ONLY. Other channels (PromptPay slip,
   // mobile banking, e-wallet) credit via their own verified routes / the webhook.
   // Never accept a non-CARD method here — that previously let callers skip the
   // charge and mint coins for free.
   if (method !== "CARD")
-    return NextResponse.json({ error: "ช่องทางชำระเงินไม่ถูกต้อง" }, { status: 400 });
+    return apiError("VAL-001", 400, { message: "ช่องทางชำระเงินไม่ถูกต้อง" });
 
   // Sandbox (no real charge) is allowed ONLY when explicitly enabled — never by
   // default, and never in production.
@@ -43,7 +44,7 @@ export async function POST(
   // ── Real Omise card charge — must succeed before any coins are credited ──
   if (omise) {
     if (!omiseToken)
-      return NextResponse.json({ error: "omiseToken required" }, { status: 400 });
+      return apiError("VAL-001", 400, { message: "ต้องมีข้อมูลบัตร (omiseToken)" });
 
     let charge: { status: string; failure_message?: string };
     try {
@@ -62,22 +63,18 @@ export async function POST(
           ? String((err as Record<string, unknown>).message)
           : "เกิดข้อผิดพลาดในการชำระเงิน";
       console.error("[Omise charge error]", err);
-      return NextResponse.json({ error: msg }, { status: 402 });
+      return apiError("COIN-007", 402, { message: msg });
     }
 
     if (charge.status !== "successful") {
       await prisma.coinOrder.update({ where: { id: orderId }, data: { status: "FAILED" } });
-      return NextResponse.json(
-        { error: charge.failure_message ?? "บัตรถูกปฏิเสธ กรุณาตรวจสอบข้อมูล" },
-        { status: 402 }
-      );
+      return apiError("COIN-007", 402, {
+        message: charge.failure_message ?? "บัตรถูกปฏิเสธ กรุณาตรวจสอบข้อมูล",
+      });
     }
   } else if (!sandbox) {
     // No payment processor configured and sandbox not explicitly enabled → refuse.
-    return NextResponse.json(
-      { error: "ระบบชำระเงินยังไม่พร้อมใช้งาน" },
-      { status: 503 }
-    );
+    return apiError("COIN-007", 503, { message: "ระบบชำระเงินยังไม่พร้อมใช้งาน" });
   }
 
   // Reaching here means: a successful Omise charge, or explicit sandbox mode.

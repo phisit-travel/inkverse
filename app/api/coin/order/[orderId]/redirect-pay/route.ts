@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/apiError";
 
 const OMISE_API = "https://api.omise.co";
 
@@ -41,7 +42,7 @@ export async function POST(
 ) {
   const session = await auth();
   if (!session?.user)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiError("AUTH-007", 401);
 
   const { orderId } = await params;
   const userId = (session.user as { id: string }).id;
@@ -50,13 +51,13 @@ export async function POST(
   const sourceType: string = body.type ?? "";
 
   if (!ALLOWED_TYPES.has(sourceType))
-    return NextResponse.json({ error: "Invalid payment type" }, { status: 400 });
+    return apiError("VAL-001", 400, { message: "ช่องทางชำระเงินไม่ถูกต้อง" });
 
   const order = await prisma.coinOrder.findUnique({ where: { id: orderId } });
   if (!order || order.userId !== userId)
-    return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    return apiError("COIN-005", 404);
   if (order.status !== "PENDING")
-    return NextResponse.json({ error: "Order already processed" }, { status: 409 });
+    return apiError("VAL-003", 409, { message: "คำสั่งซื้อนี้ดำเนินการไปแล้ว" });
 
   if (!omiseAuth()) {
     // Sandbox: simulate redirect
@@ -77,7 +78,7 @@ export async function POST(
     });
 
     if (!source || source.object === "error") {
-      return NextResponse.json({ error: source?.message ?? "สร้าง source ไม่สำเร็จ" }, { status: 502 });
+      return apiError("COIN-007", 502, { message: source?.message ?? "สร้าง source ไม่สำเร็จ" });
     }
 
     const charge = await omiseFetch("/charges", {
@@ -90,7 +91,7 @@ export async function POST(
     });
 
     if (!charge || charge.object === "error") {
-      return NextResponse.json({ error: charge?.message ?? "สร้าง charge ไม่สำเร็จ" }, { status: 502 });
+      return apiError("COIN-007", 502, { message: charge?.message ?? "สร้าง charge ไม่สำเร็จ" });
     }
 
     await prisma.coinOrder.update({
@@ -112,6 +113,6 @@ export async function POST(
         : typeof err === "object" && err !== null && "message" in err
         ? String((err as Record<string, unknown>).message)
         : "เกิดข้อผิดพลาด กรุณาลองใหม่";
-    return NextResponse.json({ error: msg }, { status: 502 });
+    return apiError("COIN-007", 502, { message: msg });
   }
 }

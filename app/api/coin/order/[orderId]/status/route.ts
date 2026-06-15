@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/apiError";
 
 export async function GET(
   _req: NextRequest,
@@ -8,7 +9,7 @@ export async function GET(
 ) {
   const session = await auth();
   if (!session?.user)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiError("AUTH-007", 401);
 
   const { orderId } = await params;
   const userId = (session.user as { id: string }).id;
@@ -19,7 +20,7 @@ export async function GET(
   });
 
   if (!order || order.userId !== userId)
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return apiError("COIN-005", 404);
 
   return NextResponse.json({ status: order.status });
 }
