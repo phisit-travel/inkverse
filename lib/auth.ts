@@ -88,18 +88,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // Google sign-in has no `remember` field → default to "remembered".
         token.remember = (user as { remember?: boolean }).remember !== false;
         token.loginAt = Date.now();
+        token.refreshedAt = Date.now(); // login data is fresh — skip refresh for a bit
       }
-      // Refresh role + username from the DB on every token use, so changes made
-      // server-side (e.g. a writer application being approved → role TRANSLATOR)
-      // take effect immediately without the user having to sign out and back in.
+      // Refresh role + username from the DB at most once a minute (not on every
+      // request) so an approved writer becomes TRANSLATOR within ~60s without a
+      // re-login, while we avoid a DB round-trip on every page view / API poll —
+      // that query sat on the critical path of literally every authed request.
       if (token.id) {
-        const u = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          select: { username: true, role: true },
-        });
-        if (u) {
-          token.username = u.username;
-          token.role = u.role;
+        const now = Date.now();
+        const last = typeof token.refreshedAt === "number" ? token.refreshedAt : 0;
+        if (now - last > 60_000) {
+          const u = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { username: true, role: true },
+          });
+          if (u) {
+            token.username = u.username;
+            token.role = u.role;
+          }
+          token.refreshedAt = now;
         }
       }
       return token;
