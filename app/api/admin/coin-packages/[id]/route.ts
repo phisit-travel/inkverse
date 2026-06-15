@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { apiError } from "@/lib/apiError";
 
 async function requireAdmin() {
   const session = await auth();
@@ -23,17 +24,17 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   if (!(await requireAdmin()))
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiError("AUTH-008", 403);
 
   const { id } = await params;
   const parsed = patchSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success)
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return apiError("VAL-001", 400, { message: "ข้อมูลแพ็กเกจไม่ถูกต้อง" });
 
   try {
     const pkg = await prisma.coinPackage.update({ where: { id }, data: parsed.data });
     return NextResponse.json(pkg);
   } catch {
-    return NextResponse.json({ error: "ไม่พบแพ็กเกจ" }, { status: 404 });
+    return apiError("VAL-002", 404, { message: "ไม่พบแพ็กเกจ" });
   }
 }

@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
+import { apiError } from "@/lib/apiError";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function POST(req: NextRequest, { params }: Params) {
   const session = await auth();
   if (!session?.user || (session.user as { role?: string }).role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiError("AUTH-008", 403);
   }
 
   const { id } = await params;
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     where: { id },
     include: { user: true },
   });
-  if (!application) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!application) return apiError("VAL-002", 404, { message: "ไม่พบใบสมัคร" });
 
   if (action === "approve") {
     await prisma.$transaction([
@@ -67,5 +68,5 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ success: true, action: "rejected" });
   }
 
-  return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+  return apiError("VAL-001", 400, { message: "คำสั่งไม่ถูกต้อง" });
 }

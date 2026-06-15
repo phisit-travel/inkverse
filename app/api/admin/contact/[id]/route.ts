@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { sendEmail, contactReplyEmail } from "@/lib/email";
 import { createNotification } from "@/lib/notifications";
 import { sendPushToUsers } from "@/lib/push";
+import { apiError } from "@/lib/apiError";
 
 export async function PATCH(
   req: NextRequest,
@@ -11,7 +12,7 @@ export async function PATCH(
 ) {
   const session = await auth();
   if ((session?.user as { role?: string })?.role !== "ADMIN")
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiError("AUTH-008", 403);
 
   const { id } = await params;
   const body = await req.json().catch(() => ({}));
@@ -20,7 +21,7 @@ export async function PATCH(
   if (typeof body?.reply === "string" && body.reply.trim()) {
     const reply = body.reply.trim().slice(0, 5000);
     const msg = await prisma.contactMessage.findUnique({ where: { id } });
-    if (!msg) return NextResponse.json({ error: "ไม่พบข้อความ" }, { status: 404 });
+    if (!msg) return apiError("VAL-002", 404, { message: "ไม่พบข้อความ" });
 
     const emailed = await sendEmail({
       to: msg.email,
@@ -55,6 +56,6 @@ export async function PATCH(
     const msg = await prisma.contactMessage.update({ where: { id }, data: { status } });
     return NextResponse.json(msg);
   } catch {
-    return NextResponse.json({ error: "ไม่พบข้อความ" }, { status: 404 });
+    return apiError("VAL-002", 404, { message: "ไม่พบข้อความ" });
   }
 }

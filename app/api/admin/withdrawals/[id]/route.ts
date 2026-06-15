@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
+import { apiError } from "@/lib/apiError";
 
 export async function PATCH(
   req: NextRequest,
@@ -9,7 +10,7 @@ export async function PATCH(
 ) {
   const session = await auth();
   if ((session?.user as { role?: string })?.role !== "ADMIN") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiError("AUTH-008", 401);
   }
 
   const { id } = await params;
@@ -20,14 +21,14 @@ export async function PATCH(
 
   const { action, adminNote } = body;
   if (!action || !["approve", "paid", "reject"].includes(action)) {
-    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+    return apiError("VAL-001", 400, { message: "คำสั่งไม่ถูกต้อง" });
   }
 
   const request = await prisma.withdrawalRequest.findUnique({
     where: { id },
     include: { translator: { select: { userId: true } } },
   });
-  if (!request) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!request) return apiError("VAL-002", 404, { message: "ไม่พบคำขอถอนเงิน" });
 
   const statusMap = { approve: "APPROVED", paid: "PAID", reject: "REJECTED" } as const;
   const newStatus = statusMap[action];

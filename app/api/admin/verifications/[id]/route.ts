@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { reviewVerification } from "@/lib/coins";
 import { createNotification } from "@/lib/notifications";
+import { apiError } from "@/lib/apiError";
 
 export async function PATCH(
   req: NextRequest,
@@ -9,7 +10,7 @@ export async function PATCH(
 ) {
   const session = await auth();
   if ((session?.user as { role?: string })?.role !== "ADMIN")
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiError("AUTH-008", 403);
 
   const { id } = await params;
   const body = await req.json().catch(() => ({}));
@@ -18,7 +19,7 @@ export async function PATCH(
 
   const userId = await reviewVerification(id, approve, note);
   if (!userId)
-    return NextResponse.json({ error: "ไม่พบคำขอ หรือดำเนินการไปแล้ว" }, { status: 404 });
+    return apiError("VAL-002", 404, { message: "ไม่พบคำขอ หรือดำเนินการไปแล้ว" });
 
   await createNotification({
     userId,

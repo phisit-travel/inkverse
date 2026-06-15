@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { apiError } from "@/lib/apiError";
 
 async function requireAdmin() {
   const session = await auth();
@@ -10,7 +11,7 @@ async function requireAdmin() {
 
 export async function GET() {
   if (!(await requireAdmin()))
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiError("AUTH-008", 403);
 
   const packages = await prisma.coinPackage.findMany({ orderBy: { price: "asc" } });
   return NextResponse.json({ packages });
@@ -29,15 +30,15 @@ const createSchema = z.object({
 
 export async function POST(req: NextRequest) {
   if (!(await requireAdmin()))
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiError("AUTH-008", 403);
 
   const parsed = createSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success)
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return apiError("VAL-001", 400, { message: "ข้อมูลแพ็กเกจไม่ถูกต้อง" });
 
   const existing = await prisma.coinPackage.findUnique({ where: { id: parsed.data.id } });
   if (existing)
-    return NextResponse.json({ error: "มี id นี้อยู่แล้ว" }, { status: 409 });
+    return apiError("VAL-003", 409, { message: "มี id นี้อยู่แล้ว" });
 
   const pkg = await prisma.coinPackage.create({ data: parsed.data });
   return NextResponse.json(pkg, { status: 201 });

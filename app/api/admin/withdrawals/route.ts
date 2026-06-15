@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/apiError";
 
 export async function GET() {
   const session = await auth();
   if ((session?.user as { role?: string })?.role !== "ADMIN") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiError("AUTH-008", 401);
   }
 
   const requests = await prisma.withdrawalRequest.findMany({
