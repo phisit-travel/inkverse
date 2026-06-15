@@ -3,6 +3,7 @@ import { ImageResponse } from "next/og";
 export const size = { width: 512, height: 512 };
 export const contentType = "image/png";
 
+// INKVERSE "IV" monogram — monochrome brand mark (matches the app launcher icon).
 export default function Icon() {
   return new ImageResponse(
     (
@@ -13,11 +14,11 @@ export default function Icon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "linear-gradient(135deg,#ff2d55,#ff6b2b)",
-          color: "#fff",
+          background: "#000000",
+          color: "#ffffff",
           fontSize: 300,
           fontWeight: 900,
-          letterSpacing: -10,
+          letterSpacing: 4,
         }}
       >
         IV

@@ -3,6 +3,7 @@ import { ImageResponse } from "next/og";
 export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
 
+// INKVERSE "IV" monogram — monochrome brand mark (matches the app launcher icon).
 export default function AppleIcon() {
   return new ImageResponse(
     (
@@ -13,11 +14,11 @@ export default function AppleIcon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "linear-gradient(135deg,#ff2d55,#ff6b2b)",
-          color: "#fff",
+          background: "#000000",
+          color: "#ffffff",
           fontSize: 104,
           fontWeight: 900,
-          letterSpacing: -4,
+          letterSpacing: 2,
         }}
       >
         IV
