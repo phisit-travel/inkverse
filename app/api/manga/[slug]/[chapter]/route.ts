@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isChapterLive, liveChapterWhere } from "@/lib/chapters";
 import { decodeSlug } from "@/lib/slug";
+import { apiError } from "@/lib/apiError";
 
 export async function GET(
   _req: NextRequest,
@@ -17,7 +18,7 @@ export async function GET(
   });
 
   if (!manga) {
-    return NextResponse.json({ error: "Manga not found" }, { status: 404 });
+    return apiError("READ-004", 404);
   }
 
   const chapterData = await prisma.chapter.findUnique({
@@ -26,7 +27,7 @@ export async function GET(
   });
 
   if (!chapterData || !isChapterLive(chapterData)) {
-    return NextResponse.json({ error: "Chapter not found" }, { status: 404 });
+    return apiError("READ-001", 404);
   }
 
   const [prev, next] = await Promise.all([

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { decodeSlug } from "@/lib/slug";
+import { apiError } from "@/lib/apiError";
 
 // Bulk-apply pricing / early-access to a range of chapters the user owns.
 export async function POST(
@@ -9,21 +10,21 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user) return apiError("AUTH-007", 401);
   const role = (session.user as { role?: string }).role;
   if (role !== "TRANSLATOR" && role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiError("AUTH-008", 403);
   }
 
   const { slug: rawSlug } = await params;
   const slug = decodeSlug(rawSlug);
   const manga = await prisma.manga.findUnique({ where: { slug } });
-  if (!manga) return NextResponse.json({ error: "Manga not found" }, { status: 404 });
+  if (!manga) return apiError("READ-004", 404);
   if (role === "TRANSLATOR") {
     const userId = (session.user as { id: string }).id;
     const translator = await prisma.translator.findUnique({ where: { userId } });
     if (!translator || manga.translatorId !== translator.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return apiError("UP-004", 403);
     }
   }
 
@@ -31,7 +32,7 @@ export async function POST(
   const fromNum = Number(body.fromNum);
   const toNum = Number(body.toNum);
   if (!Number.isFinite(fromNum) || !Number.isFinite(toNum)) {
-    return NextResponse.json({ error: "ช่วงตอนไม่ถูกต้อง" }, { status: 400 });
+    return apiError("VAL-001", 400, { message: "ช่วงตอนไม่ถูกต้อง" });
   }
   const lo = Math.min(fromNum, toNum);
   const hi = Math.max(fromNum, toNum);
@@ -45,7 +46,7 @@ export async function POST(
     const freeAt = days && days > 0 ? new Date(Date.now() + days * 86400000) : null;
     data = { isPremium: true, coinCost, freeAt };
   } else {
-    return NextResponse.json({ error: "mode ไม่ถูกต้อง" }, { status: 400 });
+    return apiError("VAL-001", 400, { message: "mode ไม่ถูกต้อง" });
   }
 
   const result = await prisma.chapter.updateMany({

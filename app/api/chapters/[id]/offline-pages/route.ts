@@ -5,6 +5,7 @@ import { hasUnlockedChapter } from "@/lib/coins";
 import { signedImagePath } from "@/lib/imageToken";
 import { renderNovel, novelStats } from "@/lib/markdown";
 import { isChapterLive } from "@/lib/chapters";
+import { apiError } from "@/lib/apiError";
 
 // Returns a chapter's content for offline download (signed page URLs for manga,
 // HTML for novels) — gated by the same access rules as the reader so locked
@@ -30,18 +31,18 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       manga: { select: { type: true, title: true, slug: true, coverUrl: true, translator: { select: { userId: true } } } },
     },
   });
-  if (!chapter) return NextResponse.json({ error: "ไม่พบตอน" }, { status: 404 });
+  if (!chapter) return apiError("READ-001", 404);
 
   const isOwner = !!userId && chapter.manga.translator?.userId === userId;
 
   if (!isChapterLive(chapter) && !isOwner) {
-    return NextResponse.json({ error: "ตอนนี้ยังไม่เผยแพร่" }, { status: 403 });
+    return apiError("READ-003", 403);
   }
 
   const stillPaid = chapter.isPremium && (!chapter.freeAt || chapter.freeAt.getTime() > Date.now());
   if (stillPaid && !isOwner) {
     if (!userId || !(await hasUnlockedChapter(userId, chapter.id))) {
-      return NextResponse.json({ error: "ต้องปลดล็อกตอนนี้ก่อน" }, { status: 403 });
+      return apiError("READ-002", 403);
     }
   }
 

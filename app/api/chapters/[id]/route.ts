@@ -5,6 +5,7 @@ import { renderNovel } from "@/lib/markdown";
 import { isChapterLive } from "@/lib/chapters";
 import { notifyNewChapter } from "@/lib/notifications";
 import { revalidateMangaCache } from "@/lib/revalidate";
+import { apiError } from "@/lib/apiError";
 
 async function getOwnership(chapterId: string) {
   const session = await auth();
@@ -32,7 +33,7 @@ export async function GET(
 ) {
   const { id } = await params;
   const chapter = await getOwnership(id);
-  if (!chapter) return NextResponse.json({ error: "Not found or forbidden" }, { status: 404 });
+  if (!chapter) return apiError("CREATE-003", 404);
   return NextResponse.json(chapter);
 }
 
@@ -42,7 +43,7 @@ export async function PATCH(
 ) {
   const { id } = await params;
   const chapter = await getOwnership(id);
-  if (!chapter) return NextResponse.json({ error: "Not found or forbidden" }, { status: 404 });
+  if (!chapter) return apiError("CREATE-003", 404);
 
   const body = await req.json().catch(() => ({})) as {
     title?: string;
@@ -102,9 +103,9 @@ export async function PATCH(
   } catch (e: unknown) {
     // Unique (mangaId, chapterNum) violation → another chapter already has this number.
     if (typeof e === "object" && e !== null && "code" in e && (e as { code?: string }).code === "P2002") {
-      return NextResponse.json({ error: "มีตอนหมายเลขนี้อยู่แล้ว" }, { status: 409 });
+      return apiError("CREATE-002", 409, { message: "มีตอนหมายเลขนี้อยู่แล้ว" });
     }
-    return NextResponse.json({ error: "บันทึกไม่สำเร็จ" }, { status: 500 });
+    return apiError("CREATE-001", 500, { message: "บันทึกตอนไม่สำเร็จ" });
   }
 }
 
@@ -114,7 +115,7 @@ export async function DELETE(
 ) {
   const { id } = await params;
   const chapter = await getOwnership(id);
-  if (!chapter) return NextResponse.json({ error: "Not found or forbidden" }, { status: 404 });
+  if (!chapter) return apiError("CREATE-003", 404);
 
   // Cascades to pages, unlocked records, read history and comments.
   await prisma.chapter.delete({ where: { id } });

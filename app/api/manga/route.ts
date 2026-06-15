@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { liveChapterWhere } from "@/lib/chapters";
 import { cleanTags } from "@/lib/tags";
+import { apiError } from "@/lib/apiError";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
@@ -82,12 +83,12 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiError("AUTH-007", 401);
   }
 
   const role = (session.user as { role?: string }).role;
   if (role !== "TRANSLATOR" && role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiError("AUTH-008", 403);
   }
 
   const userId = (session.user as { id: string }).id;
@@ -97,7 +98,7 @@ export async function POST(req: NextRequest) {
   if (role === "TRANSLATOR") {
     const translator = await prisma.translator.findUnique({ where: { userId } });
     if (!translator) {
-      return NextResponse.json({ error: "Translator profile not found" }, { status: 403 });
+      return apiError("AUTH-008", 403, { message: "ไม่พบโปรไฟล์ครีเอเตอร์" });
     }
     translatorId = translator.id;
   }
@@ -106,7 +107,7 @@ export async function POST(req: NextRequest) {
   const { title, slug, description, originCountry, status, type, coverUrl, genreIds, contentRating, tags } = body;
 
   if (!title || !slug || !description) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    return apiError("VAL-001", 400, { message: "กรอกข้อมูลไม่ครบ" });
   }
 
   const validRatings = ["EVERYONE", "TEEN", "ADULT"];
@@ -145,7 +146,7 @@ export async function POST(req: NextRequest) {
     }
   }
   if (!manga) {
-    return NextResponse.json({ error: "ตั้งชื่อ slug ไม่สำเร็จ ลองเปลี่ยนชื่อเรื่อง" }, { status: 409 });
+    return apiError("CREATE-001", 409, { message: "ตั้งชื่อ slug ไม่สำเร็จ ลองเปลี่ยนชื่อเรื่อง" });
   }
 
   return NextResponse.json(manga, { status: 201 });
