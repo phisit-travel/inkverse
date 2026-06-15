@@ -2,15 +2,24 @@
 
 import { useEffect } from "react";
 
-// Registers the service worker ONLY inside the Capacitor app. Keeping it app-only
-// means offline reading + instant cached loads are a real reason to install the
-// app, and a SW bug (if any) can never affect the website — only app users, who
-// also auto-update. To kill it in an emergency, ship a /sw.js that unregisters.
+// TEMPORARILY DISABLED. The caching service worker broke cover images inside the
+// app, so instead of registering it we actively unregister any copy still
+// installed and clear its caches. This is the most reliable client-side kill —
+// it doesn't depend on the browser noticing the kill-switch /sw.js update. The
+// offline-download feature will return once the SW can be tested on-device.
 export default function ServiceWorkerRegister() {
   useEffect(() => {
-    const inApp = !!(window as unknown as { Capacitor?: unknown }).Capacitor;
-    if (!inApp || !("serviceWorker" in navigator)) return;
-    navigator.serviceWorker.register("/sw.js").catch(() => {});
+    if (!("serviceWorker" in navigator)) return;
+    navigator.serviceWorker
+      .getRegistrations?.()
+      .then((regs) => regs.forEach((r) => r.unregister()))
+      .catch(() => {});
+    if ("caches" in window) {
+      caches
+        .keys()
+        .then((keys) => keys.forEach((k) => k.startsWith("ink-") && caches.delete(k)))
+        .catch(() => {});
+    }
   }, []);
 
   return null;
