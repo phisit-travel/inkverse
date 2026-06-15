@@ -46,6 +46,10 @@
 
   html {
     scroll-behavior: smooth;
+    /* Guard against any stray element causing a horizontal scroll / right-edge
+       gap (seen on iOS Safari). `clip` stops the overflow without creating a
+       scroll container, so sticky headers keep working. */
+    overflow-x: clip;
   }
 
   body {
@@ -56,6 +60,8 @@
     -moz-osx-font-smoothing: grayscale;
     transition: background-color 0.2s ease, color 0.2s ease;
     letter-spacing: 0.01em;
+    overflow-x: clip;
+    max-width: 100%;
   }
 
   /* Balenciaga chrome: uppercase, airy tracking on nav + buttons. */
