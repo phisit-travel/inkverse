@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import {
-  User, LayoutDashboard, Settings, LogOut, Coins, Shield, Upload, ChevronDown, Gift, MessageSquare, Trophy, Medal, PenTool, Share2,
+  User, LayoutDashboard, Settings, LogOut, Coins, Shield, Upload, ChevronDown, Gift, MessageSquare, Trophy, Medal, PenTool, Share2, WifiOff,
 } from "lucide-react";
 import RankChip from "./RankChip";
 import type { RankBadge } from "@/lib/ranks";
@@ -77,6 +77,10 @@ export default function UserMenu({ user, rankBadge }: { user: MenuUser; rankBadg
           <Link href={`/profile/${user.username ?? user.name}`} className={item}>
             <User className="w-4 h-4" /> โปรไฟล์ของฉัน
           </Link>
+          {/* App/PWA only (.app-only) — plain <a> so it works offline (SW-cached) */}
+          <a href="/downloads" className={`${item} app-only`}>
+            <WifiOff className="w-4 h-4" /> คลังออฟไลน์
+          </a>
           {isStaff && (
             <Link href="/dashboard" className={item}>
               <LayoutDashboard className="w-4 h-4" /> แดชบอร์ด
