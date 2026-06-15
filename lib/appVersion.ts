@@ -2,8 +2,8 @@
 // publish a new APK; the download page and the in-app update checker both read
 // from here, and the API at /api/app/version exposes it to the installed app.
 export const LATEST_APK = {
-  version: "1.0.4",
-  url: "/downloads/inkverse-1.0.4.apk",
+  version: "1.0.5",
+  url: "/downloads/inkverse-1.0.5.apk",
 };
 
 // True when dotted version `a` is strictly older than `b` (e.g. "1.0.3" < "1.0.4").

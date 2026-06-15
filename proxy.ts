@@ -79,6 +79,20 @@ export const proxy = auth((req) => {
   // user back to the apex callback → error=Configuration. Redirecting early keeps
   // the whole flow (and the rest of the site) on one host.
   const host = req.headers.get("host");
+
+  // 0a) Close the Cloudflare-bypass hole: the bare Vercel origin is publicly
+  // reachable and skips Cloudflare's edge bot protection (Bot Fight Mode / AI-bot
+  // blocking). Send its stable production alias to the real proxied domain so all
+  // traffic goes through Cloudflare. Per-deploy *.vercel.app hash URLs (used by
+  // preview builds) are intentionally left alone.
+  if (host === "inkverse-tau.vercel.app") {
+    const url = req.nextUrl.clone();
+    url.protocol = "https:";
+    url.host = "inksverse.com";
+    url.port = "";
+    return NextResponse.redirect(url, 308);
+  }
+
   if (host && host.startsWith("www.")) {
     const url = req.nextUrl.clone();
     url.host = host.slice(4); // drop "www."
