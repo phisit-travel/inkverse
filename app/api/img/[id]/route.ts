@@ -35,24 +35,23 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const page = await prisma.page.findUnique({ where: { id }, select: { imageUrl: true } });
   if (!page) return new NextResponse("Not found", { status: 404 });
 
-  // Hand back a short-lived direct URL instead of proxying the bytes through this
-  // function: R2 (behind Cloudflare) serves the image straight to the client, so
-  // the serverless function is out of the heavy data path — the old proxy made
-  // every page round-trip R2 → Vercel → client and skipped all CDN caching.
-  // Access is already gated above by the signed token + per-IP/per-user limits;
-  // the presigned URL expires in 15 min. Legacy public objects redirect as-is.
-  // NOTE: the reader fetches this as a blob for the canvas, so the private bucket
-  // must allow GET CORS from the site origin.
+  // Proxy the bytes through this function (same-origin response). We tried a 302
+  // redirect to a presigned R2 URL for speed, but a cross-origin redirect that the
+  // client then reads as a blob breaks on mobile: iOS Safari rejects the
+  // CORS-after-redirect read, and inside the app the service worker can't return
+  // the redirected response to a non-navigation fetch. Same-origin bytes "just
+  // work" everywhere; the SW + browser still cache the result for fast re-reads.
   const isLegacyPublic = /^https?:\/\//i.test(page.imageUrl);
-  const src = isLegacyPublic ? page.imageUrl : await getPresignedDownloadUrl(page.imageUrl, 900);
+  const src = isLegacyPublic ? page.imageUrl : await getPresignedDownloadUrl(page.imageUrl);
+  const upstream = await fetch(src);
+  if (!upstream.ok || !upstream.body) return new NextResponse("Bad gateway", { status: 502 });
 
-  return new NextResponse(null, {
-    status: 302,
+  return new NextResponse(upstream.body, {
+    status: 200,
     headers: {
-      Location: src,
-      // Briefly cache the redirect in the browser so re-scrolling doesn't re-hit
-      // the function — well under the presigned URL's 15-min lifetime.
-      "Cache-Control": "private, max-age=300",
+      "Content-Type": upstream.headers.get("content-type") || "image/webp",
+      "Cache-Control": "private, max-age=3600",
+      "X-Content-Type-Options": "nosniff",
       "X-Robots-Tag": "noindex",
     },
   });

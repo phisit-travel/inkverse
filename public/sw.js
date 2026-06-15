@@ -120,12 +120,13 @@ async function imageCache(req, url) {
   try {
     const res = await fetch(req);
     if (res && res.ok) {
-      const body = await res.clone().blob();
+      const body = await res.blob();
       const clean = new Response(body, {
         status: 200,
         headers: { "Content-Type": res.headers.get("Content-Type") || "image/webp" },
       });
-      cache.put(key, clean);
+      cache.put(key, clean.clone());
+      return clean; // never the raw (possibly redirected) response → safe for fetch()
     }
     return res;
   } catch {
