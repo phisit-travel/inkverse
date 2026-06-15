@@ -5,7 +5,13 @@
   "server": {
     "url": "https://inksverse.com",
     "androidScheme": "https",
-    "cleartext": false
+    "cleartext": false,
+    "allowNavigation": [
+      "inksverse.com",
+      "*.inksverse.com",
+      "challenges.cloudflare.com",
+      "accounts.google.com"
+    ]
   },
   "plugins": {
     "GoogleAuth": {

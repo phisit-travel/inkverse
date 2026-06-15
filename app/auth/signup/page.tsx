@@ -34,7 +34,10 @@ export default function SignUpPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (CAPTCHA_ON && !captcha) {
+    // In-app the Turnstile widget can't render (WebView blocks third-party
+    // storage), so we skip it there — the real anti-bot gate is email
+    // verification before the welcome bonus, which still applies.
+    if (CAPTCHA_ON && !inApp && !captcha) {
       setError("กรุณายืนยันว่าคุณไม่ใช่บอท");
       return;
     }
@@ -43,7 +46,12 @@ export default function SignUpPage() {
 
     const res = await fetch("/api/auth/register", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        // Marks the request as coming from the app shell, where Turnstile is
+        // skipped (widget can't render in the WebView).
+        ...(inApp ? { "x-inkverse-app": "1" } : {}),
+      },
       body: JSON.stringify({ ...form, ...(ref ? { ref } : {}), turnstileToken: captcha }),
     });
 
@@ -218,8 +226,8 @@ export default function SignUpPage() {
               </button>
             </div>
 
-            {/* "I am human" — renders only when a Turnstile site key is set */}
-            <Turnstile onToken={setCaptcha} />
+            {/* "I am human" — web only (the widget can't load in the app WebView) */}
+            {!inApp && <Turnstile onToken={setCaptcha} />}
 
             {error && (
               <p className="text-sm text-[var(--text-primary)] text-center">{error}</p>
@@ -227,7 +235,7 @@ export default function SignUpPage() {
 
             <button
               type="submit"
-              disabled={loading || (CAPTCHA_ON && !captcha)}
+              disabled={loading || (CAPTCHA_ON && !inApp && !captcha)}
               className="w-full py-3 rounded-xl bal-btn font-semibold text-sm hover:opacity-90 transition-colors disabled:opacity-50"
             >
               {loading ? "กำลังสมัคร..." : "สมัครสมาชิก"}

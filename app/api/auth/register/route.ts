@@ -40,7 +40,11 @@ export async function POST(req: NextRequest) {
   const { username, email, password, ref, turnstileToken } = parsed.data;
 
   // Bot check ("I am human"). No-op until TURNSTILE_SECRET_KEY is configured.
-  if (!(await verifyTurnstile(turnstileToken, clientIp(req)))) {
+  // Skipped for the app shell — the Turnstile widget can't render in the
+  // WebView, and email verification still gates the welcome bonus, so bot
+  // signups gain nothing. The IP rate-limit above still applies to everyone.
+  const isApp = req.headers.get("x-inkverse-app") === "1";
+  if (!isApp && !(await verifyTurnstile(turnstileToken, clientIp(req)))) {
     return NextResponse.json({ error: "กรุณายืนยันว่าคุณไม่ใช่บอท" }, { status: 400 });
   }
 
