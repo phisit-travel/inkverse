@@ -93,7 +93,7 @@ export default function DownloadMangaButton({ chapters }: Props) {
       {open && (
         <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/70" onClick={() => !busy && setOpen(false)}>
           <div
-            className="w-full sm:max-w-md bg-[var(--bg-surface)] border border-[var(--border)] rounded-t-2xl sm:rounded-2xl max-h-[85vh] flex flex-col"
+            className="w-full sm:max-w-md bg-[var(--bg-surface)] border border-[var(--border)] rounded-t-2xl sm:rounded-2xl max-h-[85vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* header */}
@@ -112,10 +112,10 @@ export default function DownloadMangaButton({ chapters }: Props) {
             {available.length > 0 && !busy && (
               <button
                 onClick={toggleAll}
-                className="flex items-center justify-between px-4 py-2.5 text-sm text-[var(--text-primary)] border-b border-[var(--border)] hover:bg-white/5"
+                className="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm text-[var(--text-primary)] border-b border-[var(--border)] hover:bg-white/5"
               >
-                <span>เลือกทั้งหมด ({available.length} ตอน)</span>
-                <span className={`w-5 h-5 rounded border flex items-center justify-center ${allSelected ? "bg-[var(--text-primary)] border-[var(--text-primary)]" : "border-[var(--border)]"}`}>
+                <span className="min-w-0 truncate">เลือกทั้งหมด ({available.length} ตอน)</span>
+                <span className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ${allSelected ? "bg-[var(--text-primary)] border-[var(--text-primary)]" : "border-[var(--border)]"}`}>
                   {allSelected && <Check className="w-3.5 h-3.5 text-[var(--bg-primary)]" />}
                 </span>
               </button>
@@ -136,12 +136,12 @@ export default function DownloadMangaButton({ chapters }: Props) {
                     <span className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ${isSel ? "bg-[var(--text-primary)] border-[var(--text-primary)]" : "border-[var(--border)]"}`}>
                       {isDone ? <Check className="w-3.5 h-3.5 text-[var(--text-primary)]" /> : isSel ? <Check className="w-3.5 h-3.5 text-[var(--bg-primary)]" /> : c.locked ? <Lock className="w-3 h-3 text-[var(--text-muted)]" /> : null}
                     </span>
-                    <span className="text-[var(--text-primary)] truncate">
+                    <span className="flex-1 min-w-0 text-[var(--text-primary)] truncate">
                       ตอนที่ {c.chapterNum}
                       {c.title ? ` — ${c.title}` : ""}
                     </span>
-                    {isDone && <span className="ml-auto text-[10px] text-[var(--text-secondary)] shrink-0">โหลดแล้ว</span>}
-                    {c.locked && <span className="ml-auto text-[10px] text-[var(--text-secondary)] shrink-0">ล็อก</span>}
+                    {isDone && <span className="text-[10px] text-[var(--text-secondary)] shrink-0">โหลดแล้ว</span>}
+                    {c.locked && <span className="text-[10px] text-[var(--text-secondary)] shrink-0">ล็อก</span>}
                   </button>
                 );
               })}
