@@ -35,6 +35,32 @@ const RATING = [
 
 const sel = "w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--text-primary)]/50";
 
+// Phone photos are often 3–10 MB, which overran the cover endpoint's serverless
+// body limit and left the upload spinning forever. Shrink client-side first —
+// the cover only renders at 300×400, so ~1600px is plenty. Falls back to the
+// original file if the canvas path fails (e.g. an unsupported codec).
+async function downscaleImage(file: File, maxDim = 1600, quality = 0.85): Promise<Blob> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+    const w = Math.round(bitmap.width * scale);
+    const h = Math.round(bitmap.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close?.();
+    const blob: Blob | null = await new Promise((res) =>
+      canvas.toBlob((b) => res(b), "image/jpeg", quality)
+    );
+    return blob && blob.size < file.size ? blob : file;
+  } catch {
+    return file;
+  }
+}
+
 export default function MangaSettings({
   slug, manga, allGenres, initialGenreIds,
 }: {
@@ -66,10 +92,19 @@ export default function MangaSettings({
     if (!file) return;
     setUploadingCover(true); setError("");
     try {
+      const blob = await downscaleImage(file);
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", blob, "cover.jpg");
       fd.append("slug", slug);
-      const up = await fetch("/api/upload/cover", { method: "POST", body: fd });
+      // Hard timeout so a stalled upload never spins forever.
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 30000);
+      let up: Response;
+      try {
+        up = await fetch("/api/upload/cover", { method: "POST", body: fd, signal: ctrl.signal });
+      } finally {
+        clearTimeout(timer);
+      }
       const d = await up.json().catch(() => ({}));
       if (!up.ok || !d.url) {
         setError(d.code ? `[${d.code}] ${d.error}` : d.error || "อัปโหลดปกไม่สำเร็จ");
@@ -85,8 +120,13 @@ export default function MangaSettings({
       if (!patch.ok) { setError("บันทึกปกไม่สำเร็จ"); return; }
       setCover(url);
       router.refresh();
-    } catch { setError("เกิดข้อผิดพลาด"); }
-    finally { setUploadingCover(false); }
+    } catch (err) {
+      setError(
+        err instanceof DOMException && err.name === "AbortError"
+          ? "อัปโหลดนานเกินไป (หมดเวลา) — ลองรูปที่เล็กลง หรือเช็คเน็ต"
+          : "เกิดข้อผิดพลาด"
+      );
+    } finally { setUploadingCover(false); }
   }
 
   async function save() {
