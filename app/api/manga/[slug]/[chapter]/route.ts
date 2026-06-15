@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isChapterLive, liveChapterWhere } from "@/lib/chapters";
+import { decodeSlug } from "@/lib/slug";
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ slug: string; chapter: string }> }
 ) {
-  const { slug, chapter } = await params;
+  const { slug: rawSlug, chapter } = await params;
+  const slug = decodeSlug(rawSlug);
   const chapterNum = parseFloat(chapter);
 
   const manga = await prisma.manga.findUnique({

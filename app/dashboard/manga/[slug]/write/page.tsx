@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import NovelEditor from "@/components/ui/NovelEditor";
+import { decodeSlug } from "@/lib/slug";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -18,7 +19,8 @@ export default async function WriteNovelPage({ params, searchParams }: Props) {
   if (!session?.user) redirect("/auth/signin");
   if (role !== "TRANSLATOR" && role !== "ADMIN") redirect("/");
 
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeSlug(rawSlug);
   const { ch } = await searchParams;
   const userId = (session.user as { id: string }).id;
 

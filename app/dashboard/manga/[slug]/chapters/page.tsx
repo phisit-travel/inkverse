@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { ArrowLeft, BookOpen, Plus } from "lucide-react";
 import ChapterManager from "./ChapterManager";
+import { decodeSlug } from "@/lib/slug";
 import MangaSettings from "./MangaSettings";
 import { novelStats } from "@/lib/markdown";
 import { Pencil } from "lucide-react";
@@ -14,7 +15,8 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeSlug(rawSlug);
   const manga = await prisma.manga.findUnique({ where: { slug }, select: { title: true } });
   return { title: manga ? `จัดการตอน — ${manga.title}` : "จัดการตอน" };
 }
@@ -25,7 +27,8 @@ export default async function MangaChaptersPage({ params }: Props) {
   if (!session?.user) redirect("/auth/signin");
   if (role !== "TRANSLATOR" && role !== "ADMIN") redirect("/");
 
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeSlug(rawSlug);
   const userId = (session.user as { id: string }).id;
 
   const manga = await prisma.manga.findUnique({

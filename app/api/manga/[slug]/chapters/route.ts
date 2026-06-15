@@ -5,6 +5,7 @@ import { notifyNewChapter } from "@/lib/notifications";
 import { renderNovel } from "@/lib/markdown";
 import { isChapterLive } from "@/lib/chapters";
 import { revalidateMangaCache } from "@/lib/revalidate";
+import { decodeSlug } from "@/lib/slug";
 
 export async function POST(
   req: NextRequest,
@@ -20,7 +21,8 @@ export async function POST(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeSlug(rawSlug);
   const manga = await prisma.manga.findUnique({ where: { slug } });
   if (!manga) {
     return NextResponse.json({ error: "Manga not found" }, { status: 404 });

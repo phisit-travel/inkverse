@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { decodeSlug } from "@/lib/slug";
 
 // Bulk-apply pricing / early-access to a range of chapters the user owns.
 export async function POST(
@@ -14,7 +15,8 @@ export async function POST(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeSlug(rawSlug);
   const manga = await prisma.manga.findUnique({ where: { slug } });
   if (!manga) return NextResponse.json({ error: "Manga not found" }, { status: 404 });
   if (role === "TRANSLATOR") {

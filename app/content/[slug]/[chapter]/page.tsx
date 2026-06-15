@@ -15,6 +15,7 @@ import { isChapterLive, liveChapterWhere } from "@/lib/chapters";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { after } from "next/server";
+import { decodeSlug } from "@/lib/slug";
 
 const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inksverse.com";
 
@@ -23,7 +24,8 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug, chapter } = await params;
+  const { slug: rawSlug, chapter } = await params;
+  const slug = decodeSlug(rawSlug);
   const manga = await prisma.manga.findUnique({
     where: { slug },
     select: { title: true, coverUrl: true },
@@ -47,7 +49,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ReaderPage({ params }: Props) {
-  const { slug, chapter } = await params;
+  const { slug: rawSlug, chapter } = await params;
+  const slug = decodeSlug(rawSlug);
   const session = await auth();
   const chapterNum = parseFloat(chapter);
 
