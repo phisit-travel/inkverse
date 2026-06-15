@@ -3,10 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Download, Check, Loader2, X, Smartphone } from "lucide-react";
-import { downloadChapter, downloadNovel, removeDownload, isDownloaded } from "@/lib/offline";
-
-// Offline downloads need the app service worker (v3, same-origin only).
-const OFFLINE_ENABLED = true;
+import { downloadChapter, downloadNovel, removeDownload, isDownloaded, OFFLINE_ENABLED } from "@/lib/offline";
 
 interface Props {
   chapterId: string;

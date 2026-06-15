@@ -27,6 +27,10 @@ export interface OfflineChapter {
   imgUrls?: string[];
 }
 
+// Master switch for the whole offline feature (button visibility etc.). Flip to
+// false to instantly hide it everywhere if the service worker must be disabled.
+export const OFFLINE_ENABLED = true;
+
 const KEY = "ink-downloads-v1";
 const CACHE = "ink-downloads";
 
@@ -119,6 +123,40 @@ export async function downloadNovel(meta: {
     imgUrls,
     savedAt: Date.now(),
   });
+}
+
+// Fetch a chapter's content from the (access-controlled) API and save it. Used by
+// the bulk "download chapters" picker on the manga page.
+export async function downloadById(
+  id: string,
+  onPageProgress?: (done: number, total: number) => void
+): Promise<void> {
+  const res = await fetch(`/api/chapters/${id}/offline-pages`);
+  if (!res.ok) throw new Error("fetch-failed");
+  const data = await res.json();
+  if (data.type === "novel") {
+    await downloadNovel({
+      chapterId: data.chapterId,
+      mangaSlug: data.mangaSlug,
+      chapterNum: data.chapterNum,
+      mangaTitle: data.mangaTitle,
+      html: data.html,
+      chapterTitle: data.chapterTitle,
+      minutes: data.minutes,
+      authorNote: data.authorNote,
+    });
+  } else {
+    await downloadChapter(
+      {
+        chapterId: data.chapterId,
+        mangaSlug: data.mangaSlug,
+        chapterNum: data.chapterNum,
+        mangaTitle: data.mangaTitle,
+      },
+      data.pages,
+      onPageProgress
+    );
+  }
 }
 
 export async function removeDownload(chapterId: string): Promise<void> {

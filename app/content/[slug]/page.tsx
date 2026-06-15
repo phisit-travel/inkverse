@@ -8,6 +8,7 @@ import { auth } from "@/lib/auth";
 import { cookies } from "next/headers";
 import StarRating from "@/components/ui/StarRating";
 import BookmarkButton from "@/components/ui/BookmarkButton";
+import DownloadMangaButton from "@/components/ui/DownloadMangaButton";
 import ShareButtons from "@/components/ui/ShareButtons";
 import ChapterRow from "@/components/ui/ChapterRow";
 import AgeGate from "@/components/ui/AgeGate";
@@ -199,6 +200,14 @@ export default async function MangaProfilePage({ params }: Props) {
   const latestChapter = manga.chapters[manga.chapters.length - 1];
   const firstChapter = manga.chapters[0];
 
+  // Chapters offered in the offline-download picker (locked premium = not saveable).
+  const downloadableChapters = manga.chapters.map((ch) => ({
+    id: ch.id,
+    chapterNum: ch.chapterNum,
+    title: ch.title,
+    locked: !isOwner && isChapterLocked(ch, unlockedSet.has(ch.id)),
+  }));
+
   // Premium chapters the user hasn't unlocked yet (ascending) — for bulk unlock.
   const lockedPremium = manga.chapters
     .filter((ch) => isChapterLocked(ch, unlockedSet.has(ch.id)))
@@ -314,6 +323,12 @@ export default async function MangaProfilePage({ params }: Props) {
                   initialBookmarked={isBookmarked}
                 />
               )}
+              {/* App-only: renders nothing on the web (returns null) */}
+              <DownloadMangaButton
+                mangaSlug={manga.slug}
+                mangaTitle={manga.title}
+                chapters={downloadableChapters}
+              />
             </div>
 
             {/* Share — turns every reader into a distribution channel */}
