@@ -18,7 +18,7 @@ const SLIDES: Slide[] = [
   {
     tag: "อ่านออฟไลน์ได้แล้ววันนี้",
     title: "โหลดเก็บไว้อ่านออฟไลน์",
-    sub: "ดาวน์โหลดตอนเก็บไว้อ่านตอนเน็ตไม่มี/บนเครื่องบิน — ลื่นกว่าเว็บ กันแคปหน้าจอ ใช้ได้ทั้ง iPhone และ Android ฟรี!",
+    sub: "ดาวน์โหลดตอนเก็บไว้อ่านตอนเน็ตไม่มี — ทั้ง iPhone และ Android ฟรี!",
     cta: "โหลดแอป",
     href: "/download",
     icon: Smartphone,
@@ -68,21 +68,21 @@ function AndroidLogo({ className }: { className?: string }) {
 
 function PlatformButtons() {
   const btn =
-    "flex items-center gap-3 px-5 py-2.5 rounded-xl bg-[var(--text-primary)] text-[var(--bg-primary)] hover:opacity-90 transition-opacity";
+    "flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[var(--text-primary)] text-[var(--bg-primary)] hover:opacity-90 transition-opacity";
   return (
-    <div className="flex flex-col sm:flex-row gap-3">
+    <div className="flex flex-wrap gap-2.5">
       <Link href="/download" className={btn}>
-        <AppleLogo className="w-6 h-6 shrink-0" />
-        <span className="flex flex-col leading-none text-left">
-          <span className="text-[9px] uppercase tracking-wider opacity-70">iPhone / iPad</span>
-          <span className="text-sm font-semibold">เพิ่มลงหน้าจอโฮม</span>
+        <AppleLogo className="w-5 h-5 shrink-0" />
+        <span className="flex flex-col text-left leading-tight">
+          <span className="text-[8px] uppercase tracking-wider opacity-70">iPhone</span>
+          <span className="text-xs font-semibold whitespace-nowrap">เพิ่มลงโฮม</span>
         </span>
       </Link>
       <Link href="/download" className={btn}>
-        <AndroidLogo className="w-6 h-6 shrink-0" />
-        <span className="flex flex-col leading-none text-left">
-          <span className="text-[9px] uppercase tracking-wider opacity-70">Android</span>
-          <span className="text-sm font-semibold">โหลด APK ฟรี</span>
+        <AndroidLogo className="w-5 h-5 shrink-0" />
+        <span className="flex flex-col text-left leading-tight">
+          <span className="text-[8px] uppercase tracking-wider opacity-70">Android</span>
+          <span className="text-xs font-semibold whitespace-nowrap">โหลด APK</span>
         </span>
       </Link>
     </div>
@@ -139,10 +139,16 @@ export default function PromoCarousel() {
             {/* text — rises in each time its slide becomes active */}
             <div className={`relative z-10 max-w-md lg:max-w-lg ${idx === i ? "iv-rise" : ""}`}>
               <p className="eyebrow mb-4">{s.tag}</p>
-              <h2 className="font-bebas text-4xl sm:text-5xl lg:text-6xl text-[var(--text-primary)] tracking-[0.04em] leading-[0.95] mb-4 uppercase">
+              <h2
+                className={`font-bebas text-[var(--text-primary)] tracking-[0.04em] leading-[0.95] mb-3 uppercase ${
+                  s.platforms
+                    ? "text-3xl sm:text-4xl lg:text-5xl"
+                    : "text-4xl sm:text-5xl lg:text-6xl"
+                }`}
+              >
                 {s.title}
               </h2>
-              <p className="text-sm sm:text-base text-[var(--text-secondary)] mb-6 leading-relaxed">
+              <p className="text-sm sm:text-base text-[var(--text-secondary)] mb-5 leading-relaxed">
                 {s.sub}
               </p>
               {s.platforms ? (
