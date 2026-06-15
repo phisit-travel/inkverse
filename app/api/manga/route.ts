@@ -109,30 +109,44 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  const existing = await prisma.manga.findUnique({ where: { slug } });
-  if (existing) {
-    return NextResponse.json({ error: "Slug already taken" }, { status: 409 });
-  }
-
   const validRatings = ["EVERYONE", "TEEN", "ADULT"];
 
-  const manga = await prisma.manga.create({
-    data: {
-      title,
-      slug,
-      description,
-      originCountry: originCountry || "JP",
-      status: status || "ONGOING",
-      type: type || "MANGA",
-      coverUrl: coverUrl || null,
-      contentRating: validRatings.includes(contentRating) ? contentRating : "EVERYONE",
-      tags: cleanTags(tags),
-      translatorId,
-      genres: genreIds
-        ? { create: genreIds.map((id: string) => ({ genreId: id })) }
-        : undefined,
-    },
-  });
+  // Use a clean slug (just the slugified title). Only if that exact slug is
+  // already taken do we append -2, -3, … — so URLs stay pretty by default.
+  // Race-safe: slug is @unique, so a concurrent create throws P2002, which we
+  // catch and retry with the next suffix.
+  const baseSlug = slug;
+  let manga = null;
+  for (let attempt = 0; attempt < 25; attempt++) {
+    const finalSlug = attempt === 0 ? baseSlug : `${baseSlug}-${attempt + 1}`;
+    try {
+      manga = await prisma.manga.create({
+        data: {
+          title,
+          slug: finalSlug,
+          description,
+          originCountry: originCountry || "JP",
+          status: status || "ONGOING",
+          type: type || "MANGA",
+          coverUrl: coverUrl || null,
+          contentRating: validRatings.includes(contentRating) ? contentRating : "EVERYONE",
+          tags: cleanTags(tags),
+          translatorId,
+          genres: genreIds
+            ? { create: genreIds.map((id: string) => ({ genreId: id })) }
+            : undefined,
+        },
+      });
+      break;
+    } catch (e: unknown) {
+      const code = (e as { code?: string })?.code;
+      if (code === "P2002" && attempt < 24) continue; // slug taken — try next suffix
+      throw e;
+    }
+  }
+  if (!manga) {
+    return NextResponse.json({ error: "ตั้งชื่อ slug ไม่สำเร็จ ลองเปลี่ยนชื่อเรื่อง" }, { status: 409 });
+  }
 
   return NextResponse.json(manga, { status: 201 });
 }

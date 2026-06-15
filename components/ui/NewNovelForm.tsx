@@ -35,7 +35,8 @@ export default function NewNovelForm({ genres = [] }: { genres?: { id: string; n
     }
     setLoading(true);
     setError("");
-    const slug = `${slugify(title)}-${Math.random().toString(36).slice(2, 7)}`;
+    // Send a clean slug; the API appends -2, -3, … only if it's already taken.
+    const slug = slugify(title);
     try {
       const res = await fetch("/api/manga", {
         method: "POST",
