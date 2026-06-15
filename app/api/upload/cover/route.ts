@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { uploadToR2 } from "@/lib/r2";
 import sharp from "sharp";
 import { apiError } from "@/lib/apiError";
+import { createHash } from "crypto";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 
@@ -57,16 +58,28 @@ export async function POST(req: NextRequest) {
 
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  // Convert to WebP and generate two sizes
-  const [cover, thumb] = await Promise.all([
-    sharp(buffer).resize(300, 400, { fit: "cover" }).webp({ quality: 85 }).toBuffer(),
-    sharp(buffer).resize(150, 200, { fit: "cover" }).webp({ quality: 75 }).toBuffer(),
-  ]);
+  // R2 public (r2.dev) URLs are unreliable with non-ASCII object keys, so the
+  // cover key must be ASCII. Already-safe slugs (e.g. manga) keep their key
+  // unchanged; Thai novel slugs map to a stable hash so the upload/serve works.
+  const safeSlug = /^[A-Za-z0-9._-]+$/.test(slug)
+    ? slug
+    : `c${createHash("sha1").update(slug).digest("hex").slice(0, 20)}`;
 
-  const [coverUrl] = await Promise.all([
-    uploadToR2(`covers/${slug}.webp`, cover, "image/webp"),
-    uploadToR2(`covers/${slug}-thumb.webp`, thumb, "image/webp"),
-  ]);
+  // Convert to WebP (two sizes) and push to R2. Wrapped so a storage failure
+  // surfaces a code on screen instead of a blank "อัปโหลดปกไม่สำเร็จ".
+  let coverUrl: string;
+  try {
+    const [cover, thumb] = await Promise.all([
+      sharp(buffer).resize(300, 400, { fit: "cover" }).webp({ quality: 85 }).toBuffer(),
+      sharp(buffer).resize(150, 200, { fit: "cover" }).webp({ quality: 75 }).toBuffer(),
+    ]);
+    [coverUrl] = await Promise.all([
+      uploadToR2(`covers/${safeSlug}.webp`, cover, "image/webp"),
+      uploadToR2(`covers/${safeSlug}-thumb.webp`, thumb, "image/webp"),
+    ]);
+  } catch {
+    return apiError("UP-002", 502, { message: "อัปโหลดปกไปที่จัดเก็บ (R2) ไม่สำเร็จ" });
+  }
 
   return NextResponse.json({ url: coverUrl });
 }

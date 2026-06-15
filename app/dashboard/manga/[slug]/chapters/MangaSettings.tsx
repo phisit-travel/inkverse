@@ -71,7 +71,10 @@ export default function MangaSettings({
       fd.append("slug", slug);
       const up = await fetch("/api/upload/cover", { method: "POST", body: fd });
       const d = await up.json().catch(() => ({}));
-      if (!up.ok || !d.url) { setError(d.error || "อัปโหลดปกไม่สำเร็จ"); return; }
+      if (!up.ok || !d.url) {
+        setError(d.code ? `[${d.code}] ${d.error}` : d.error || "อัปโหลดปกไม่สำเร็จ");
+        return;
+      }
       // Cache-bust so the new cover shows everywhere immediately (same key overwrites).
       const url = `${d.url}?v=${Date.now()}`;
       const patch = await fetch(`/api/manga/${slug}`, {
