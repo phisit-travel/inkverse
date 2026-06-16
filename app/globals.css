@@ -302,14 +302,10 @@ html.app-mode .app-only { display: flex !important; }
   .iv-float, .iv-ring-spin, .iv-ring-spin-rev, .iv-rise { animation: none; }
 }
 
-/* Achievement book — page-turn (the leaving page swings off its spine edge) */
-@keyframes achFlipNext {
-  from { transform: rotateY(0deg); }
-  to   { transform: rotateY(-180deg); }
-}
-@keyframes achFlipPrev {
-  from { transform: rotateY(0deg); }
-  to   { transform: rotateY(180deg); }
+/* Achievement book — the new page swings in from the left and closes over the old (realistic, both directions) */
+@keyframes achFlipPrevIn {
+  from { transform: rotateY(-180deg); }
+  to   { transform: rotateY(0deg); }
 }
 /* page-curl shadow: swells as the leaf reaches edge-on, then fades */
 @keyframes achLeafShade {
