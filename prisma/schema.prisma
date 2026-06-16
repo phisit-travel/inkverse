@@ -319,6 +319,7 @@ model Chapter {
   coinCost         Int               @default(0)
   publishedAt      DateTime          @default(now())
   viewCount        Int               @default(0)
+  wordCount        Int               @default(0) // denormalized novel word count (novelStats on save) so the manage page never loads every chapter's content
   content          String?           @db.Text // novel chapter body (HTML from the WYSIWYG editor); null for image manga
   authorNote       String?           @db.Text // optional note shown at the end of a novel chapter
   status           String            @default("PUBLISHED") // DRAFT | PUBLISHED

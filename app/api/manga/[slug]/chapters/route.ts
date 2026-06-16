@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notifyNewChapter } from "@/lib/notifications";
-import { renderNovel } from "@/lib/markdown";
+import { renderNovel, novelStats } from "@/lib/markdown";
 import { isChapterLive } from "@/lib/chapters";
 import { syncMangaLatestChapter } from "@/lib/mangaStats";
 import { revalidateMangaCache } from "@/lib/revalidate";
@@ -63,6 +63,7 @@ export async function POST(
       isPremium,
       coinCost: isPremium ? coinCost : 0,
       content: typeof content === "string" ? renderNovel(content.slice(0, 500000)) : null,
+      wordCount: typeof content === "string" ? novelStats(content).words : 0,
       status: status === "DRAFT" ? "DRAFT" : "PUBLISHED",
       publishAt: publishDate,
       freeAt: isPremium && typeof freeAt === "string" && !isNaN(new Date(freeAt).getTime()) ? new Date(freeAt) : null,

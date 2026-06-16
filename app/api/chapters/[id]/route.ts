@@ -60,7 +60,10 @@ export async function PATCH(
 
   const data: Record<string, unknown> = {};
   if (typeof body.title === "string") data.title = body.title || null;
-  if (typeof body.content === "string") data.content = renderNovel(body.content.slice(0, 500000));
+  if (typeof body.content === "string") {
+    data.content = renderNovel(body.content.slice(0, 500000));
+    data.wordCount = novelStats(body.content).words;
+  }
   if (body.status === "DRAFT" || body.status === "PUBLISHED") data.status = body.status;
   if (body.publishAt === null) data.publishAt = null;
   else if (typeof body.publishAt === "string") {

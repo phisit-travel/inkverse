@@ -6,7 +6,6 @@ import { ArrowLeft, BookOpen, Plus, BarChart3, BookMarked, Download } from "luci
 import ChapterManager from "./ChapterManager";
 import { decodeSlug } from "@/lib/slug";
 import MangaSettings from "./MangaSettings";
-import { novelStats } from "@/lib/markdown";
 import { Pencil } from "lucide-react";
 import type { Metadata } from "next";
 
@@ -36,7 +35,15 @@ export default async function MangaChaptersPage({ params }: Props) {
     include: {
       chapters: {
         orderBy: { chapterNum: "asc" },
-        include: { _count: { select: { pages: true } } },
+        // Select only what the list needs — never the full `content` of every
+        // chapter (that made this page slower as a novel grew). wordCount is
+        // denormalized, so no per-chapter HTML parsing here.
+        select: {
+          id: true, chapterNum: true, title: true, isPremium: true, coinCost: true,
+          viewCount: true, wordCount: true, status: true, publishAt: true,
+          publishedAt: true, freeAt: true,
+          _count: { select: { pages: true } },
+        },
       },
       translator: { select: { userId: true } },
       genres: { select: { genreId: true } },
@@ -64,7 +71,7 @@ export default async function MangaChaptersPage({ params }: Props) {
     coinCost: ch.coinCost,
     viewCount: ch.viewCount,
     pageCount: ch._count.pages,
-    wordCount: isNovel ? novelStats(ch.content).words : 0,
+    wordCount: isNovel ? ch.wordCount : 0,
     status: ch.status,
     scheduledAt: ch.publishAt ? ch.publishAt.toISOString() : null,
     publishedAt: ch.publishedAt.toISOString(),
