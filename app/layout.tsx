@@ -118,6 +118,9 @@ export default async function RootLayout({
     <html
       lang="th"
       className={`${bebasNeue.variable} ${notoSansThai.variable}`}
+      // The inline script below sets data-theme on <html> before React hydrates
+      // (to avoid a theme flash); suppress the resulting attribute mismatch.
+      suppressHydrationWarning
     >
       <head>
         {/* Apply saved theme before paint to avoid a flash (default: dark). */}
