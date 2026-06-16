@@ -13,7 +13,6 @@ import HelpChatbot from "@/components/ui/HelpChatbot";
 import ReadingProgressProvider from "@/components/ui/ReadingProgressProvider";
 import AchievementToaster from "@/components/ui/AchievementToaster";
 import TrafficBeacon from "@/components/ui/TrafficBeacon";
-import AppBonus from "@/components/ui/AppBonus";
 import PushRegister from "@/components/ui/PushRegister";
 import WelcomePopup from "@/components/ui/WelcomePopup";
 import NativeShell from "@/components/ui/NativeShell";
@@ -148,7 +147,6 @@ export default async function RootLayout({
         <CookieConsent />
         <TrafficBeacon />
         {userId && <AchievementToaster />}
-        {userId && <AppBonus />}
         {userId && <PushRegister />}
         <WelcomePopup isCreator={userRole === "TRANSLATOR" || userRole === "ADMIN"} />
       </body>
