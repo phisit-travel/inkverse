@@ -217,8 +217,25 @@ model Manga {
   ratings       Rating[]
   comments      Comment[]
   weeklyStats   WeeklyStats[]
+  storyBible    StoryBibleEntry[]
   translatorId  String?
   translator    Translator? @relation(fields: [translatorId], references: [id])
+}
+
+// Private worldbuilding notes for the writer — characters, places, timeline.
+// Never shown to readers; owner/admin only.
+model StoryBibleEntry {
+  id        String   @id @default(cuid())
+  mangaId   String
+  category  String   @default("CHARACTER") // CHARACTER | WORLD | TIMELINE | NOTE
+  title     String
+  body      String?  @db.Text
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  manga     Manga    @relation(fields: [mangaId], references: [id], onDelete: Cascade)
+
+  @@index([mangaId, category])
 }
 
 model Genre {
