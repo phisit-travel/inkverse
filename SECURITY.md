@@ -26,6 +26,19 @@
 5. **Rate limiting / flood guard at scale** — `lib/rate-limit.ts` and `proxy.ts` keep counters in-memory (per instance). On multi-instance/serverless, move them to Redis/Upstash. For real volumetric DDoS, put **Cloudflare** (orange-cloud + "Under Attack" mode / rate-limiting rules) or **Vercel WAF** in front — the app layer alone cannot absorb a large attack.
 6. **DB backups + least-privilege** — ensure the Neon role used by the app can't drop tables it doesn't need; enable point-in-time backups.
 
+## Pentest audit 2026-06-17 — content-leak, auth/IDOR, XSS/fuzzing
+
+Found + fixed (commits cb8c0e6, b0c21a1):
+
+| Issue | Severity | Fix |
+|---|---|---|
+| `GET /api/manga/[slug]/[chapter]` returned full novel `content` + page keys for PREMIUM chapters with no auth/unlock check (bypassed the PremiumGate; no frontend consumer) | 🔴 critical | Mirror the reader: check unlock/ownership, return `content:null`+`pages:[]`+`locked:true` when not paid, sanitize HTML, serve signed page paths (no raw R2 keys). |
+| Stored XSS via JSON-LD — creator-controlled manga title/description went through `JSON.stringify` into a `<script>` unescaped; `</script><img onerror>` broke out. Reachable by any user (creators are auto-approved) | 🔴 critical | `safeJsonLd()` escapes `<>&`→`\uXXXX` in `components/seo/JsonLd.tsx`. |
+| Rate-limit bypass — `clientIp` trusted the leftmost `x-forwarded-for` (client-controlled; CF/proxies append), so a forged header rotated the key past every per-IP limit | 🟠 | Prefer `cf-connecting-ip`/`x-real-ip`; XFF rightmost as fallback (`lib/rate-limit.ts` + `proxy.ts`). |
+| Pagination — `page=-1`→negative Prisma skip (500); `limit` unbounded (request whole table = DoS) | 🟠 | Clamp `page>=1`, `take` 1..100 on `/api/manga` + `/manga`, `/manga/[genre]`, `/discover`. |
+
+Verified clean (no change needed): reader page omits locked content server-side; `/api/img` HMAC token + per-IP/user limits; offline-pages/export/revisions/chapters-pages owner-gated; all `admin/*` enforce ADMIN; register hard-codes `role:READER`; IDOR scoped (`comment`, `notifications`, `coin/order/*`, `bookmark`, `follow`, `tip`, uploads, withdraw); JWT role re-fetched from DB (tamper-proof); `renderNovel` strips script/onerror/`javascript:`; SQL-injection N/A (Prisma); login brute-force 5/5min/email + register 5/10min/IP confirmed blocking. Note: `AUTO_APPROVE_CREATORS` is ON (growth mode) — the creator role isn't a hard trust boundary until set to `false`.
+
 ## Launch-hardening (money paths) — fixed
 
 | Issue | Severity | Fix |
