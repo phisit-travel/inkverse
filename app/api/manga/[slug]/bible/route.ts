@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiError } from "@/lib/apiError";
 import { resolveOwnedManga } from "@/lib/mangaOwner";
+import { rateLimit } from "@/lib/rate-limit";
 
 const CATEGORIES = ["CHARACTER", "WORLD", "TIMELINE", "NOTE"];
 
@@ -20,6 +21,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const { slug } = await params;
   const r = await resolveOwnedManga(slug);
   if ("err" in r) return r.err;
+  if (!rateLimit(`bible:${r.userId}`, 60, 60_000).ok) return apiError("RATE-001", 429);
 
   const body = await req.json().catch(() => ({}));
   const category = CATEGORIES.includes(body.category) ? body.category : "CHARACTER";

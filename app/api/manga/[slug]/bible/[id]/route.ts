@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiError } from "@/lib/apiError";
 import { resolveOwnedManga } from "@/lib/mangaOwner";
+import { rateLimit } from "@/lib/rate-limit";
 
 const CATEGORIES = ["CHARACTER", "WORLD", "TIMELINE", "NOTE"];
 
@@ -9,6 +10,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sl
   const { slug, id } = await params;
   const r = await resolveOwnedManga(slug);
   if ("err" in r) return r.err;
+  if (!rateLimit(`bible:${r.userId}`, 60, 60_000).ok) return apiError("RATE-001", 429);
 
   const existing = await prisma.storyBibleEntry.findUnique({ where: { id }, select: { mangaId: true } });
   if (!existing || existing.mangaId !== r.manga.id) return apiError("READ-004", 404);
@@ -31,6 +33,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const { slug, id } = await params;
   const r = await resolveOwnedManga(slug);
   if ("err" in r) return r.err;
+  if (!rateLimit(`bible:${r.userId}`, 60, 60_000).ok) return apiError("RATE-001", 429);
 
   const existing = await prisma.storyBibleEntry.findUnique({ where: { id }, select: { mangaId: true } });
   if (!existing || existing.mangaId !== r.manga.id) return apiError("READ-004", 404);

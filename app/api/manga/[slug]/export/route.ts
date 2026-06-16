@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiError } from "@/lib/apiError";
 import { resolveOwnedManga } from "@/lib/mangaOwner";
+import { rateLimit } from "@/lib/rate-limit";
 import { buildTxt, buildEpub } from "@/lib/export";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const r = await resolveOwnedManga(slug);
   if ("err" in r) return r.err;
+  // Building a whole-novel epub is CPU work — cap per owner.
+  if (!rateLimit(`export:${r.userId}`, 20, 60_000).ok) return apiError("RATE-001", 429);
 
   const format = new URL(req.url).searchParams.get("format") === "epub" ? "epub" : "txt";
 

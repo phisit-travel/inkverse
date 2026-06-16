@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiError } from "@/lib/apiError";
 import { resolveOwnedChapter } from "@/lib/mangaOwner";
+import { rateLimit } from "@/lib/rate-limit";
 import { novelStats } from "@/lib/markdown";
 import { revalidateMangaCache } from "@/lib/revalidate";
 
@@ -11,6 +12,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   const { id, revId } = await params;
   const r = await resolveOwnedChapter(id);
   if ("err" in r) return r.err;
+  if (!rateLimit(`restore:${r.userId}`, 30, 60_000).ok) return apiError("RATE-001", 429);
 
   const rev = await prisma.chapterRevision.findUnique({ where: { id: revId } });
   if (!rev || rev.chapterId !== id) return apiError("READ-004", 404);
