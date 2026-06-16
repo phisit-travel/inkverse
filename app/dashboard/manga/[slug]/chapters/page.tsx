@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, Plus } from "lucide-react";
+import { ArrowLeft, BookOpen, Plus, BarChart3 } from "lucide-react";
 import ChapterManager from "./ChapterManager";
 import { decodeSlug } from "@/lib/slug";
 import MangaSettings from "./MangaSettings";
@@ -105,6 +105,14 @@ export default async function MangaChaptersPage({ params }: Props) {
               <Plus className="w-4 h-4" /> อัปโหลดตอนเพิ่ม
             </Link>
           )}
+        </div>
+        <div className="mt-3">
+          <Link
+            href={`/dashboard/manga/${slug}/analytics`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[var(--border)] text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-primary)]/40"
+          >
+            <BarChart3 className="w-4 h-4" /> ดูสถิติ
+          </Link>
         </div>
       </div>
 
