@@ -30,6 +30,19 @@ const CATS: { key: AchievementCategory; icon: ComponentType<{ className?: string
   { key: "engagement", icon: Coins },
 ];
 
+const FLIP_MS = 720;
+
+// Ornamental corner bracket (monochrome, INKVERSE-style).
+function Corner({ pos }: { pos: "tl" | "tr" | "bl" | "br" }) {
+  const map: Record<string, string> = {
+    tl: "top-1.5 left-1.5 border-t border-l rounded-tl-lg",
+    tr: "top-1.5 right-1.5 border-t border-r rounded-tr-lg",
+    bl: "bottom-1.5 left-1.5 border-b border-l rounded-bl-lg",
+    br: "bottom-1.5 right-1.5 border-b border-r rounded-br-lg",
+  };
+  return <span className={`pointer-events-none absolute w-6 h-6 border-[var(--text-primary)]/45 ${map[pos]}`} />;
+}
+
 function AchRow({ a }: { a: AchievementProgress }) {
   const Icon = ICONS[a.icon] ?? Trophy;
   const pct = Math.min(100, Math.round((a.current / a.threshold) * 100));
@@ -74,14 +87,14 @@ export default function AchievementBook({ items, unlockedCount }: { items: Achie
     const dir = c > cat ? "next" : "prev";
     setFlip({ dir, from: cat });
     setCat(c);
-    window.setTimeout(() => setFlip(null), 600);
+    window.setTimeout(() => setFlip(null), FLIP_MS);
   };
 
   const ContentPage = ({ c }: { c: number }) => {
     const Icon = CATS[c].icon;
     return (
       <div className="absolute inset-0 bg-[var(--bg-surface)] overflow-y-auto p-4 sm:p-5"
-        style={{ backgroundImage: "linear-gradient(to right, rgba(0,0,0,0.10), transparent 12%)" }}>
+        style={{ backgroundImage: "linear-gradient(to right, rgba(0,0,0,0.16), transparent 11%)" }}>
         <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-[0.15em] uppercase flex items-center gap-2 mb-3">
           <Icon className="w-5 h-5" /> {CATEGORY_LABEL[CATS[c].key]}
         </h2>
@@ -94,24 +107,29 @@ export default function AchievementBook({ items, unlockedCount }: { items: Achie
 
   return (
     <div className="mx-auto max-w-3xl">
-      {/* Book */}
-      <div className="relative rounded-2xl border-2 border-[var(--text-primary)]/25 bg-[var(--bg-card)] p-2 sm:p-3 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.6)]">
+      {/* ── Book cover ── */}
+      <div className="relative rounded-2xl border border-[var(--text-primary)]/30 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-surface)] p-3 sm:p-4 shadow-[0_34px_80px_-28px_rgba(0,0,0,0.8)]">
+        {/* embossed inner ring + ornamental corners */}
+        <div className="pointer-events-none absolute inset-2 rounded-xl border border-[var(--text-primary)]/15" />
+        <Corner pos="tl" /><Corner pos="tr" /><Corner pos="bl" /><Corner pos="br" />
+
         {/* emblem header */}
-        <div className="flex items-center justify-center gap-2 py-2">
-          <Star className="w-4 h-4 text-[var(--text-primary)]" />
-          <span className="font-bebas text-xl tracking-[0.25em] text-[var(--text-primary)] uppercase">ความสำเร็จ</span>
-          <Star className="w-4 h-4 text-[var(--text-primary)]" />
+        <div className="flex items-center justify-center gap-2.5 py-2">
+          <span className="w-8 h-px bg-gradient-to-r from-transparent to-[var(--text-primary)]/60" />
+          <Star className="w-3.5 h-3.5 text-[var(--text-primary)]" />
+          <span className="font-bebas text-xl tracking-[0.3em] text-[var(--text-primary)] uppercase">ความสำเร็จ</span>
+          <Star className="w-3.5 h-3.5 text-[var(--text-primary)]" />
+          <span className="w-8 h-px bg-gradient-to-l from-transparent to-[var(--text-primary)]/60" />
         </div>
 
-        {/* inner frame */}
-        <div className="rounded-xl border border-[var(--border)] overflow-hidden">
-          <div className="flex flex-col sm:flex-row sm:min-h-[460px]">
+        {/* ── Open pages ── */}
+        <div className="relative rounded-xl border border-[var(--border)] overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:min-h-[470px]">
             {/* LEFT: contents / category tabs */}
-            <div className="sm:w-[38%] bg-[var(--bg-surface)] border-b sm:border-b-0 sm:border-r border-[var(--text-primary)]/15 p-3 sm:p-4"
-              style={{ backgroundImage: "linear-gradient(to left, rgba(0,0,0,0.08), transparent 14%)" }}>
+            <div className="sm:w-[37%] bg-[var(--bg-surface)] p-3 sm:p-4"
+              style={{ backgroundImage: "linear-gradient(to left, rgba(0,0,0,0.16), transparent 12%)" }}>
               <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--text-muted)] mb-3 hidden sm:block">สารบัญ</p>
-              {/* overall progress */}
-              <div className="mb-3 p-2.5 rounded-lg border border-[var(--border)]">
+              <div className="mb-3 p-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg-card)]/40">
                 <div className="flex items-baseline justify-between">
                   <span className="font-bebas text-2xl text-[var(--text-primary)] tracking-wider">{unlockedCount}/{items.length}</span>
                   <span className="text-xs text-[var(--text-secondary)]">{pct}%</span>
@@ -120,7 +138,6 @@ export default function AchievementBook({ items, unlockedCount }: { items: Achie
                   <div className="h-full bg-[var(--text-primary)] transition-all" style={{ width: `${pct}%` }} />
                 </div>
               </div>
-              {/* category tabs (dropbar on mobile = horizontal scroll) */}
               <div className="flex sm:flex-col gap-2 overflow-x-auto sm:overflow-visible pb-1 sm:pb-0">
                 {CATS.map((cdef, i) => {
                   const { done, total } = countCat(i);
@@ -140,25 +157,44 @@ export default function AchievementBook({ items, unlockedCount }: { items: Achie
               </div>
             </div>
 
-            {/* RIGHT: content page with flip */}
-            <div className="sm:w-[62%] relative" style={{ perspective: "2000px", minHeight: "320px" }}>
-              <div className="relative w-full h-full min-h-[320px] sm:min-h-[460px]" style={{ transformStyle: "preserve-3d" }}>
+            {/* RIGHT: content page with page-turn */}
+            <div className="sm:w-[63%] relative" style={{ perspective: "2200px", minHeight: "320px" }}>
+              <div className="relative w-full h-full min-h-[320px] sm:min-h-[470px]" style={{ transformStyle: "preserve-3d" }}>
                 <ContentPage c={cat} />
                 {flip && (
                   <div className="absolute inset-0"
                     style={{
                       transformStyle: "preserve-3d",
                       transformOrigin: flip.dir === "next" ? "left center" : "right center",
-                      animation: `${flip.dir === "next" ? "achFlipNext" : "achFlipPrev"} 0.58s ease-in-out forwards`,
+                      animation: `${flip.dir === "next" ? "achFlipNext" : "achFlipPrev"} ${FLIP_MS}ms cubic-bezier(0.34, 0.05, 0.2, 1) forwards`,
+                      boxShadow: "0 0 40px -6px rgba(0,0,0,0.5)",
                       zIndex: 10,
                     }}>
-                    <div className="absolute inset-0" style={{ backfaceVisibility: "hidden" }}><ContentPage c={flip.from} /></div>
+                    {/* front (leaving page) */}
+                    <div className="absolute inset-0" style={{ backfaceVisibility: "hidden" }}>
+                      <ContentPage c={flip.from} />
+                      {/* curl shadow that swells mid-turn */}
+                      <div className="absolute inset-0 pointer-events-none"
+                        style={{
+                          background: flip.dir === "next"
+                            ? "linear-gradient(to right, rgba(0,0,0,0.55), transparent 42%)"
+                            : "linear-gradient(to left, rgba(0,0,0,0.55), transparent 42%)",
+                          animation: `achLeafShade ${FLIP_MS}ms ease-in-out forwards`,
+                        }} />
+                    </div>
+                    {/* back of the sheet */}
                     <div className="absolute inset-0 bg-[var(--bg-card)] border border-[var(--border)]"
-                      style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)", backgroundImage: "linear-gradient(to left, rgba(0,0,0,0.12), transparent 18%)" }} />
+                      style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)", backgroundImage: "linear-gradient(to left, rgba(0,0,0,0.18), transparent 16%)" }} />
                   </div>
                 )}
               </div>
             </div>
+          </div>
+
+          {/* spine — sits over the seam between the two pages (desktop) */}
+          <div className="pointer-events-none hidden sm:block absolute inset-y-0 left-[37%] -ml-2 w-4 z-20"
+            style={{ background: "linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,0.30) 35%, rgba(0,0,0,0.30) 65%, rgba(0,0,0,0) 100%)" }}>
+            <span className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-[var(--text-primary)]/15" />
           </div>
         </div>
       </div>
