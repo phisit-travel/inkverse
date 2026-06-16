@@ -1,10 +1,6 @@
 import { prisma } from "./prisma";
 import type { Prisma } from "@prisma/client";
 
-// Reader gets this many coins the moment their account is created (both Google
-// OAuth and email/password). Granted once per user — see grantSignupBonus.
-export const SIGNUP_BONUS_COINS = 20;
-
 // Tiered discount for unlocking many chapters at once — encourages spending the
 // whole balance in one go (raises coins-used). Kept in sync with the UI hint in
 // components/ui/BulkUnlock.tsx.
@@ -280,40 +276,6 @@ export async function unlockChaptersBulk(
     discountRate,
     coinsLeft: result.coins,
   };
-}
-
-/**
- * Grant the one-time signup bonus. Idempotent: a marker CoinTransaction keyed by
- * `signup:<userId>` guarantees a user can never receive it twice (re-runs, retries,
- * or being called from both the OAuth adapter and the credentials register route).
- * Safe to call right after a User row is created.
- */
-export async function grantSignupBonus(userId: string): Promise<void> {
-  try {
-    await prisma.$transaction(async (tx) => {
-      const already = await tx.coinTransaction.findFirst({
-        where: { userId, refId: `signup:${userId}` },
-        select: { id: true },
-      });
-      if (already) return;
-      await tx.coinTransaction.create({
-        data: {
-          userId,
-          amount: SIGNUP_BONUS_COINS,
-          type: "BONUS",
-          description: "โบนัสสมัครสมาชิกใหม่",
-          refId: `signup:${userId}`,
-        },
-      });
-      await tx.user.update({
-        where: { id: userId },
-        data: { coins: { increment: SIGNUP_BONUS_COINS } },
-      });
-    });
-  } catch (err) {
-    // Non-critical: never block account creation if the bonus fails.
-    console.error("[grantSignupBonus]", err);
-  }
 }
 
 /**

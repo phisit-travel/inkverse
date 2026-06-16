@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import crypto from "crypto";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
-import { grantSignupBonus, recordReferral } from "@/lib/coins";
+import { recordReferral } from "@/lib/coins";
 import { sendEmail, verificationEmail } from "@/lib/email";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { apiError } from "@/lib/apiError";
@@ -69,8 +69,8 @@ export async function POST(req: NextRequest) {
     select: { id: true, username: true, email: true, role: true },
   });
 
-  // Email verification gates the welcome bonus on a real, unique inbox — this
-  // stops re-signup coin farming. Bonus is granted on verify, not here.
+  // A verified email is required before password login (stops pre-account
+  // hijacking). New accounts must click the link before they can sign in.
   const vToken = crypto.randomBytes(32).toString("hex");
   await prisma.emailVerificationToken.create({
     data: { token: vToken, userId: user.id, expires: new Date(Date.now() + 24 * 60 * 60_000) },
@@ -81,8 +81,8 @@ export async function POST(req: NextRequest) {
     html: verificationEmail(`${BASE_URL}/api/auth/verify?token=${vToken}`),
   });
   if (!sent) {
-    // Email isn't configured → can't verify; fall back to immediate bonus.
-    await grantSignupBonus(user.id);
+    // Email isn't configured → can't verify; mark verified so the account isn't
+    // locked out of password login.
     await prisma.user.update({ where: { id: user.id }, data: { emailVerified: new Date() } });
   }
 

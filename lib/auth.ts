@@ -8,7 +8,6 @@ import bcrypt from "bcryptjs";
 import { OAuth2Client } from "google-auth-library";
 import { authConfig } from "./auth.config";
 import { rateLimit } from "@/lib/rate-limit";
-import { grantSignupBonus } from "@/lib/coins";
 
 const googleVerifier = new OAuth2Client();
 
@@ -40,7 +39,6 @@ async function findOrCreateGoogleUser(p: {
         role: "READER",
       },
     });
-    await grantSignupBonus(user.id);
   }
   return user;
 }
@@ -70,8 +68,6 @@ const adapter: Adapter = {
         role: "READER",
       },
     });
-    // Welcome coins for new Google sign-ups (idempotent).
-    await grantSignupBonus(user.id);
     return user as AdapterUser;
   },
 };

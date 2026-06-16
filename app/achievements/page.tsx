@@ -19,7 +19,7 @@ import type { ComponentType } from "react";
 
 export const metadata: Metadata = {
   title: "ความสำเร็จ — INKVERSE",
-  description: "เก็บความสำเร็จจากการอ่าน รับเหรียญรางวัล",
+  description: "เก็บความสำเร็จจากการอ่าน ปลดล็อกเหรียญตรา และไต่อันดับนักอ่าน",
 };
 
 const ICONS: Record<string, ComponentType<{ className?: string }>> = {

@@ -4,8 +4,8 @@ import { createNotification } from "./notifications";
 /**
  * Achievement system. Definitions live here in code (not the DB); the
  * `UserAchievement` table only records which keys a user has earned. Unlocking
- * grants a small one-time coin reward (margin-safe) and a notification — a
- * retention loop that nudges readers to read more, finish series, and engage.
+ * grants a badge + a notification ONLY — no coin reward (avoids coin inflation).
+ * A retention loop that nudges readers to read more, finish series, and engage.
  */
 
 export type AchievementCategory = "reading" | "completion" | "social" | "engagement";
@@ -18,7 +18,7 @@ export interface AchievementDef {
   category: AchievementCategory;
   metric: keyof Stats;
   threshold: number;
-  coinReward: number;
+  coinReward: number; // vestigial — achievements grant NO coins (badge only)
 }
 
 export interface Stats {
@@ -123,8 +123,8 @@ async function computeStats(userId: string): Promise<Stats> {
 
 /**
  * Check the user's current stats against every achievement, unlock any newly
- * earned ones (atomically grant the coin reward), and notify. Idempotent: the
- * UserAchievement primary key prevents double-granting even under races.
+ * earned ones (badge + notification only — no coins), and notify. Idempotent:
+ * the UserAchievement primary key prevents double-unlocking even under races.
  * Returns the achievements unlocked on THIS call.
  */
 export async function evaluateAchievements(userId: string): Promise<AchievementDef[]> {

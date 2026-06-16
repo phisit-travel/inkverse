@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { grantSignupBonus } from "@/lib/coins";
 
 const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inksverse.com";
 
-// Email verification link target. Verifies → grants the welcome bonus → signs in prompt.
+// Email verification link target. Verifies the inbox → enables password login.
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token");
   if (!token) return NextResponse.redirect(`${BASE_URL}/auth/signin?verify=invalid`);
@@ -21,8 +20,6 @@ export async function GET(req: NextRequest) {
     prisma.user.update({ where: { id: row.userId }, data: { emailVerified: new Date() } }),
     prisma.emailVerificationToken.deleteMany({ where: { userId: row.userId } }),
   ]);
-  // Grant the welcome coins now that the inbox is confirmed (idempotent).
-  await grantSignupBonus(row.userId);
 
   return NextResponse.redirect(`${BASE_URL}/auth/signin?verify=success`);
 }

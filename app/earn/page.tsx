@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { CalendarCheck, Smartphone, UserPlus, Gift, Zap, ArrowRight, Coins } from "lucide-react";
-import { DAILY_CHECKIN_BASE, DAILY_CHECKIN_STREAK_BONUS, REFERRAL_REWARD_COINS, SIGNUP_BONUS_COINS } from "@/lib/coins";
+import { CalendarCheck, Smartphone, UserPlus, Zap, ArrowRight, Coins } from "lucide-react";
+import { DAILY_CHECKIN_BASE, DAILY_CHECKIN_STREAK_BONUS, REFERRAL_REWARD_COINS } from "@/lib/coins";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -34,14 +34,6 @@ const WAYS = [
     body: `แชร์ลิงก์ชวนเพื่อน — พอเพื่อนเติมเงินครั้งแรก คุณและเพื่อนรับคนละ ${REFERRAL_REWARD_COINS} เหรียญ`,
     href: "/referral",
     cta: "รับลิงก์ชวนเพื่อน",
-  },
-  {
-    icon: Gift,
-    coins: `+${SIGNUP_BONUS_COINS}`,
-    title: "สมัครสมาชิก",
-    body: `สมาชิกใหม่รับ ${SIGNUP_BONUS_COINS} เหรียญต้อนรับทันที (รับครั้งเดียวตอนสมัคร)`,
-    href: "/auth/signup",
-    cta: "สมัครสมาชิก",
   },
   {
     icon: Zap,

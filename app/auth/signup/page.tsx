@@ -35,8 +35,8 @@ export default function SignUpPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // In-app the Turnstile widget can't render (WebView blocks third-party
-    // storage), so we skip it there — the real anti-bot gate is email
-    // verification before the welcome bonus, which still applies.
+    // storage), so we skip it there — email verification (required before login)
+    // is the real gate.
     if (CAPTCHA_ON && !inApp && !captcha) {
       setError("กรุณายืนยันว่าคุณไม่ใช่บอท");
       return;
@@ -66,7 +66,7 @@ export default function SignUpPage() {
     }
 
     if (data.needsVerification) {
-      // Email sent — they must verify to activate the welcome bonus.
+      // Email sent — they must verify before they can sign in.
       setSent(true);
       setLoading(false);
       return;
@@ -129,7 +129,7 @@ export default function SignUpPage() {
           <p className="text-sm text-[var(--text-secondary)] mt-3 leading-relaxed">
             เราส่งลิงก์ยืนยันไปที่<br />
             <span className="text-[var(--text-primary)] font-semibold">{form.email}</span><br />
-            กดลิงก์ในอีเมลเพื่อยืนยัน แล้ว<span className="text-[var(--text-primary)]">รับ 20 เหรียญต้อนรับ</span>
+            กดลิงก์ในอีเมลเพื่อ<span className="text-[var(--text-primary)]">ยืนยันบัญชีและเข้าสู่ระบบ</span>
           </p>
           <p className="text-xs text-[var(--text-muted)] mt-4">ไม่เห็นอีเมล? ลองเช็คในกล่อง Junk / Spam</p>
           <Link href="/auth/signin" className="inline-block mt-6 px-6 py-3 bal-btn text-sm font-semibold uppercase tracking-widest">
