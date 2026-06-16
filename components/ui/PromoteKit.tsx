@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Copy, Check } from "lucide-react";
-import ReferralLink from "./ReferralLink";
 
 type Work = { slug: string; title: string; coverUrl: string | null; type: string };
 
@@ -25,22 +24,13 @@ function CopyBtn({ text, label, done }: { text: string; label: string; done: str
   );
 }
 
-export default function PromoteKit({ works, refCode }: { works: Work[]; refCode: string }) {
+export default function PromoteKit({ works }: { works: Work[] }) {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const enc = encodeURIComponent;
   const chip = "px-3 py-1.5 border border-[var(--border)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-primary)]/50 transition-colors rounded";
 
   return (
     <div className="space-y-8">
-      {/* Referral — creators earn when their fans sign up + top up */}
-      <section>
-        <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-[0.15em] uppercase mb-1">ลิงก์ชวนแฟนของคุณ</h2>
-        <p className="text-sm text-[var(--text-secondary)] mb-3">
-          แฟนสมัครผ่านลิงก์นี้ → เขารับ 20 เหรียญ · พอเขาเติมเงินครั้งแรก <span className="text-[var(--text-primary)]">คุณรับ 20 เหรียญ</span> (ได้คนอ่าน + ได้เหรียญ)
-        </p>
-        <ReferralLink code={refCode} />
-      </section>
-
       {/* Per-work share */}
       <section>
         <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-[0.15em] uppercase mb-3">แชร์ผลงานของคุณ</h2>

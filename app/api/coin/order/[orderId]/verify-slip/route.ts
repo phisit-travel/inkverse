@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { uploadToR2Private } from "@/lib/r2";
 import { rateLimit } from "@/lib/rate-limit";
-import { isFirstTopup, extendVipDays, rewardReferralOnFirstTopup } from "@/lib/coins";
+import { extendVipDays } from "@/lib/coins";
 import { apiError } from "@/lib/apiError";
 
 // EasySlip API v1 — the image-upload endpoint EasySlip's own clients use.
@@ -179,9 +179,7 @@ export async function POST(
       });
       if (flipped.count === 0) return; // already processed elsewhere
 
-      const firstTopup = await isFirstTopup(tx, order.userId);
       if (order.vipDays > 0) await extendVipDays(tx, order.userId, order.vipDays);
-      if (firstTopup) await rewardReferralOnFirstTopup(tx, order.userId);
       await tx.user.update({
         where: { id: order.userId },
         data: { coins: { increment: totalCoins } },

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { isFirstTopup, extendVipDays, rewardReferralOnFirstTopup } from "@/lib/coins";
+import { extendVipDays } from "@/lib/coins";
 import { apiError } from "@/lib/apiError";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -88,9 +88,7 @@ export async function POST(
     });
     if (flipped.count === 0) return;
 
-    const firstTopup = await isFirstTopup(tx, userId);
     if (order.vipDays > 0) await extendVipDays(tx, userId, order.vipDays);
-    if (firstTopup) await rewardReferralOnFirstTopup(tx, userId);
     await tx.coinTransaction.create({
       data: {
         userId,

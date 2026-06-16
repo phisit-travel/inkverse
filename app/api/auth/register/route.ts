@@ -4,7 +4,6 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import crypto from "crypto";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
-import { recordReferral } from "@/lib/coins";
 import { sendEmail, verificationEmail } from "@/lib/email";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { apiError } from "@/lib/apiError";
@@ -19,7 +18,6 @@ const schema = z.object({
     .regex(/^[a-zA-Z0-9_]+$/, "ใช้ได้เฉพาะตัวอักษร ตัวเลข และ _"),
   email: z.string().email(),
   password: z.string().min(8),
-  ref: z.string().max(30).optional(),
   turnstileToken: z.string().optional(),
 });
 
@@ -43,7 +41,7 @@ export async function POST(req: NextRequest) {
     return apiError("VAL-001", 400);
   }
 
-  const { username, email, password, ref, turnstileToken } = parsed.data;
+  const { username, email, password, turnstileToken } = parsed.data;
 
   // Bot check ("I am human"). No-op until TURNSTILE_SECRET_KEY is configured.
   // Skipped for the app shell — the Turnstile widget can't render in the
@@ -85,9 +83,6 @@ export async function POST(req: NextRequest) {
     // locked out of password login.
     await prisma.user.update({ where: { id: user.id }, data: { emailVerified: new Date() } });
   }
-
-  // Attribute the referral if they arrived via an invite link (best-effort).
-  if (ref) await recordReferral(user.id, ref);
 
   return NextResponse.json({ ...user, needsVerification: sent }, { status: 201 });
 }

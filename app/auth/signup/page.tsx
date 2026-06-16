@@ -5,7 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Logo from "@/components/ui/Logo";
 import Turnstile from "@/components/ui/Turnstile";
-import { Mail, Lock, User, Eye, EyeOff, Gift } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 
 const CAPTCHA_ON = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
@@ -17,16 +17,12 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
-  const [ref, setRef] = useState("");
   const [inApp, setInApp] = useState(false);
   const [captcha, setCaptcha] = useState("");
   const [noGms, setNoGms] = useState(false);
   const showGoogle = !inApp || !noGms; // web always; in-app only on GMS devices
 
-  // Capture an invite code (?ref=username) without needing a Suspense boundary.
   useEffect(() => {
-    const r = new URLSearchParams(window.location.search).get("ref");
-    if (r) setRef(r);
     // In-app uses the native Google picker — but not on Huawei/Honor (no GMS).
     setInApp(!!(window as unknown as { Capacitor?: unknown }).Capacitor);
     setNoGms(/huawei|honor/i.test(navigator.userAgent));
@@ -52,7 +48,7 @@ export default function SignUpPage() {
         // skipped (widget can't render in the WebView).
         ...(inApp ? { "x-inkverse-app": "1" } : {}),
       },
-      body: JSON.stringify({ ...form, ...(ref ? { ref } : {}), turnstileToken: captcha }),
+      body: JSON.stringify({ ...form, turnstileToken: captcha }),
     });
 
     const data = await res.json().catch(() => ({}));
@@ -151,13 +147,6 @@ export default function SignUpPage() {
           <h1 className="font-bebas text-3xl text-[var(--text-primary)] tracking-wider text-center mb-6">
             สมัครสมาชิก
           </h1>
-
-          {ref && (
-            <div className="flex items-center justify-center gap-2 mb-6 px-4 py-2 border border-[var(--border)] bg-[var(--bg-card)] text-xs text-[var(--text-secondary)] uppercase tracking-widest">
-              <Gift className="w-3.5 h-3.5" />
-              ได้รับเชิญโดย @{ref} · รับ 20 เหรียญเมื่อเติมครั้งแรก
-            </div>
-          )}
 
           {/* Google — native picker in-app (GMS), OAuth on web; off on Huawei/Honor. */}
           {showGoogle && (

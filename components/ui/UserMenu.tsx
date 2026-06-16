@@ -127,10 +127,7 @@ export default function UserMenu({ user, rankBadge }: { user: MenuUser; rankBadg
           </a>
 
           {/* Rewards */}
-          <Section label="เหรียญ & รางวัล" Icon={Gift} open={section === "rewards"} onToggle={() => toggle("rewards")}>
-            <Link href="/referral" className={subCls}>
-              <Share2 className="w-4 h-4" /> ชวนเพื่อน
-            </Link>
+          <Section label="รางวัล & อันดับ" Icon={Gift} open={section === "rewards"} onToggle={() => toggle("rewards")}>
             <Link href="/achievements" className={subCls}>
               <Trophy className="w-4 h-4" /> ความสำเร็จ
             </Link>

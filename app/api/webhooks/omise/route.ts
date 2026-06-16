@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
-import { isFirstTopup, extendVipDays, rewardReferralOnFirstTopup } from "@/lib/coins";
+import { extendVipDays } from "@/lib/coins";
 import { sendEmail, topupReceiptEmail, withdrawalEmail } from "@/lib/email";
 
 // Omise does not sign webhooks, so the POST body cannot be trusted: anyone who
@@ -69,9 +69,7 @@ export async function POST(req: NextRequest) {
       if (flipped.count === 0) return;
       credited = true;
 
-      const firstTopup = await isFirstTopup(tx, order.userId);
       if (order.vipDays > 0) await extendVipDays(tx, order.userId, order.vipDays);
-      if (firstTopup) await rewardReferralOnFirstTopup(tx, order.userId);
       await tx.user.update({
         where: { id: order.userId },
         data: { coins: { increment: totalCoins } },

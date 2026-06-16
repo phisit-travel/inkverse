@@ -15,7 +15,6 @@ export default async function PromotePage() {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
-      username: true,
       translator: {
         select: {
           mangas: {
@@ -31,7 +30,7 @@ export default async function PromotePage() {
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
       <h1 className="font-bebas text-4xl text-[var(--text-primary)] tracking-wider mb-1">โปรโมตผลงาน</h1>
       <p className="text-sm text-[var(--text-secondary)] mb-8">ดึงแฟนของคุณเข้ามา — แชร่ผลงานง่ายๆ พร้อมลิงก์ + แคปชั่น</p>
-      <PromoteKit works={user?.translator?.mangas ?? []} refCode={user?.username ?? ""} />
+      <PromoteKit works={user?.translator?.mangas ?? []} />
     </div>
   );
 }
