@@ -635,22 +635,20 @@ export async function reviewVerification(
   const reqRow = await prisma.verificationRequest.findUnique({ where: { id: requestId } });
   if (!reqRow || reqRow.status !== "PENDING") return null;
 
-  if (approve) {
-    await prisma.$transaction([
-      prisma.verificationRequest.update({
-        where: { id: requestId },
-        data: { status: "APPROVED", reviewedAt: new Date(), adminNote: note ?? null },
-      }),
-      prisma.user.update({ where: { id: reqRow.userId }, data: { verifiedAt: new Date() } }),
-    ]);
-  } else {
-    await prisma.$transaction([
-      prisma.verificationRequest.update({
-        where: { id: requestId },
-        data: { status: "REJECTED", reviewedAt: new Date(), adminNote: note ?? null },
-      }),
-      prisma.user.update({ where: { id: reqRow.userId }, data: { coins: { increment: reqRow.coinsPaid } } }),
-      prisma.coinTransaction.create({
+  const done = await prisma.$transaction(async (tx) => {
+    // Atomic guard: only the first reviewer flips PENDING → decision, so a
+    // double-click (or two admins) can't approve twice or double-refund the fee.
+    const flip = await tx.verificationRequest.updateMany({
+      where: { id: requestId, status: "PENDING" },
+      data: { status: approve ? "APPROVED" : "REJECTED", reviewedAt: new Date(), adminNote: note ?? null },
+    });
+    if (flip.count === 0) return false;
+
+    if (approve) {
+      await tx.user.update({ where: { id: reqRow.userId }, data: { verifiedAt: new Date() } });
+    } else {
+      await tx.user.update({ where: { id: reqRow.userId }, data: { coins: { increment: reqRow.coinsPaid } } });
+      await tx.coinTransaction.create({
         data: {
           userId: reqRow.userId,
           amount: reqRow.coinsPaid,
@@ -658,8 +656,10 @@ export async function reviewVerification(
           description: "คืนค่าธรรมเนียมยืนยันตัวตน (ไม่ผ่าน)",
           refId: `verify-refund:${reqRow.userId}`,
         },
-      }),
-    ]);
-  }
-  return reqRow.userId;
+      });
+    }
+    return true;
+  });
+
+  return done ? reqRow.userId : null;
 }
