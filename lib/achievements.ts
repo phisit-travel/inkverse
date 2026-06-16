@@ -18,7 +18,6 @@ export interface AchievementDef {
   category: AchievementCategory;
   metric: keyof Stats;
   threshold: number;
-  coinReward: number; // vestigial — achievements grant NO coins (badge only)
 }
 
 export interface Stats {
@@ -29,49 +28,74 @@ export interface Stats {
   ratings: number;
   premiumUnlocked: number;
   topups: number;
+  comments: number;
+  coinsSpent: number;
 }
 
 export const CATEGORY_LABEL: Record<AchievementCategory, string> = {
   reading: "การอ่าน",
   completion: "อ่านจบเรื่อง",
-  social: "สำรวจ & รีวิว",
-  engagement: "มีส่วนร่วม",
+  social: "รีวิว & สังคม",
+  engagement: "สนับสนุน & มีส่วนร่วม",
 };
 
+// Thresholds are deliberately demanding — achievements are long-term challenges,
+// not participation trophies. Badge + notification only; no coin reward.
 export const ACHIEVEMENTS: AchievementDef[] = [
-  // ── Reading volume (drives raw reading) ──
-  { key: "read-1",    title: "ก้าวแรก",            description: "อ่านตอนแรกของคุณ",       icon: "BookOpen", category: "reading", metric: "chaptersRead", threshold: 1,    coinReward: 5 },
-  { key: "read-10",   title: "นักอ่านหน้าใหม่",     description: "อ่านครบ 10 ตอน",         icon: "BookOpen", category: "reading", metric: "chaptersRead", threshold: 10,   coinReward: 5 },
-  { key: "read-50",   title: "หนอนหนังสือ",         description: "อ่านครบ 50 ตอน",         icon: "BookText", category: "reading", metric: "chaptersRead", threshold: 50,   coinReward: 10 },
-  { key: "read-100",  title: "นักอ่านตัวยง",        description: "อ่านครบ 100 ตอน",        icon: "Library",  category: "reading", metric: "chaptersRead", threshold: 100,  coinReward: 15 },
-  { key: "read-500",  title: "เซียนนักอ่าน",        description: "อ่านครบ 500 ตอน",        icon: "Flame",    category: "reading", metric: "chaptersRead", threshold: 500,  coinReward: 30 },
-  { key: "read-1000", title: "ตำนานนักอ่าน",        description: "อ่านครบ 1,000 ตอน",      icon: "Crown",    category: "reading", metric: "chaptersRead", threshold: 1000, coinReward: 50 },
+  // ── Reading volume ──
+  { key: "read-10",    title: "นักอ่านหน้าใหม่",     description: "อ่านครบ 10 ตอน",          icon: "BookOpen",     category: "reading",    metric: "chaptersRead",    threshold: 10 },
+  { key: "read-100",   title: "หนอนหนังสือ",         description: "อ่านครบ 100 ตอน",         icon: "BookText",     category: "reading",    metric: "chaptersRead",    threshold: 100 },
+  { key: "read-300",   title: "นักอ่านตัวยง",        description: "อ่านครบ 300 ตอน",         icon: "Library",      category: "reading",    metric: "chaptersRead",    threshold: 300 },
+  { key: "read-1000",  title: "เซียนนักอ่าน",        description: "อ่านครบ 1,000 ตอน",       icon: "Flame",        category: "reading",    metric: "chaptersRead",    threshold: 1000 },
+  { key: "read-3000",  title: "ปรมาจารย์การอ่าน",    description: "อ่านครบ 3,000 ตอน",       icon: "Crown",        category: "reading",    metric: "chaptersRead",    threshold: 3000 },
+  { key: "read-8000",  title: "ตำนานนักอ่าน",        description: "อ่านครบ 8,000 ตอน",       icon: "Sparkles",     category: "reading",    metric: "chaptersRead",    threshold: 8000 },
 
-  // ── Completion (drives finishing series) ──
-  { key: "complete-1",  title: "จบเรื่องแรก",        description: "อ่านครบทุกตอน 1 เรื่อง",  icon: "CheckCircle2", category: "completion", metric: "mangaCompleted", threshold: 1,  coinReward: 10 },
-  { key: "complete-5",  title: "นักสะสมเรื่องจบ",     description: "อ่านจบ 5 เรื่อง",         icon: "CheckCircle2", category: "completion", metric: "mangaCompleted", threshold: 5,  coinReward: 25 },
-  { key: "complete-10", title: "ปิดเล่มมือโปร",       description: "อ่านจบ 10 เรื่อง",        icon: "Trophy",       category: "completion", metric: "mangaCompleted", threshold: 10, coinReward: 50 },
+  // ── Completion ──
+  { key: "complete-3",   title: "จบเรื่องแรกๆ",       description: "อ่านจบ 3 เรื่อง",          icon: "CheckCircle2", category: "completion", metric: "mangaCompleted",  threshold: 3 },
+  { key: "complete-10",  title: "นักสะสมเรื่องจบ",     description: "อ่านจบ 10 เรื่อง",         icon: "CheckCircle2", category: "completion", metric: "mangaCompleted",  threshold: 10 },
+  { key: "complete-30",  title: "ปิดเล่มมือโปร",       description: "อ่านจบ 30 เรื่อง",         icon: "Trophy",       category: "completion", metric: "mangaCompleted",  threshold: 30 },
+  { key: "complete-75",  title: "นักล่าเรื่องจบ",      description: "อ่านจบ 75 เรื่อง",         icon: "Trophy",       category: "completion", metric: "mangaCompleted",  threshold: 75 },
+  { key: "complete-150", title: "จอมสะสมตำนาน",       description: "อ่านจบ 150 เรื่อง",        icon: "Crown",        category: "completion", metric: "mangaCompleted",  threshold: 150 },
 
-  // ── Explore & review ──
-  { key: "genre-5",    title: "นักผจญภัยหลายแนว",   description: "อ่านครบ 5 แนว",          icon: "Compass",  category: "social", metric: "genresRead", threshold: 5, coinReward: 10 },
-  { key: "bookmark-5", title: "ชั้นหนังสือส่วนตัว",   description: "บุ๊กมาร์ก 5 เรื่อง",       icon: "Bookmark", category: "social", metric: "bookmarks",  threshold: 5, coinReward: 5 },
-  { key: "rating-1",   title: "นักวิจารณ์",          description: "ให้คะแนนเรื่องแรก",       icon: "Star",     category: "social", metric: "ratings",    threshold: 1, coinReward: 5 },
+  // ── Premium unlock (supporting creators) ──
+  { key: "unlock-10",   title: "ผู้สนับสนุนหน้าใหม่",  description: "ปลดล็อกตอนพรีเมียม 10 ตอน", icon: "Unlock",     category: "engagement", metric: "premiumUnlocked", threshold: 10 },
+  { key: "unlock-50",   title: "ผู้สนับสนุนตัวจริง",   description: "ปลดล็อก 50 ตอน",          icon: "Unlock",       category: "engagement", metric: "premiumUnlocked", threshold: 50 },
+  { key: "unlock-200",  title: "ผู้อุปถัมภ์",          description: "ปลดล็อก 200 ตอน",         icon: "Unlock",       category: "engagement", metric: "premiumUnlocked", threshold: 200 },
+  { key: "unlock-600",  title: "เสาหลักของนักเขียน",   description: "ปลดล็อก 600 ตอน",         icon: "Gem",          category: "engagement", metric: "premiumUnlocked", threshold: 600 },
+  { key: "unlock-1500", title: "มหาเศรษฐีนักปลดล็อก",  description: "ปลดล็อก 1,500 ตอน",       icon: "Crown",        category: "engagement", metric: "premiumUnlocked", threshold: 1500 },
 
-  // ── Engagement / support ──
-  { key: "unlock-1",   title: "ปลดล็อกครั้งแรก",      description: "ปลดล็อกตอนพรีเมียมครั้งแรก", icon: "Unlock",       category: "engagement", metric: "premiumUnlocked", threshold: 1,  coinReward: 5 },
-  { key: "unlock-25",  title: "ผู้สนับสนุนตัวจริง",    description: "ปลดล็อกครบ 25 ตอน",        icon: "Unlock",       category: "engagement", metric: "premiumUnlocked", threshold: 25, coinReward: 15 },
-  { key: "topup-1",    title: "ผู้สนับสนุน",          description: "เติมเหรียญครั้งแรก",        icon: "Coins",        category: "engagement", metric: "topups",          threshold: 1,  coinReward: 10 },
+  // ── Coins spent ──
+  { key: "spent-1000",  title: "ใช้จ่ายมีสไตล์",      description: "ใช้เหรียญรวม 1,000",      icon: "Coins",        category: "engagement", metric: "coinsSpent",      threshold: 1000 },
+  { key: "spent-5000",  title: "นักลงทุนตัวยง",       description: "ใช้เหรียญรวม 5,000",      icon: "Coins",        category: "engagement", metric: "coinsSpent",      threshold: 5000 },
+  { key: "spent-20000", title: "เจ้าบุญทุ่ม",         description: "ใช้เหรียญรวม 20,000",     icon: "Gem",          category: "engagement", metric: "coinsSpent",      threshold: 20000 },
+
+  // ── Top-ups ──
+  { key: "topup-1",   title: "ผู้สนับสนุน",           description: "เติมเหรียญครั้งแรก",        icon: "Coins",        category: "engagement", metric: "topups",          threshold: 1 },
+  { key: "topup-10",  title: "ขาประจำ",              description: "เติมเหรียญครบ 10 ครั้ง",     icon: "Coins",        category: "engagement", metric: "topups",          threshold: 10 },
+  { key: "topup-30",  title: "ผู้สนับสนุนระดับตำนาน",  description: "เติมเหรียญครบ 30 ครั้ง",     icon: "Medal",        category: "engagement", metric: "topups",          threshold: 30 },
+
+  // ── Reviews / explore / social ──
+  { key: "rating-5",     title: "นักวิจารณ์",         description: "ให้คะแนน 5 เรื่อง",         icon: "Star",         category: "social",     metric: "ratings",         threshold: 5 },
+  { key: "rating-30",    title: "นักรีวิวมือฉมัง",     description: "ให้คะแนน 30 เรื่อง",        icon: "Star",         category: "social",     metric: "ratings",         threshold: 30 },
+  { key: "rating-100",   title: "กูรูรีวิว",          description: "ให้คะแนน 100 เรื่อง",       icon: "Award",        category: "social",     metric: "ratings",         threshold: 100 },
+  { key: "bookmark-20",  title: "ชั้นหนังสือส่วนตัว",  description: "บุ๊กมาร์ก 20 เรื่อง",        icon: "Bookmark",     category: "social",     metric: "bookmarks",       threshold: 20 },
+  { key: "bookmark-100", title: "บรรณารักษ์",         description: "บุ๊กมาร์ก 100 เรื่อง",       icon: "Bookmark",     category: "social",     metric: "bookmarks",       threshold: 100 },
+  { key: "genre-8",      title: "นักผจญภัยหลายแนว",   description: "อ่านครบ 8 แนว",            icon: "Compass",      category: "social",     metric: "genresRead",      threshold: 8 },
+  { key: "comment-10",   title: "นักพูดคุย",          description: "คอมเมนต์ 10 ครั้ง",         icon: "MessageSquare", category: "social",    metric: "comments",        threshold: 10 },
+  { key: "comment-75",   title: "ขาเมาท์ตัวยง",       description: "คอมเมนต์ 75 ครั้ง",         icon: "MessageSquare", category: "social",    metric: "comments",        threshold: 75 },
 ];
 
 /** Compute every stat an achievement can depend on, in one batch. */
 async function computeStats(userId: string): Promise<Stats> {
-  const [chaptersRead, bookmarks, ratings, premiumUnlocked, topups, reads] =
+  const [chaptersRead, bookmarks, ratings, premiumUnlocked, topups, comments, spentAgg, reads] =
     await Promise.all([
       prisma.readHistory.count({ where: { userId } }),
       prisma.bookmark.count({ where: { userId } }),
       prisma.rating.count({ where: { userId } }),
       prisma.unlockedChapter.count({ where: { userId } }),
       prisma.coinOrder.count({ where: { userId, status: "PAID" } }),
+      prisma.comment.count({ where: { userId } }),
+      prisma.unlockedChapter.aggregate({ where: { userId }, _sum: { coinSpent: true } }),
       prisma.readHistory.findMany({
         where: { userId },
         select: { chapter: { select: { mangaId: true } } },
@@ -113,6 +137,8 @@ async function computeStats(userId: string): Promise<Stats> {
     ratings,
     premiumUnlocked,
     topups,
+    comments,
+    coinsSpent: spentAgg._sum.coinSpent ?? 0,
   };
 }
 

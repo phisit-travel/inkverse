@@ -13,6 +13,7 @@ import {
   BookOpen, BookText, Library, Flame, Crown, CheckCircle2, Trophy,
   Compass, Bookmark, Star, Unlock, Coins, CalendarCheck, Lock, Check,
   Sprout, Footprints, Swords, Shield, Gem, ArrowRight,
+  Sparkles, Medal, Award, MessageSquare,
 } from "lucide-react";
 import type { Metadata } from "next";
 import type { ComponentType } from "react";
@@ -25,6 +26,7 @@ export const metadata: Metadata = {
 const ICONS: Record<string, ComponentType<{ className?: string }>> = {
   BookOpen, BookText, Library, Flame, Crown, CheckCircle2, Trophy,
   Compass, Bookmark, Star, Unlock, Coins, CalendarCheck,
+  Sparkles, Gem, Medal, Award, MessageSquare,
 };
 
 const RANK_ICONS: Record<string, ComponentType<{ className?: string }>> = {
