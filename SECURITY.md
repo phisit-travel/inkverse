@@ -7,7 +7,7 @@
 | Auth | NextAuth v5 (JWT). All mutating API routes call `auth()`; admin/translator routes also check `role`. |
 | Passwords | bcrypt, cost 12. Min 8 chars (register). |
 | Brute force | Per-account login throttle (5 / 5 min) in the credentials provider. |
-| Rate limiting | `lib/rate-limit.ts` applied to register (5 / 10 min / IP), comment (10 / min / user), slip verify (6 / 5 min / user). |
+| Rate limiting | `lib/rate-limit.ts` applied to register (5 / 10 min / IP), comment (10 / min / user), slip verify (6 / 5 min / user), and the creator routes — export (20/min), story-bible writes (60/min), revision restore (30/min), per user. |
 | IDOR | Owner-scoped queries (`where: { id, userId }`) on notifications, orders, etc. |
 | Input | Zod validation on register / comment / etc. No raw SQL, no `dangerouslySetInnerHTML`. |
 | Payment slip | Amount must match order exactly; receiver verified; slip `transRef` is `@unique` (no reuse). |
@@ -19,9 +19,9 @@
 
 ## ⚠️ You must do these (cannot be fixed in code)
 
-1. **Rotate the EasySlip token** — it was pasted into a chat. Revoke `52a2b27…` in the EasySlip dashboard and put the new one in `.env`.
-2. **Production secrets** — set a fresh `NEXTAUTH_SECRET` in your host's env (the one in `.env` is for local). Never commit real secrets. Consider rotating the Neon/R2/Google/Omise creds that have been shared in chat.
-3. **HTTPS only** — deploy behind TLS so HSTS + secure cookies take effect.
+1. ~~**Rotate the EasySlip token**~~ ✅ **DONE 2026-06-16** — revoked + reissued, new token in Vercel prod env.
+2. ~~**Production secrets / rotate shared creds**~~ ✅ **DONE 2026-06-16** — `NEXTAUTH_SECRET`, Neon password, R2 keys, Google secret, Omise secret all rotated and updated in Vercel prod + local `.env`. Verified prod healthy (home + `/api/manga` 200 = DB + secret OK).
+3. ~~**HTTPS only**~~ ✅ live on `https://inksverse.com` (Vercel TLS + Cloudflare).
 4. **Omise live** — when going live: use `skey_live_`/`pkey_live_`, and register the webhook URL `https://<domain>/api/webhooks/omise` in the Omise dashboard.
 5. **Rate limiting / flood guard at scale** — `lib/rate-limit.ts` and `proxy.ts` keep counters in-memory (per instance). On multi-instance/serverless, move them to Redis/Upstash. For real volumetric DDoS, put **Cloudflare** (orange-cloud + "Under Attack" mode / rate-limiting rules) or **Vercel WAF** in front — the app layer alone cannot absorb a large attack.
 6. **DB backups + least-privilege** — ensure the Neon role used by the app can't drop tables it doesn't need; enable point-in-time backups.
