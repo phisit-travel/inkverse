@@ -301,3 +301,13 @@ html.app-mode .app-only { display: flex !important; }
 @media (prefers-reduced-motion: reduce) {
   .iv-float, .iv-ring-spin, .iv-ring-spin-rev, .iv-rise { animation: none; }
 }
+
+/* Achievement book — page-turn (the leaving page swings off its spine edge) */
+@keyframes achFlipNext {
+  from { transform: rotateY(0deg); }
+  to   { transform: rotateY(-180deg); }
+}
+@keyframes achFlipPrev {
+  from { transform: rotateY(0deg); }
+  to   { transform: rotateY(180deg); }
+}

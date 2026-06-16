@@ -4,16 +4,12 @@ import { prisma } from "@/lib/prisma";
 import {
   evaluateAchievements,
   getAchievementProgress,
-  CATEGORY_LABEL,
-  type AchievementCategory,
-  type AchievementProgress,
 } from "@/lib/achievements";
 import { getReaderRank } from "@/lib/ranks";
+import AchievementBook from "@/components/ui/AchievementBook";
 import {
-  BookOpen, BookText, Library, Flame, Crown, CheckCircle2, Trophy,
-  Compass, Bookmark, Star, Unlock, Coins, CalendarCheck, Lock, Check,
+  BookOpen, Flame, Crown, Trophy, Coins, Check,
   Sprout, Footprints, Swords, Shield, Gem, ArrowRight,
-  Sparkles, Medal, Award, MessageSquare,
 } from "lucide-react";
 import type { Metadata } from "next";
 import type { ComponentType } from "react";
@@ -21,12 +17,6 @@ import type { ComponentType } from "react";
 export const metadata: Metadata = {
   title: "ความสำเร็จ — INKVERSE",
   description: "เก็บความสำเร็จจากการอ่าน ปลดล็อกเหรียญตรา และไต่อันดับนักอ่าน",
-};
-
-const ICONS: Record<string, ComponentType<{ className?: string }>> = {
-  BookOpen, BookText, Library, Flame, Crown, CheckCircle2, Trophy,
-  Compass, Bookmark, Star, Unlock, Coins, CalendarCheck,
-  Sparkles, Gem, Medal, Award, MessageSquare,
 };
 
 const RANK_ICONS: Record<string, ComponentType<{ className?: string }>> = {
@@ -48,9 +38,6 @@ export default async function AchievementsPage() {
   const coinsSpent = coinSpentAgg._sum.coinSpent ?? 0;
   const rank = getReaderRank(stats.chaptersRead, coinsSpent);
   const RankIcon = RANK_ICONS[rank.current.icon] ?? BookOpen;
-
-  const categories = ["reading", "completion", "social", "engagement"] as AchievementCategory[];
-  const byCat = (c: AchievementCategory) => items.filter((i) => i.category === c);
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
@@ -135,75 +122,8 @@ export default async function AchievementsPage() {
         )}
       </div>
 
-      {/* Categories */}
-      <div className="space-y-10">
-        {categories.map((cat) => (
-          <section key={cat}>
-            <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-[0.18em] uppercase flex items-center gap-3 mb-4">
-              <span className="w-6 h-px bg-[var(--text-primary)]" />
-              {CATEGORY_LABEL[cat]}
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {byCat(cat).map((a) => (
-                <AchievementCard key={a.key} a={a} />
-              ))}
-            </div>
-          </section>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function AchievementCard({ a }: { a: AchievementProgress }) {
-  const Icon = ICONS[a.icon] ?? Trophy;
-  const pct = Math.min(100, Math.round((a.current / a.threshold) * 100));
-
-  return (
-    <div
-      className={`relative p-4 border transition-colors ${
-        a.unlocked
-          ? "bg-[var(--bg-surface)] border-[var(--text-primary)]/40"
-          : "bg-[var(--bg-card)] border-[var(--border)] opacity-80"
-      }`}
-    >
-      <div className="flex items-start gap-3">
-        <div
-          className={`w-11 h-11 flex items-center justify-center border shrink-0 ${
-            a.unlocked
-              ? "bg-[var(--text-primary)] text-[var(--bg-primary)] border-[var(--text-primary)]"
-              : "bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border)]"
-          }`}
-        >
-          {a.unlocked ? <Icon className="w-5 h-5" /> : <Lock className="w-4 h-4" />}
-        </div>
-        <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-semibold text-[var(--text-primary)] truncate">
-            {a.title}
-          </h3>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5 line-clamp-2">
-            {a.description}
-          </p>
-
-          {a.unlocked ? (
-            <p className="text-[11px] text-[var(--text-primary)] mt-2 flex items-center gap-1">
-              <Check className="w-3 h-3" /> ปลดล็อกแล้ว
-            </p>
-          ) : (
-            <div className="mt-2">
-              <div className="flex justify-between text-[10px] text-[var(--text-secondary)] mb-1">
-                <span>
-                  {a.current.toLocaleString()}/{a.threshold.toLocaleString()}
-                </span>
-                <span>{pct}%</span>
-              </div>
-              <div className="h-1 w-full bg-[var(--bg-primary)] border border-[var(--border)] overflow-hidden">
-                <div className="h-full bg-[var(--text-primary)]" style={{ width: `${pct}%` }} />
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Achievement book — flip through your achievements by category */}
+      <AchievementBook items={items} unlockedCount={unlockedCount} />
     </div>
   );
 }
