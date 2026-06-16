@@ -302,8 +302,12 @@ html.app-mode .app-only { display: flex !important; }
   .iv-float, .iv-ring-spin, .iv-ring-spin-rev, .iv-rise { animation: none; }
 }
 
-/* Achievement book — the new page swings in from the left and closes over the old (realistic, both directions) */
-@keyframes achFlipPrevIn {
+/* Achievement book — page turns back and forth like a real book (opposite directions) */
+@keyframes achFlipNext {   /* ขาไป: หน้าเก่าเปิดออกไปทางซ้าย */
+  from { transform: rotateY(0deg); }
+  to   { transform: rotateY(-180deg); }
+}
+@keyframes achFlipPrevIn { /* ขากลับ: หน้าก่อนหน้าพับกลับเข้ามาจากซ้าย */
   from { transform: rotateY(-180deg); }
   to   { transform: rotateY(0deg); }
 }

@@ -73,7 +73,7 @@ function AchRow({ a }: { a: AchievementProgress }) {
 
 export default function AchievementBook({ items, unlockedCount }: { items: AchievementProgress[]; unlockedCount: number }) {
   const [cat, setCat] = useState(0);
-  const [flip, setFlip] = useState<null | { from: number }>(null);
+  const [flip, setFlip] = useState<null | { dir: "next" | "prev"; from: number }>(null);
   const pct = Math.round((unlockedCount / items.length) * 100);
 
   const byCat = (c: number) => items.filter((i) => i.category === CATS[c].key);
@@ -84,9 +84,9 @@ export default function AchievementBook({ items, unlockedCount }: { items: Achie
 
   const select = (c: number) => {
     if (c === cat || flip) return;
-    // Realistic page-turn, same both ways: the new page swings in from the
-    // left and closes over the old one, which stays beneath until covered.
-    setFlip({ from: cat });
+    // Directional page-turn like a real book: forward peels the old page off to
+    // the left (revealing the new); back folds the previous page in from the left.
+    setFlip({ dir: c > cat ? "next" : "prev", from: cat });
     setCat(c);
     window.setTimeout(() => setFlip(null), FLIP_MS);
   };
@@ -161,20 +161,20 @@ export default function AchievementBook({ items, unlockedCount }: { items: Achie
             {/* RIGHT: content page with page-turn */}
             <div className="sm:w-[63%] relative" style={{ perspective: "2200px", minHeight: "320px" }}>
               <div className="relative w-full h-full min-h-[320px] sm:min-h-[470px]" style={{ transformStyle: "preserve-3d" }}>
-                {/* old page stays beneath until the incoming page closes over it */}
-                <ContentPage c={flip ? flip.from : cat} />
+                {/* base beneath — next reveals the new page; prev keeps the old page until the previous one folds back over */}
+                <ContentPage c={flip?.dir === "prev" ? flip.from : cat} />
                 {flip && (
                   <div className="absolute inset-0"
                     style={{
                       transformStyle: "preserve-3d",
                       transformOrigin: "left center",
-                      animation: `achFlipPrevIn ${FLIP_MS}ms cubic-bezier(0.34, 0.05, 0.2, 1) forwards`,
+                      animation: `${flip.dir === "next" ? "achFlipNext" : "achFlipPrevIn"} ${FLIP_MS}ms cubic-bezier(0.34, 0.05, 0.2, 1) forwards`,
                       boxShadow: "0 0 40px -6px rgba(0,0,0,0.5)",
                       zIndex: 10,
                     }}>
-                    {/* leaf = the new page, swinging in from the left to close over the old */}
+                    {/* leaf — next: the old page peeling away left. prev: the previous page folding back in from the left. */}
                     <div className="absolute inset-0" style={{ backfaceVisibility: "hidden" }}>
-                      <ContentPage c={cat} />
+                      <ContentPage c={flip.dir === "prev" ? cat : flip.from} />
                       {/* curl shadow that swells mid-turn */}
                       <div className="absolute inset-0 pointer-events-none"
                         style={{
