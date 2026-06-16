@@ -69,17 +69,17 @@ export default function FeaturedTitles({ items }: { items: FeaturedItem[] }) {
             )}
             <div className="absolute inset-0 bg-gradient-to-r from-[var(--bg-primary)] via-[var(--bg-primary)]/85 to-transparent" />
 
-            <div className="relative h-full flex items-center gap-6 px-6 sm:px-10 lg:px-14">
+            <div className="relative h-full flex items-center gap-4 sm:gap-6 px-5 sm:px-10 lg:px-14">
               {/* text */}
               <div className={`flex-1 min-w-0 max-w-lg ${idx === i ? "iv-rise" : ""}`}>
                 <p className="eyebrow mb-3">
                   {it.type === "NOVEL" ? "นิยาย" : it.genres?.[0] ?? "แนะนำ"}
                 </p>
-                <h3 className="font-bebas text-4xl sm:text-5xl text-[var(--text-primary)] tracking-[0.04em] leading-[0.95] uppercase line-clamp-2 mb-3">
+                <h3 className="font-bebas text-3xl sm:text-4xl lg:text-5xl text-[var(--text-primary)] tracking-[0.04em] leading-[0.95] uppercase line-clamp-2 mb-3">
                   {it.title}
                 </h3>
                 {it.description && (
-                  <p className="text-sm text-[var(--text-secondary)] line-clamp-2 mb-4 leading-relaxed">
+                  <p className="hidden sm:block text-sm text-[var(--text-secondary)] line-clamp-2 mb-4 leading-relaxed">
                     {it.description}
                   </p>
                 )}
@@ -112,10 +112,10 @@ export default function FeaturedTitles({ items }: { items: FeaturedItem[] }) {
                 </Link>
               </div>
 
-              {/* cover poster (desktop) */}
+              {/* cover poster — visible on mobile too (smaller), so the cover always shows */}
               <Link
                 href={`/content/${it.slug}`}
-                className="hidden md:block relative w-44 lg:w-52 aspect-[3/4] flex-shrink-0 border border-[var(--border)] overflow-hidden group"
+                className="block relative w-28 sm:w-36 md:w-44 lg:w-52 aspect-[3/4] flex-shrink-0 border border-[var(--border)] overflow-hidden group"
               >
                 {it.coverUrl ? (
                   <Image
