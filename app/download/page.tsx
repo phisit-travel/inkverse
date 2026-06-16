@@ -49,7 +49,7 @@ export default function DownloadPage() {
             </span>
           )}
           <p className="text-sm font-semibold text-[var(--text-primary)] flex items-center justify-center gap-1.5">
-            <Gift className="w-4 h-4" /> ติดตั้งแล้วล็อกอินครั้งแรก รับ 20 เหรียญฟรี
+            <Gift className="w-4 h-4" /> อ่านลื่น กันแคปหน้าจอ + โหลดเก็บอ่านออฟไลน์
           </p>
           <p className="text-xs text-[var(--text-muted)]">
             สำหรับ Android เท่านั้น{APK_VERSION ? ` · เวอร์ชัน ${APK_VERSION}` : ""} · ไฟล์ฟรี ไม่มีโฆษณา

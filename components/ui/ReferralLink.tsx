@@ -13,7 +13,7 @@ export default function ReferralLink({ code }: { code: string }) {
     setCanNativeShare(typeof navigator !== "undefined" && !!navigator.share);
   }, [code]);
 
-  const shareText = "มาอ่านมังงะ & นิยายแปลไทยที่ INKVERSE กัน! สมัครผ่านลิงก์นี้รับ 20 เหรียญฟรีเลย";
+  const shareText = "มาอ่านมังงะ & นิยายแปลไทยที่ INKVERSE กัน! สมัครผ่านลิงก์นี้ เติมเหรียญครั้งแรกรับโบนัสทั้งคู่";
   const enc = encodeURIComponent;
   const shares = [
     { label: "X", href: `https://twitter.com/intent/tweet?text=${enc(shareText)}&url=${enc(link)}` },

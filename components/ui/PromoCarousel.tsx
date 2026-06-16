@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { ArrowRight, ChevronLeft, ChevronRight, Coins, PenLine, Smartphone, Users } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Coins, PenLine, Smartphone } from "lucide-react";
 
 type Slide = {
   tag: string;
@@ -39,14 +39,6 @@ const SLIDES: Slide[] = [
     cta: "สมัครเลย",
     href: "/creator-101",
     icon: PenLine,
-  },
-  {
-    tag: "ชวนเพื่อน",
-    title: "ชวนเพื่อนมาอ่าน รับเหรียญฟรีทั้งคู่",
-    sub: "แชร์ลิงก์ชวนเพื่อนของคุณ เพื่อนสมัครแล้วเติมครั้งแรก = ได้เหรียญกันทั้งคู่ ยิ่งชวนยิ่งได้",
-    cta: "ชวนเพื่อน",
-    href: "/earn",
-    icon: Users,
   },
 ];
 

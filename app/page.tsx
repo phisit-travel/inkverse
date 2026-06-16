@@ -9,7 +9,6 @@ import RankingPanel from "@/components/ui/RankingPanel";
 import GenreFilterBar from "@/components/ui/GenreFilterBar";
 import PromoCarousel from "@/components/ui/PromoCarousel";
 import ContinueReading from "@/components/ui/ContinueReading";
-import DailyCheckIn from "@/components/ui/DailyCheckIn";
 import TranslatorRanking from "@/components/ui/TranslatorRanking";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
@@ -164,9 +163,6 @@ export default async function HomePage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
       {/* Hero — auto-rotating promo carousel */}
       <PromoCarousel />
-
-      {/* Daily check-in (per-user, client-fetched so the page stays cached) */}
-      <DailyCheckIn />
 
       {/* Continue reading (per-user, client-fetched so the page stays cached) */}
       <ContinueReading />
