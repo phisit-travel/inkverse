@@ -75,3 +75,8 @@ inkverse-android-apk.zip
 !public/downloads/*.apk
 mobile/.idea/
 .idea/
+
+# Claude Code local settings (per-machine, not shared) + temp diagnostic scripts
+.claude/settings.local.json
+/zz-*.cjs
+/zz-*.js
