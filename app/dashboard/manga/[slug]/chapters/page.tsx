@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, Plus, BarChart3, BookMarked } from "lucide-react";
+import { ArrowLeft, BookOpen, Plus, BarChart3, BookMarked, Download } from "lucide-react";
 import ChapterManager from "./ChapterManager";
 import { decodeSlug } from "@/lib/slug";
 import MangaSettings from "./MangaSettings";
@@ -119,6 +119,22 @@ export default async function MangaChaptersPage({ params }: Props) {
           >
             <BookMarked className="w-4 h-4" /> สมุดโลก
           </Link>
+          {isNovel && (
+            <>
+              <a
+                href={`/api/manga/${slug}/export?format=epub`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[var(--border)] text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-primary)]/40"
+              >
+                <Download className="w-4 h-4" /> EPUB
+              </a>
+              <a
+                href={`/api/manga/${slug}/export?format=txt`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[var(--border)] text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-primary)]/40"
+              >
+                <Download className="w-4 h-4" /> TXT
+              </a>
+            </>
+          )}
         </div>
       </div>
 
