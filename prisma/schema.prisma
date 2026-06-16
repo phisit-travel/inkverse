@@ -318,8 +318,24 @@ model Chapter {
   readHistory      ReadHistory[]
   comments         Comment[]
   unlockedBy       UnlockedChapter[]
+  revisions        ChapterRevision[]
 
   @@unique([mangaId, chapterNum])
+}
+
+// Periodic snapshots of a chapter's text so writers can review/restore past
+// versions. Written (throttled) on edit; pruned to the most recent few per chapter.
+model ChapterRevision {
+  id         String   @id @default(cuid())
+  chapterId  String
+  title      String?
+  content    String?  @db.Text
+  authorNote String?  @db.Text
+  words      Int      @default(0)
+  createdAt  DateTime @default(now())
+  chapter    Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@index([chapterId, createdAt])
 }
 
 model Page {

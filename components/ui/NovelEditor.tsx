@@ -12,6 +12,7 @@ import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough, Heading2, Heading3,
   List, ListOrdered, Quote, Minus, Link2, ImagePlus, AlignLeft, AlignCenter, AlignRight,
   Undo2, Redo2, Maximize2, Search, Save, Send, Clock, Loader2, Coins, Target, X,
+  History, RotateCcw, Eye,
 } from "lucide-react";
 
 interface Existing {
@@ -54,6 +55,11 @@ export default function NovelEditor({
   const [uploadingImg, setUploadingImg] = useState(false);
   const [findText, setFindText] = useState("");
   const [replaceText, setReplaceText] = useState("");
+  const [showHistory, setShowHistory] = useState(false);
+  const [revisions, setRevisions] = useState<{ id: string; title: string | null; words: number; createdAt: string }[]>([]);
+  const [revsLoading, setRevsLoading] = useState(false);
+  const [previewRev, setPreviewRev] = useState<{ id: string; title: string | null; content: string | null; createdAt: string } | null>(null);
+  const [restoring, setRestoring] = useState(false);
   const [, force] = useState(0);
 
   const fileRef = useRef<HTMLInputElement>(null);
@@ -205,6 +211,48 @@ export default function NovelEditor({
     chain.run();
   }
 
+  // ── Version history ──────────────────────────────────────────
+  async function openHistory() {
+    setShowHistory(true);
+    const cid = stateRef.current.chapterId;
+    if (!cid) return;
+    setRevsLoading(true);
+    try {
+      const res = await fetch(`/api/chapters/${cid}/revisions`);
+      if (res.ok) setRevisions(await res.json());
+    } catch {} finally { setRevsLoading(false); }
+  }
+  async function previewRevision(revId: string) {
+    const cid = stateRef.current.chapterId;
+    if (!cid) return;
+    try {
+      const res = await fetch(`/api/chapters/${cid}/revisions/${revId}`);
+      if (res.ok) setPreviewRev(await res.json());
+    } catch {}
+  }
+  async function restoreRevision(revId: string) {
+    const cid = stateRef.current.chapterId;
+    if (!cid || !editor) return;
+    if (!confirm("กู้คืนเวอร์ชันนี้? เวอร์ชันปัจจุบันจะถูกบันทึกไว้ในประวัติก่อน")) return;
+    setRestoring(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/chapters/${cid}/revisions/${revId}/restore`, { method: "POST" });
+      if (!res.ok) throw new Error();
+      const d = await res.json();
+      editor.commands.setContent(d.content || "");
+      setTitle(d.title ?? "");
+      setAuthorNote(d.authorNote ?? "");
+      setPreviewRev(null);
+      setSaveState("saved");
+      await openHistory();
+    } catch {
+      setError("กู้คืนไม่สำเร็จ");
+    } finally { setRestoring(false); }
+  }
+  const fmtDate = (s: string) =>
+    new Date(s).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+
   const words = editor?.storage.characterCount.words() ?? 0;
   const chars = editor?.storage.characterCount.characters() ?? 0;
 
@@ -255,6 +303,7 @@ export default function NovelEditor({
           <button onClick={() => e?.chain().focus().redo().run()} className={tb} title="ทำซ้ำ"><Redo2 className="w-4 h-4" /></button>
           <span className="w-px bg-[var(--border)] mx-0.5" />
           <button onClick={() => setShowFind((v) => !v)} className={`${tb} ${active(showFind)}`} title="ค้นหา-แทนที่"><Search className="w-4 h-4" /></button>
+          {chapterId && <button onClick={() => (showHistory ? setShowHistory(false) : openHistory())} className={`${tb} ${active(showHistory)}`} title="ประวัติเวอร์ชัน"><History className="w-4 h-4" /></button>}
           <button onClick={() => setFocus((v) => !v)} className={`${tb} ${active(focus)}`} title="โหมดโฟกัส"><Maximize2 className="w-4 h-4" /></button>
         </div>
 
@@ -263,6 +312,54 @@ export default function NovelEditor({
             <input value={findText} onChange={(ev) => setFindText(ev.target.value)} placeholder="ค้นหา" className="bg-[var(--bg-card)] border border-[var(--border)] px-2 py-1 text-[var(--text-primary)]" />
             <input value={replaceText} onChange={(ev) => setReplaceText(ev.target.value)} placeholder="แทนที่ด้วย" className="bg-[var(--bg-card)] border border-[var(--border)] px-2 py-1 text-[var(--text-primary)]" />
             <button onClick={replaceAll} className="px-3 py-1 bal-btn text-xs">แทนที่ทั้งหมด</button>
+          </div>
+        )}
+
+        {showHistory && (
+          <div className="mb-2 p-3 bg-[var(--bg-surface)] border border-[var(--border)]">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-1.5"><History className="w-4 h-4" /> ประวัติเวอร์ชัน</span>
+              <button onClick={() => setShowHistory(false)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><X className="w-4 h-4" /></button>
+            </div>
+            {revsLoading ? (
+              <p className="text-xs text-[var(--text-secondary)] flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> กำลังโหลด...</p>
+            ) : revisions.length === 0 ? (
+              <p className="text-xs text-[var(--text-muted)]">ยังไม่มีเวอร์ชันก่อนหน้า — ระบบจะบันทึกให้อัตโนมัติเมื่อแก้ไขเป็นช่วงๆ</p>
+            ) : (
+              <ul className="flex flex-col gap-1.5 max-h-60 overflow-y-auto">
+                {revisions.map((rv) => (
+                  <li key={rv.id} className="flex items-center justify-between gap-2 text-sm border border-[var(--border)] px-2.5 py-1.5">
+                    <span className="min-w-0 text-[var(--text-secondary)] truncate">
+                      <span className="text-[var(--text-primary)]">{fmtDate(rv.createdAt)}</span>
+                      <span className="text-[11px]"> · {rv.words.toLocaleString()} คำ</span>
+                      {rv.title && <span className="text-[11px]"> · {rv.title}</span>}
+                    </span>
+                    <span className="flex items-center gap-1 shrink-0">
+                      <button onClick={() => previewRevision(rv.id)} className="px-2 py-1 border border-[var(--border)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1"><Eye className="w-3 h-3" /> ดู</button>
+                      <button onClick={() => restoreRevision(rv.id)} disabled={restoring} className="px-2 py-1 border border-[var(--border)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1"><RotateCcw className="w-3 h-3" /> กู้คืน</button>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {previewRev && (
+          <div className="fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-4" onClick={() => setPreviewRev(null)}>
+            <div className="bg-[var(--bg-primary)] border border-[var(--border)] max-w-2xl w-full max-h-[80vh] overflow-y-auto p-5" onClick={(ev) => ev.stopPropagation()}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm text-[var(--text-secondary)] flex items-center gap-1.5"><Eye className="w-4 h-4" /> ตัวอย่าง · {fmtDate(previewRev.createdAt)}</span>
+                <button onClick={() => setPreviewRev(null)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><X className="w-4 h-4" /></button>
+              </div>
+              {previewRev.title && <h3 className="font-semibold text-[var(--text-primary)] mb-2">{previewRev.title}</h3>}
+              <div className="text-[var(--text-primary)] text-sm leading-relaxed [&_p]:mb-3 [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:font-semibold [&_img]:max-w-full" dangerouslySetInnerHTML={{ __html: previewRev.content || "<p>(ว่าง)</p>" }} />
+              <div className="mt-4 flex justify-end">
+                <button onClick={() => restoreRevision(previewRev.id)} disabled={restoring} className="px-4 py-2 bal-btn text-sm font-semibold flex items-center gap-1.5">
+                  {restoring ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />} กู้คืนเวอร์ชันนี้
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

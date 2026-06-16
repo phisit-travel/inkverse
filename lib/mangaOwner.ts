@@ -31,3 +31,26 @@ export async function resolveOwnedManga(
   }
   return { manga };
 }
+
+/** Same as resolveOwnedManga but keyed by chapter id (for chapter-scoped routes). */
+export async function resolveOwnedChapter(
+  chapterId: string
+): Promise<{ err: NextResponse } | { chapter: { id: string; mangaId: string; mangaSlug: string } }> {
+  const session = await auth();
+  if (!session?.user) return { err: apiError("AUTH-007", 401) };
+  const role = (session.user as { role?: string }).role;
+  if (role !== "TRANSLATOR" && role !== "ADMIN") return { err: apiError("AUTH-008", 403) };
+
+  const chapter = await prisma.chapter.findUnique({
+    where: { id: chapterId },
+    select: { id: true, mangaId: true, manga: { select: { slug: true, translatorId: true } } },
+  });
+  if (!chapter) return { err: apiError("READ-004", 404) };
+
+  if (role === "TRANSLATOR") {
+    const userId = (session.user as { id: string }).id;
+    const translator = await prisma.translator.findUnique({ where: { userId }, select: { id: true } });
+    if (!translator || chapter.manga.translatorId !== translator.id) return { err: apiError("UP-004", 403) };
+  }
+  return { chapter: { id: chapter.id, mangaId: chapter.mangaId, mangaSlug: chapter.manga.slug } };
+}

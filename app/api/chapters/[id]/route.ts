@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { renderNovel } from "@/lib/markdown";
+import { renderNovel, novelStats } from "@/lib/markdown";
 import { isChapterLive } from "@/lib/chapters";
 import { notifyNewChapter } from "@/lib/notifications";
 import { revalidateMangaCache } from "@/lib/revalidate";
@@ -83,6 +83,35 @@ export async function PATCH(
   }
   if (typeof body.chapterNum === "number" && Number.isFinite(body.chapterNum) && body.chapterNum >= 0) {
     data.chapterNum = body.chapterNum;
+  }
+
+  // Snapshot the about-to-be-replaced version so it can be restored later.
+  // Throttled (≤1 per 10 min) so frequent autosaves don't spam the table.
+  if (typeof data.content === "string" && data.content !== chapter.content && chapter.content) {
+    const last = await prisma.chapterRevision.findFirst({
+      where: { chapterId: id },
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true },
+    });
+    if (!last || Date.now() - last.createdAt.getTime() > 10 * 60 * 1000) {
+      await prisma.chapterRevision.create({
+        data: {
+          chapterId: id,
+          title: chapter.title,
+          content: chapter.content,
+          authorNote: chapter.authorNote,
+          words: novelStats(chapter.content).words,
+        },
+      });
+      // Keep only the 30 most recent revisions per chapter.
+      const stale = await prisma.chapterRevision.findMany({
+        where: { chapterId: id },
+        orderBy: { createdAt: "desc" },
+        skip: 30,
+        select: { id: true },
+      });
+      if (stale.length) await prisma.chapterRevision.deleteMany({ where: { id: { in: stale.map((s) => s.id) } } });
+    }
   }
 
   try {
