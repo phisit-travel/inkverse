@@ -79,7 +79,7 @@ export default function FeaturedTitles({ items }: { items: FeaturedItem[] }) {
                   {it.title}
                 </h3>
                 {it.description && (
-                  <p className="hidden sm:block text-sm text-[var(--text-secondary)] line-clamp-2 mb-4 leading-relaxed">
+                  <p className="max-sm:hidden text-sm text-[var(--text-secondary)] line-clamp-2 mb-4 leading-relaxed">
                     {it.description}
                   </p>
                 )}
