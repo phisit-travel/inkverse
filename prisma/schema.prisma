@@ -17,7 +17,6 @@ model User {
   bio              String?           // short profile bio (readers; translators use Translator.bio)
   verifiedAt       DateTime?         // identity-verified translator (paid + admin-approved)
   coins            Int               @default(0)
-  appBonusAt       DateTime?         // claimed the one-time Android-app install bonus
   vipExpiresAt     DateTime?         // active VIP while in the future (coin stipend + unlock discount)
   createdAt        DateTime          @default(now())
   // Fields required by @auth/prisma-adapter for OAuth (Google) sign-in
@@ -37,9 +36,6 @@ model User {
   translatorApplication   TranslatorApplication?
   coinOrders              CoinOrder[]
   notifications           Notification[]
-  dailyCheckIns           DailyCheckIn[]
-  referralsGiven          Referral[]        @relation("Referrer")
-  referralReceived        Referral?         @relation("Referee")
   contactMessages         ContactMessage[]
   verificationRequest     VerificationRequest?
   passwordResetTokens     PasswordResetToken[]
@@ -143,20 +139,6 @@ model ContactMessage {
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([status, createdAt])
-}
-
-model Referral {
-  id           String    @id @default(cuid())
-  referrerId   String
-  refereeId    String    @unique // a user can only be referred once
-  status       String    @default("PENDING") // PENDING | REWARDED
-  coinsAwarded Int       @default(0)
-  createdAt    DateTime  @default(now())
-  rewardedAt   DateTime?
-  referrer     User      @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
-  referee      User      @relation("Referee", fields: [refereeId], references: [id], onDelete: Cascade)
-
-  @@index([referrerId])
 }
 
 model CoinOrder {
@@ -467,19 +449,6 @@ model UnlockedChapter {
   chapter     Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
   @@id([userId, chapterId])
-}
-
-model DailyCheckIn {
-  id          String   @id @default(cuid())
-  userId      String
-  date        DateTime // truncated to 00:00 UTC of the claim day
-  coinsEarned Int
-  streak      Int      @default(1)
-  createdAt   DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, date])
-  @@index([userId, date])
 }
 
 model Notification {

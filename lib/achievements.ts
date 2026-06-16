@@ -29,7 +29,6 @@ export interface Stats {
   ratings: number;
   premiumUnlocked: number;
   topups: number;
-  bestStreak: number;
 }
 
 export const CATEGORY_LABEL: Record<AchievementCategory, string> = {
@@ -62,20 +61,17 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { key: "unlock-1",   title: "ปลดล็อกครั้งแรก",      description: "ปลดล็อกตอนพรีเมียมครั้งแรก", icon: "Unlock",       category: "engagement", metric: "premiumUnlocked", threshold: 1,  coinReward: 5 },
   { key: "unlock-25",  title: "ผู้สนับสนุนตัวจริง",    description: "ปลดล็อกครบ 25 ตอน",        icon: "Unlock",       category: "engagement", metric: "premiumUnlocked", threshold: 25, coinReward: 15 },
   { key: "topup-1",    title: "ผู้สนับสนุน",          description: "เติมเหรียญครั้งแรก",        icon: "Coins",        category: "engagement", metric: "topups",          threshold: 1,  coinReward: 10 },
-  { key: "streak-7",   title: "ขยันทั้งสัปดาห์",      description: "เช็คอิน 7 วันติด",          icon: "CalendarCheck", category: "engagement", metric: "bestStreak",      threshold: 7,  coinReward: 10 },
-  { key: "streak-30",  title: "วินัยเหล็ก",          description: "เช็คอิน 30 วันติด",         icon: "CalendarCheck", category: "engagement", metric: "bestStreak",      threshold: 30, coinReward: 30 },
 ];
 
 /** Compute every stat an achievement can depend on, in one batch. */
 async function computeStats(userId: string): Promise<Stats> {
-  const [chaptersRead, bookmarks, ratings, premiumUnlocked, topups, streakAgg, reads] =
+  const [chaptersRead, bookmarks, ratings, premiumUnlocked, topups, reads] =
     await Promise.all([
       prisma.readHistory.count({ where: { userId } }),
       prisma.bookmark.count({ where: { userId } }),
       prisma.rating.count({ where: { userId } }),
       prisma.unlockedChapter.count({ where: { userId } }),
       prisma.coinOrder.count({ where: { userId, status: "PAID" } }),
-      prisma.dailyCheckIn.aggregate({ where: { userId }, _max: { streak: true } }),
       prisma.readHistory.findMany({
         where: { userId },
         select: { chapter: { select: { mangaId: true } } },
@@ -117,7 +113,6 @@ async function computeStats(userId: string): Promise<Stats> {
     ratings,
     premiumUnlocked,
     topups,
-    bestStreak: streakAgg._max.streak ?? 0,
   };
 }
 
