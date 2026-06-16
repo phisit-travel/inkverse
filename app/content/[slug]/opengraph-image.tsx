@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { prisma } from "@/lib/prisma";
 import sharp from "sharp";
+import { decodeSlug } from "@/lib/slug";
 
 // Covers are WebP, which Satori can't render — fetch + transcode to a PNG data URI.
 async function coverPng(url: string | null): Promise<string | null> {
@@ -49,7 +50,8 @@ async function getFonts() {
 }
 
 export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeSlug(rawSlug);
   const [manga, fonts] = await Promise.all([
     prisma.manga.findUnique({ where: { slug }, select: { title: true, coverUrl: true, type: true } }),
     getFonts(),

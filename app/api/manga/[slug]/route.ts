@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { liveChapterWhere } from "@/lib/chapters";
 import { cleanTags } from "@/lib/tags";
 import { apiError } from "@/lib/apiError";
+import { decodeSlug } from "@/lib/slug";
 
 // Returns the manga only if the signed-in user owns it (translator) or is admin.
 async function getMangaOwnership(slug: string) {
@@ -26,7 +27,8 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeSlug(rawSlug);
 
   const manga = await prisma.manga.findUnique({
     where: { slug },
@@ -65,7 +67,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeSlug(rawSlug);
   const manga = await getMangaOwnership(slug);
   if (!manga) return apiError("CREATE-003", 404);
 
@@ -101,7 +104,8 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeSlug(rawSlug);
   const manga = await getMangaOwnership(slug);
   if (!manga) return apiError("CREATE-003", 404);
 

@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { cookies } from "next/headers";
+import { decodeSlug } from "@/lib/slug";
 import StarRating from "@/components/ui/StarRating";
 import BookmarkButton from "@/components/ui/BookmarkButton";
 import DownloadMangaButton from "@/components/ui/DownloadMangaButton";
@@ -38,7 +39,8 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeSlug(rawSlug);
   const manga = await prisma.manga.findUnique({
     where: { slug },
     include: { genres: { include: { genre: true } } },
@@ -112,7 +114,8 @@ function getMangaProfile(slug: string) {
 }
 
 export default async function MangaProfilePage({ params }: Props) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeSlug(rawSlug);
   const session = await auth();
 
   const userId = session?.user ? (session.user as { id: string }).id : null;
