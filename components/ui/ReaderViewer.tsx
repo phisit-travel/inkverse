@@ -119,9 +119,11 @@ function MangaCanvas({
       (entries) => {
         for (const e of entries) (e.isIntersecting ? draw : release)();
       },
-      // Preload ~2.5 screens ahead so pages are ready before they scroll into
-      // view (less skeleton / perceived lag). Still releases far-away canvases.
-      { rootMargin: "2400px 0px" }
+      // Asymmetric preload: load pages well before they scroll INTO view (large
+      // bottom margin = read downward stays ahead of the scroll, no skeleton),
+      // but keep a smaller top margin so passed pages release sooner to save
+      // memory. ~4 screens ahead, ~1 behind.
+      { rootMargin: "900px 0px 4000px 0px" }
     );
     io.observe(wrap);
     return () => {
@@ -330,7 +332,7 @@ export default function ReaderViewer({
       >
         {mode === "webtoon" ? (
           <div className="flex flex-col items-center">
-            {pages.map((page) => (
+            {pages.map((page, i) => (
               <MangaCanvas
                 key={page.pageNum}
                 source={page.src}
@@ -338,6 +340,9 @@ export default function ReaderViewer({
                 w={page.width || 800}
                 h={page.height || 1200}
                 full
+                // Paint the first screenful immediately so the chapter opens
+                // without a skeleton flash at the top.
+                priority={i < 2}
               />
             ))}
           </div>
@@ -347,16 +352,26 @@ export default function ReaderViewer({
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
-            {pages[currentPage] && (
-              <MangaCanvas
-                source={pages[currentPage].src}
-                alt={`Page ${currentPage + 1}`}
-                w={pages[currentPage].width || 800}
-                h={pages[currentPage].height || 1200}
-                full={false}
-                priority
-              />
-            )}
+            {/* Render a small window around the current page and keep neighbours
+                mounted+decoded (priority) so flipping is instant. Only the
+                current one is shown; the rest are decoded off-screen. */}
+            {[currentPage - 1, currentPage, currentPage + 1, currentPage + 2]
+              .filter((i) => i >= 0 && i < pages.length)
+              .map((i) => (
+                <div
+                  key={pages[i].pageNum}
+                  className={i === currentPage ? "w-full flex items-center justify-center" : "hidden"}
+                >
+                  <MangaCanvas
+                    source={pages[i].src}
+                    alt={`Page ${i + 1}`}
+                    w={pages[i].width || 800}
+                    h={pages[i].height || 1200}
+                    full={false}
+                    priority
+                  />
+                </div>
+              ))}
 
             {/* Nav buttons */}
             <button
