@@ -4,7 +4,7 @@ import { apiError } from "@/lib/apiError";
 import { resolveOwnedManga } from "@/lib/mangaOwner";
 import { rateLimit } from "@/lib/rate-limit";
 
-const CATEGORIES = ["CHARACTER", "WORLD", "TIMELINE", "NOTE"];
+const CATEGORIES = ["GLOSSARY", "CHARACTER", "WORLD", "TIMELINE", "NOTE"];
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ slug: string; id: string }> }) {
   const { slug, id } = await params;
