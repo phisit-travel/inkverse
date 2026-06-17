@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Users, Globe2, Clock, StickyNote, Plus, Pencil, Trash2, Check, X, Loader2 } from "lucide-react";
+import { Users, Globe2, Clock, StickyNote, Plus, Pencil, Trash2, Check, X, Loader2, Languages } from "lucide-react";
 import type { ComponentType } from "react";
 
 interface Entry {
@@ -11,11 +11,14 @@ interface Entry {
   body: string | null;
 }
 
-const CATS: { key: string; label: string; icon: ComponentType<{ className?: string }> }[] = [
-  { key: "CHARACTER", label: "ตัวละคร", icon: Users },
-  { key: "WORLD", label: "โลก & สถานที่", icon: Globe2 },
-  { key: "TIMELINE", label: "ไทม์ไลน์", icon: Clock },
-  { key: "NOTE", label: "โน้ตอื่นๆ", icon: StickyNote },
+const CATS: { key: string; label: string; icon: ComponentType<{ className?: string }>; titlePh: string; bodyPh: string }[] = [
+  // Glossary first — the translator-facing "keep terms consistent" tool, the
+  // mirror of what writers use the rest of the bible for.
+  { key: "GLOSSARY", label: "คำแปล/ชื่อ", icon: Languages, titlePh: "คำ/ชื่อต้นฉบับ (เช่น Arin, SFX: ドキドキ)", bodyPh: "คำแปลไทยที่ใช้ + โน้ต (เช่น “อาริน” / เสียงหัวใจเต้น — ใช้ให้ตรงกันทุกตอน)" },
+  { key: "CHARACTER", label: "ตัวละคร", icon: Users, titlePh: "ชื่อตัวละคร", bodyPh: "ลักษณะนิสัย, ความสัมพันธ์, จุดเด่น ฯลฯ" },
+  { key: "WORLD", label: "โลก & สถานที่", icon: Globe2, titlePh: "ชื่อสถานที่ / กฎของโลก", bodyPh: "รายละเอียดสถานที่, ระบบเวท, กติกาของโลก ฯลฯ" },
+  { key: "TIMELINE", label: "ไทม์ไลน์", icon: Clock, titlePh: "ชื่อเหตุการณ์", bodyPh: "ลำดับเหตุการณ์สำคัญ, ช่วงเวลา ฯลฯ" },
+  { key: "NOTE", label: "โน้ตอื่นๆ", icon: StickyNote, titlePh: "หัวข้อโน้ต", bodyPh: "รายละเอียดอื่นๆ ที่อยากจดไว้" },
 ];
 
 export default function StoryBible({ mangaSlug, initial }: { mangaSlug: string; initial: Entry[] }) {
@@ -95,12 +98,13 @@ export default function StoryBible({ mangaSlug, initial }: { mangaSlug: string; 
     }
   }
 
+  const activeCat = CATS.find((c) => c.key === cat) ?? CATS[0];
   const form = (
     <div className="border border-[var(--text-primary)]/40 bg-[var(--bg-surface)] p-3">
       <input
         value={draftTitle}
         onChange={(e) => setDraftTitle(e.target.value)}
-        placeholder="ชื่อ (เช่น ชื่อตัวละคร / สถานที่ / เหตุการณ์)"
+        placeholder={activeCat.titlePh}
         autoFocus
         className="w-full bg-[var(--bg-card)] border border-[var(--border)] px-3 py-2 text-[var(--text-primary)] text-sm mb-2"
       />
@@ -108,7 +112,7 @@ export default function StoryBible({ mangaSlug, initial }: { mangaSlug: string; 
         value={draftBody}
         onChange={(e) => setDraftBody(e.target.value)}
         rows={5}
-        placeholder="รายละเอียด... (ลักษณะนิสัย, ความสัมพันธ์, กฎของโลก, เหตุการณ์สำคัญ ฯลฯ)"
+        placeholder={activeCat.bodyPh}
         className="w-full bg-[var(--bg-card)] border border-[var(--border)] px-3 py-2 text-[var(--text-primary)] text-sm resize-y leading-relaxed"
       />
       {error && <p className="text-xs text-[var(--text-primary)] mt-1">{error}</p>}

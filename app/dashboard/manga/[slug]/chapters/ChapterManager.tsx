@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Lock, Unlock, Coins, ArrowUpDown, Check, X, Loader2,
-  ChevronRight, GripVertical, Edit3, Trash2, Clock, ChevronDown, Layers,
+  ChevronRight, GripVertical, Edit3, Trash2, Clock, ChevronDown, Layers, Eye,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -309,6 +309,18 @@ function ChapterRow({
             : <Unlock className="w-3.5 h-3.5" />}
           {chapter.isPremium ? "ล็อค" : "ฟรี"}
         </button>
+
+        {/* Preview — opens the real reader; the owner can see drafts too */}
+        <Link
+          href={`/content/${mangaSlug}/${chapter.chapterNum}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="พรีวิวหน้าอ่าน (เห็นแบบที่คนอ่านเห็น)"
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs text-[var(--text-secondary)] bg-white/5 border border-[var(--border)] hover:bg-white/10 hover:text-[var(--text-primary)] transition-all"
+        >
+          <Eye className="w-3.5 h-3.5" />
+          พรีวิว
+        </Link>
 
         {/* Reorder pages (manga) / edit text (novel) */}
         {isNovel ? (

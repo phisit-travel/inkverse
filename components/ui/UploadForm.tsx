@@ -64,6 +64,50 @@ async function compressImage(
   }
 }
 
+// Manhwa/webtoon pages are often one very tall vertical strip. Split such
+// strips into reader-friendly pages in the browser before upload. Returns 1
+// item for normal pages, N items for a split strip; falls back to compressImage.
+const STRIP_RATIO = 2.5; // height/width above this = treat as a long strip
+const SLICE_TALL = 1800; // target slice height (px)
+async function prepareImage(
+  file: File,
+  split: boolean
+): Promise<{ blob: Blob; contentType: string; width: number; height: number }[]> {
+  if (!split) return [await compressImage(file)];
+  try {
+    const bitmap = await createImageBitmap(file);
+    const MAX_WIDTH = 2560;
+    const scale = bitmap.width > MAX_WIDTH ? MAX_WIDTH / bitmap.width : 1;
+    const w = Math.round(bitmap.width * scale);
+    const h = Math.round(bitmap.height * scale);
+    // Only split genuinely tall strips — leave normal manga pages untouched.
+    if (h / w <= STRIP_RATIO || h <= SLICE_TALL * 1.2) {
+      bitmap.close();
+      return [await compressImage(file)];
+    }
+    const n = Math.ceil(h / SLICE_TALL);
+    const out: { blob: Blob; contentType: string; width: number; height: number }[] = [];
+    for (let i = 0; i < n; i++) {
+      const top = i * SLICE_TALL;
+      const ph = Math.min(SLICE_TALL, h - top);
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = ph;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) continue;
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(bitmap, 0, top / scale, bitmap.width, ph / scale, 0, 0, w, ph);
+      const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/webp", 0.92));
+      if (blob) out.push({ blob, contentType: "image/webp", width: w, height: ph });
+    }
+    bitmap.close();
+    return out.length ? out : [await compressImage(file)];
+  } catch {
+    return [await compressImage(file)];
+  }
+}
+
 const IMG_RE = /\.(jpe?g|png|webp|gif|avif)$/i;
 
 // Group a folder selection (webkitdirectory) into chapters by the sub-folder
@@ -97,12 +141,13 @@ function groupFilesByChapter(files: File[]): { num: number; files: File[] }[] {
 async function uploadPagesToChapter(
   chapterId: string,
   files: File[],
+  split: boolean,
   onProgress?: (msg: string) => void
 ): Promise<{ ok: boolean; error?: string }> {
-  const prepared = [];
+  const prepared: { blob: Blob; contentType: string; width: number; height: number }[] = [];
   for (let i = 0; i < files.length; i++) {
-    onProgress?.(`บีบอัด ${i + 1}/${files.length}`);
-    prepared.push(await compressImage(files[i]));
+    onProgress?.(`เตรียมรูป ${i + 1}/${files.length}`);
+    prepared.push(...(await prepareImage(files[i], split)));
   }
   const presignRes = await fetch("/api/upload/presign", {
     method: "POST", headers: { "Content-Type": "application/json" },
@@ -174,6 +219,8 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
 
   // --- Bulk (multi-chapter by folder) ---
   const [chapterMode, setChapterMode] = useState<"single" | "bulk">("single");
+  // Auto-split tall manhwa/webtoon strips into reader-friendly pages on upload.
+  const [splitLong, setSplitLong] = useState(true);
   const [bulkChapters, setBulkChapters] = useState<{ num: number; files: File[] }[]>([]);
   const [bulkPremium, setBulkPremium] = useState(false);
   const [bulkCoinCost, setBulkCoinCost] = useState("5");
@@ -259,7 +306,7 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
       if (createRes.status === 409) { skipped++; continue; } // already exists → skip
       if (!createRes.ok) { failed++; errors.push(`ตอน ${num}: สร้างไม่สำเร็จ`); continue; }
       const chapter = await createRes.json();
-      const res = await uploadPagesToChapter(chapter.id, files, (m) =>
+      const res = await uploadPagesToChapter(chapter.id, files, splitLong, (m) =>
         setUploadProgress(`ตอน ${num} (${i + 1}/${bulkChapters.length}) — ${m}`));
       if (res.ok) ok++;
       else { failed++; errors.push(`ตอน ${num}: ${res.error}`); }
@@ -339,8 +386,8 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
       // via presigned URLs — bytes never pass through the server (no size limit).
       const prepared: { blob: Blob; contentType: string; width: number; height: number }[] = [];
       for (let i = 0; i < pageFiles.length; i++) {
-        setUploadProgress(`กำลังบีบอัดรูป ${i + 1}/${pageFiles.length}...`);
-        prepared.push(await compressImage(pageFiles[i]));
+        setUploadProgress(`กำลังเตรียมรูป ${i + 1}/${pageFiles.length}...`);
+        prepared.push(...(await prepareImage(pageFiles[i], splitLong)));
       }
 
       const presignRes = await fetch("/api/upload/presign", {
@@ -439,6 +486,18 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
 
   const inputCls =
     "w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-gray-500 focus:outline-none focus:border-[var(--text-primary)]/50 transition-colors";
+
+  const splitToggle = (
+    <button type="button" onClick={() => setSplitLong((v) => !v)} className="flex items-center gap-3 text-left w-full">
+      <div className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${splitLong ? "bg-[var(--text-primary)]" : "bg-white/10"}`}>
+        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${splitLong ? "translate-x-6" : "translate-x-1"}`} />
+      </div>
+      <span className="min-w-0">
+        <span className="block text-sm text-[var(--text-primary)]">ตัดภาพแนวตั้งยาวอัตโนมัติ (manhwa / เว็บตูน)</span>
+        <span className="block text-[11px] text-[var(--text-muted)]">ภาพ strip ยาวจะถูกตัดเป็นหน้าอ่านง่ายให้เอง — หน้ามังงะปกติไม่ถูกแตะ</span>
+      </span>
+    </button>
+  );
 
   return (
     <div>
@@ -752,6 +811,10 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
                   )}
                 </div>
 
+                <div className="border border-[var(--border)] bg-[var(--bg-card)] rounded-xl p-3">
+                  {splitToggle}
+                </div>
+
                 {bulkResult && (
                   <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-sm text-[var(--text-primary)]">
                     เสร็จ · สำเร็จ {bulkResult.ok} ตอน · ข้าม {bulkResult.skipped} · ล้มเหลว {bulkResult.failed}
@@ -832,6 +895,11 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
                   <span className="text-xs text-[var(--text-primary)]">เหรียญ</span>
                 </div>
               )}
+            </div>
+
+            {/* Auto-split long strips */}
+            <div className="border border-[var(--border)] bg-[var(--bg-card)] rounded-xl p-3">
+              {splitToggle}
             </div>
 
             {/* Pages upload */}
