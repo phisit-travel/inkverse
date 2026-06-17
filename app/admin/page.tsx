@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Users, BookOpen, MessageSquare, TrendingUp, Wallet, ShoppingBag, Coins, Eye, UserCheck } from "lucide-react";
 import Link from "next/link";
 import RecalculateButton from "./RecalculateButton";
+import ToolkitBannerDownloads from "@/components/ui/ToolkitBannerDownloads";
 
 export const metadata = { title: "แผงผู้ดูแลระบบ" };
 
@@ -143,6 +144,12 @@ export default async function AdminPage() {
           </div>
         </div>
       )}
+
+      {/* Marketing assets */}
+      <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-[0.18em] uppercase flex items-center gap-3 mb-4">
+        <span className="w-6 h-px bg-[var(--text-primary)]" /> เครื่องมือการตลาด
+      </h2>
+      <ToolkitBannerDownloads />
 
       {/* Quick actions */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-10">
