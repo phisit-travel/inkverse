@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { ArrowRight, ChevronLeft, ChevronRight, Coins, PenLine, Smartphone } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Coins, PenLine, Smartphone, Sparkles } from "lucide-react";
 
 type Slide = {
   tag: string;
@@ -31,6 +31,14 @@ const SLIDES: Slide[] = [
     cta: "เติมเหรียญ",
     href: "/topup",
     icon: Coins,
+  },
+  {
+    tag: "ใหม่! สำหรับนักเขียน",
+    title: "เครื่องมือเขียนระดับโปร",
+    sub: "WYSIWYG · ประวัติเวอร์ชัน · Story Bible · สถิติรายเรื่อง · ส่งออก .epub — ชุดเครื่องมือนักเขียนที่ครบกว่าทุกที่ เขียนลื่น เก็บงานปลอดภัย เริ่มฟรีวันนี้",
+    cta: "ดูเครื่องมือทั้งหมด",
+    href: "/creator-101",
+    icon: Sparkles,
   },
   {
     tag: "ครีเอเตอร์",
