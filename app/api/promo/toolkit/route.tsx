@@ -26,17 +26,41 @@ async function getFonts() {
   return fonts;
 }
 
-const TOOLS = [
-  "เอดิเตอร์ WYSIWYG",
-  "ประวัติเวอร์ชัน · กู้คืนได้",
-  "Story Bible คลังข้อมูลเรื่อง",
-  "สถิติรายเรื่อง (Analytics)",
-  "ส่งออก .txt / .epub",
-  "โหมดโฟกัส + บันทึกอัตโนมัติ",
-];
+const COPY = {
+  writer: {
+    headline: "เครื่องมือนักเขียนระดับโปร",
+    tagline: "เขียนลื่น · เก็บงานปลอดภัย · โตได้จริง",
+    cta: "เริ่มเขียนฟรี — สมัครนักเขียนได้เลยที่",
+    tools: [
+      "เอดิเตอร์ WYSIWYG",
+      "ประวัติเวอร์ชัน · กู้คืนได้",
+      "Story Bible คลังข้อมูลเรื่อง",
+      "สถิติรายเรื่อง (Analytics)",
+      "ส่งออก .txt / .epub",
+      "โหมดโฟกัส + บันทึกอัตโนมัติ",
+    ],
+  },
+  tl: {
+    headline: "เครื่องมือนักแปลระดับโปร",
+    tagline: "อัปไว · แปลเนียน · คุมงานเป็นระบบ",
+    cta: "เริ่มแปลฟรี — สมัครนักแปลได้เลยที่",
+    tools: [
+      "ตัดภาพยาว manhwa อัตโนมัติ",
+      "คลังคำแปล/ชื่อ (Glossary)",
+      "พรีวิวก่อนเผยแพร่",
+      "อัปหลายตอนรวดเดียว",
+      "สถิติรายเรื่อง (Analytics)",
+      "อ่านล่วงหน้า / พรีเมียม",
+    ],
+  },
+} as const;
 
 export async function GET(req: NextRequest) {
-  const fmt = new URL(req.url).searchParams.get("format") || "square";
+  const sp = new URL(req.url).searchParams;
+  const fmt = sp.get("format") || "square";
+  const role = sp.get("role") === "tl" ? "tl" : "writer";
+  const copy = COPY[role];
+  const TOOLS = copy.tools;
   const story = fmt === "story";
   const wide = fmt === "wide";
   const W = wide ? 1200 : 1080;
@@ -58,10 +82,10 @@ export async function GET(req: NextRequest) {
             <div style={{ display: "flex", background: "#fff", color: "#0a0a0a", fontSize: wide ? 20 : 26, fontWeight: 700, padding: "6px 18px", letterSpacing: 4 }}>ใหม่ · NEW</div>
           </div>
           <div style={{ display: "flex", fontSize: head, fontWeight: 700, lineHeight: 1.08, marginTop: wide ? 16 : 28, maxWidth: W - pad * 2 }}>
-            เครื่องมือนักเขียนระดับโปร
+            {copy.headline}
           </div>
           <div style={{ display: "flex", fontSize: subFont, fontWeight: 400, color: "#cfcfcf", marginTop: wide ? 10 : 20 }}>
-            เขียนลื่น · เก็บงานปลอดภัย · โตได้จริง
+            {copy.tagline}
           </div>
         </div>
 
@@ -77,7 +101,7 @@ export async function GET(req: NextRequest) {
 
         {/* bottom: CTA */}
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", fontSize: wide ? 22 : story ? 36 : 30, fontWeight: 400, color: "#cfcfcf" }}>เริ่มเขียนฟรี — สมัครนักเขียนได้เลยที่</div>
+          <div style={{ display: "flex", fontSize: wide ? 22 : story ? 36 : 30, fontWeight: 400, color: "#cfcfcf" }}>{copy.cta}</div>
           <div style={{ display: "flex", fontSize: wide ? 38 : story ? 60 : 50, fontWeight: 700, letterSpacing: 3, marginTop: 8 }}>inksverse.com</div>
         </div>
       </div>

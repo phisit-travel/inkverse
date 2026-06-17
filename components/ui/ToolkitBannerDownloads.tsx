@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Download, ImageIcon, ExternalLink } from "lucide-react";
+import { Download, ImageIcon, ExternalLink, PenLine, Languages } from "lucide-react";
 
 type Fmt = "square" | "story" | "wide";
+type Role = "writer" | "tl";
 
 const FORMATS: { fmt: Fmt; label: string; size: string }[] = [
   { fmt: "square", label: "จัตุรัส (IG / FB)", size: "1080×1080" },
@@ -11,7 +12,16 @@ const FORMATS: { fmt: Fmt; label: string; size: string }[] = [
   { fmt: "wide", label: "แนวนอน (X / ลิงก์การ์ด)", size: "1200×630" },
 ];
 
-function DownloadBtn({ fmt, label, size }: { fmt: Fmt; label: string; size: string }) {
+const GROUPS: { role: Role; title: string; icon: typeof PenLine }[] = [
+  { role: "writer", title: "แบนเนอร์ toolkit นักเขียน", icon: PenLine },
+  { role: "tl", title: "แบนเนอร์ toolkit นักแปล", icon: Languages },
+];
+
+function url(role: Role, fmt: Fmt) {
+  return `/api/promo/toolkit?format=${fmt}${role === "tl" ? "&role=tl" : ""}`;
+}
+
+function DownloadBtn({ role, fmt, label, size }: { role: Role; fmt: Fmt; label: string; size: string }) {
   const [busy, setBusy] = useState(false);
   return (
     <button
@@ -19,12 +29,12 @@ function DownloadBtn({ fmt, label, size }: { fmt: Fmt; label: string; size: stri
       onClick={async () => {
         setBusy(true);
         try {
-          const res = await fetch(`/api/promo/toolkit?format=${fmt}`);
+          const res = await fetch(url(role, fmt));
           if (!res.ok) throw new Error();
           const blob = await res.blob();
           const a = document.createElement("a");
           a.href = URL.createObjectURL(blob);
-          a.download = `inkverse-toolkit-${fmt}.png`;
+          a.download = `inkverse-toolkit-${role}-${fmt}.png`;
           document.body.appendChild(a);
           a.click();
           a.remove();
@@ -50,24 +60,35 @@ export default function ToolkitBannerDownloads() {
     <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5 mb-10">
       <div className="flex items-center gap-2 mb-1">
         <ImageIcon className="w-5 h-5 text-[var(--text-primary)]" />
-        <h3 className="font-semibold text-[var(--text-primary)]">แบนเนอร์โปรโมท toolkit นักเขียน</h3>
+        <h3 className="font-semibold text-[var(--text-primary)]">แบนเนอร์โปรโมท toolkit ครีเอเตอร์</h3>
       </div>
-      <p className="text-sm text-[var(--text-secondary)] mb-4">
-        ดาวน์โหลดรูปแบนเนอร์ &ldquo;เครื่องมือนักเขียนระดับโปร&rdquo; ไปโพสต์โปรโมทบน IG / Facebook / TikTok / X
+      <p className="text-sm text-[var(--text-secondary)] mb-5">
+        ดาวน์โหลดรูปแบนเนอร์ไปโพสต์โปรโมทบน IG / Facebook / TikTok / X
       </p>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {FORMATS.map((f) => (
-          <DownloadBtn key={f.fmt} {...f} />
+
+      <div className="space-y-6">
+        {GROUPS.map((g) => (
+          <div key={g.role}>
+            <div className="flex items-center gap-2 mb-2.5">
+              <g.icon className="w-4 h-4 text-[var(--text-primary)]" />
+              <span className="text-sm font-semibold text-[var(--text-primary)]">{g.title}</span>
+              <a
+                href={url(g.role, "square")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors ml-1"
+              >
+                <ExternalLink className="w-3 h-3" /> ดูตัวอย่าง
+              </a>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {FORMATS.map((f) => (
+                <DownloadBtn key={f.fmt} role={g.role} {...f} />
+              ))}
+            </div>
+          </div>
         ))}
       </div>
-      <a
-        href="/api/promo/toolkit?format=square"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors mt-3"
-      >
-        <ExternalLink className="w-3.5 h-3.5" /> ดูตัวอย่าง
-      </a>
     </div>
   );
 }

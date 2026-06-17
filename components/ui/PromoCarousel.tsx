@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { ArrowRight, ChevronLeft, ChevronRight, Coins, PenLine, Smartphone, Sparkles } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Coins, PenLine, Smartphone, Sparkles, Languages } from "lucide-react";
 
 type Slide = {
   tag: string;
@@ -39,6 +39,14 @@ const SLIDES: Slide[] = [
     cta: "ดูเครื่องมือทั้งหมด",
     href: "/creator-101",
     icon: Sparkles,
+  },
+  {
+    tag: "ใหม่! สำหรับนักแปล",
+    title: "เครื่องมือนักแปลระดับโปร",
+    sub: "ตัดภาพ manhwa อัตโนมัติ · คลังคำแปล/ชื่อ · พรีวิวก่อนเผยแพร่ · อัปหลายตอนรวด — ชุดเครื่องมือนักแปลที่ทัดเทียมนักเขียน อัปไว แปลเนียน เริ่มฟรีวันนี้",
+    cta: "ดูเครื่องมือทั้งหมด",
+    href: "/creator-101",
+    icon: Languages,
   },
   {
     tag: "ครีเอเตอร์",

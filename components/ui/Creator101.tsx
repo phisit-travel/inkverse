@@ -9,7 +9,7 @@ import {
   AlignLeft, AlignCenter, AlignRight, Undo2, Redo2, Save, Send, Clock, Coins,
   Wallet, Upload, GripVertical, Megaphone, Type, Target, Maximize2, Search,
   ArrowRight, BadgeCheck, History, RotateCcw, Library, BarChart3, FileDown,
-  Sparkles, Eye, Users, MapPin, BookOpen,
+  Sparkles, Eye, Users, MapPin, BookOpen, Scissors, Layers,
 } from "lucide-react";
 
 /* ---------- visual building blocks ---------- */
@@ -310,6 +310,94 @@ function WriterToolkitBanner() {
   );
 }
 
+/* ---------- new translator-toolkit visual blocks ---------- */
+
+function SplitterBlock() {
+  return (
+    <Mock label="ตัดภาพยาว manhwa อัตโนมัติ">
+      <div className="flex items-center justify-center gap-4">
+        {/* one tall strip */}
+        <div className="w-14 shrink-0">
+          <div className="w-full h-44 border border-[var(--border)] bg-[var(--bg-surface)] flex items-center justify-center">
+            <span className="text-[10px] text-[var(--text-muted)] -rotate-90 whitespace-nowrap">strip ยาว 1 ไฟล์</span>
+          </div>
+        </div>
+        <div className="flex flex-col items-center text-[var(--text-muted)]">
+          <Scissors className="w-5 h-5 text-[var(--text-primary)]" />
+          <ArrowRight className="w-4 h-4 mt-1" />
+        </div>
+        {/* split into pages */}
+        <div className="flex gap-1.5">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="w-9 h-14 border border-[var(--border)] bg-[var(--bg-surface)] flex items-center justify-center text-[10px] text-[var(--text-muted)]">{i}</div>
+          ))}
+        </div>
+      </div>
+      <p className="text-[11px] text-[var(--text-muted)] mt-3 text-center">อัปไฟล์เดียวยาวๆ → ระบบตัดเป็นหน้าอ่านง่ายให้เอง (ตัดเฉพาะภาพ strip จริง หน้าปกติไม่ถูกแตะ)</p>
+    </Mock>
+  );
+}
+
+function GlossaryBlock() {
+  return (
+    <Mock label="คลังคำแปล/ชื่อ (Glossary)">
+      <div className="space-y-1.5">
+        {[
+          { o: "Arin", t: "อาริน" },
+          { o: "Sword of Dawn", t: "ดาบอรุณรุ่ง" },
+          { o: "ドキドキ (SFX)", t: "ตึกตัก ๆ" },
+        ].map((g) => (
+          <div key={g.o} className="flex items-center gap-2 border border-[var(--border)] px-3 py-2 text-xs">
+            <span className="text-[var(--text-secondary)] min-w-0 flex-1 truncate">{g.o}</span>
+            <ArrowRight className="w-3.5 h-3.5 text-[var(--text-muted)] shrink-0" />
+            <span className="text-[var(--text-primary)] font-semibold min-w-0 flex-1 truncate">{g.t}</span>
+          </div>
+        ))}
+      </div>
+      <p className="text-[11px] text-[var(--text-muted)] mt-3">เก็บชื่อตัวละคร/สถานที่/SFX ให้แปลตรงกันทุกตอน — เรื่องยาวหรือทีมหลายคนก็ไม่หลุด</p>
+    </Mock>
+  );
+}
+
+/* ---------- ad banner: new translator toolkit ---------- */
+
+function TranslatorToolkitBanner() {
+  const tools = [
+    { icon: Scissors, t: "ตัดภาพยาวอัตโนมัติ" },
+    { icon: Library, t: "คลังคำแปล/ชื่อ" },
+    { icon: Eye, t: "พรีวิวก่อนเผยแพร่" },
+    { icon: Layers, t: "อัปหลายตอนรวด" },
+    { icon: BarChart3, t: "สถิติรายเรื่อง" },
+    { icon: Clock, t: "อ่านล่วงหน้า/พรีเมียม" },
+  ];
+  return (
+    <div className="relative overflow-hidden border border-[var(--text-primary)] bg-[var(--bg-card)] p-6 mb-10">
+      <div className="pointer-events-none absolute -top-16 -right-16 w-48 h-48 rounded-full bg-[var(--text-primary)]/10 blur-2xl" />
+      <div className="relative">
+        <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.25em] text-[var(--text-primary)] font-semibold">
+          <Sparkles className="w-3.5 h-3.5" /> ใหม่! เครื่องมือนักแปลระดับโปร
+        </span>
+        <h2 className="font-bebas text-3xl sm:text-4xl text-[var(--text-primary)] tracking-wide mt-2 leading-none">
+          อัปไว แปลเนียน คุมงานเป็นระบบ
+        </h2>
+        <p className="text-sm text-[var(--text-secondary)] mt-2 max-w-lg leading-relaxed">
+          INKVERSE ยกชุดเครื่องมือนักแปลให้ทัดเทียมนักเขียน — ตัดภาพ manhwa อัตโนมัติ คุมคำแปลให้ตรงทุกตอน
+          พรีวิวก่อนเผยแพร่ และดูสถิติเพื่อโต ครบในที่เดียว
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-5">
+          {tools.map((t) => (
+            <div key={t.t} className="flex items-center gap-2.5 border border-[var(--border)] bg-[var(--bg-primary)]/40 px-3 py-2.5">
+              <t.icon className="w-4 h-4 text-[var(--text-primary)] shrink-0" />
+              <span className="text-xs font-semibold text-[var(--text-primary)]">{t.t}</span>
+            </div>
+          ))}
+        </div>
+        <p className="text-[11px] text-[var(--text-muted)] mt-4">เลื่อนลงดูวิธีใช้ทุกตัวแบบทีละขั้น ↓</p>
+      </div>
+    </div>
+  );
+}
+
 /* ---------- the page ---------- */
 
 type Role = "writer" | "translator";
@@ -468,6 +556,8 @@ function WriterGuide() {
 function TranslatorGuide() {
   return (
     <>
+      <TranslatorToolkitBanner />
+
       <Step n={1} title="สมัครเป็นนักแปล">
         <p>เข้าเมนู <b className="text-[var(--text-primary)]">ครีเอเตอร์ → สมัครนักแปล</b> กรอกใบสมัครสั้นๆ</p>
         <Mock label="ใบสมัครนักแปล">
@@ -496,8 +586,8 @@ function TranslatorGuide() {
         <Tip>ตั้ง <b className="text-[var(--text-primary)]">ประเภท</b> ให้ถูก (MANGA/MANHWA/MANHUA) เรื่องจะไปอยู่ในหมวดที่ใช่ คนหาเจอง่าย</Tip>
       </Step>
 
-      <Step n={3} title="เพิ่มตอน + อัปรูปหน้า">
-        <p>กด <b className="text-[var(--text-primary)]">เพิ่มตอน</b> แล้วอัปรูปหน้ามังงะทีละหลายรูป — ระบบเรียงตามลำดับให้</p>
+      <Step n={3} title="เพิ่มตอน + อัปรูปหน้า (ทีละตอน / หลายตอนรวด)">
+        <p>กด <b className="text-[var(--text-primary)]">เพิ่มตอน</b> แล้วอัปรูปหน้าทีละหลายรูป — ระบบเรียงตามลำดับให้ หรือเลือกโหมด <b className="text-[var(--text-primary)]">หลายตอน</b> เลือกทั้งโฟลเดอร์ (ตอนที่ 1/ ตอนที่ 2/ …) อัปทุกตอนรวดเดียว</p>
         <Mock label="อัปโหลดหน้าของตอน">
           <div className="flex items-center gap-3">
             <FakeBtn><Upload className="w-3.5 h-3.5" /> อัปรูปหน้า</FakeBtn>
@@ -509,9 +599,21 @@ function TranslatorGuide() {
             </div>
           </div>
         </Mock>
+        <Tip>รูปคมเต็มความละเอียด — ระบบบีบอัดเป็น WebP ให้อัตโนมัติ ไฟล์เล็กลงแต่ภาพไม่แตก</Tip>
       </Step>
 
-      <Step n={4} title="จัดการตอน (เรียง / แก้ / ลบ)">
+      <Step n={4} title="ตัดภาพยาว manhwa อัตโนมัติ">
+        <p>มันฮวา/เว็บตูนมักเป็นไฟล์ภาพแนวตั้งยาวไฟล์เดียว — เปิดสวิตช์ <b className="text-[var(--text-primary)]">“ตัดภาพแนวตั้งยาวอัตโนมัติ”</b> (เปิดให้อยู่แล้ว) ตอนอัป ระบบจะตัดเป็นหน้าอ่านง่ายให้เอง ไม่ต้องนั่งตัดเองทีละหน้า</p>
+        <SplitterBlock />
+        <Tip>ตัดเฉพาะภาพ strip ยาวจริง (สูงกว่ากว้างมากๆ) — ถ้าอัปหน้ามังงะปกติที่แยกหน้าแล้ว ระบบจะไม่ไปยุ่ง</Tip>
+      </Step>
+
+      <Step n={5} title="พรีวิวก่อนเผยแพร่">
+        <p>ในหน้าจัดการตอน กดปุ่ม <b className="text-[var(--text-primary)]">พรีวิว</b> <Eye className="inline w-3.5 h-3.5 align-text-bottom" /> เพื่อดูตอนแบบที่คนอ่านเห็นจริง — เช็กว่าหน้าเรียงถูก ไม่มีหน้าหาย/หน้าสลับ ก่อนกดเผยแพร่</p>
+        <Mock><div className="flex items-center gap-2"><FakeBtn><Eye className="w-3.5 h-3.5" /> พรีวิว</FakeBtn><ArrowRight className="w-4 h-4 text-[var(--text-muted)]" /><span className="text-xs text-[var(--text-muted)]">เปิดหน้าอ่านจริง (ตอนร่างก็ดูได้ เฉพาะเจ้าของ)</span></div></Mock>
+      </Step>
+
+      <Step n={6} title="จัดการตอน (เรียง / แก้ / ลบ)">
         <p>ในหน้าจัดการตอน ลากเรียงลำดับ แก้ไข หรือลบได้ พร้อมเห็นสถานะแต่ละตอน</p>
         <Mock label="ตัวจัดการตอน">
           <div className="space-y-1.5">
@@ -530,18 +632,24 @@ function TranslatorGuide() {
         </Mock>
       </Step>
 
-      <Step n={5} title="ตั้งตอนพรีเมียม / อ่านล่วงหน้า">
+      <Step n={7} title="คลังคำแปล/ชื่อ (Glossary)">
+        <p>เปิดจากหน้าจัดการเรื่อง → <b className="text-[var(--text-primary)]">คลังข้อมูล</b> แท็บ <b className="text-[var(--text-primary)]">คำแปล/ชื่อ</b> เก็บชื่อตัวละคร สถานที่ SFX และคำเฉพาะ พร้อมคำแปลไทยที่ใช้ — ให้แปลตรงกันทุกตอน เรื่องยาวหรือแปลกันหลายคนก็ไม่หลุด</p>
+        <GlossaryBlock />
+        <Tip>คู่กับ <b className="text-[var(--text-primary)]">คลังตัวละคร/สถานที่</b> ในแท็บอื่น — เปิดอ้างอิงระหว่างแปลได้ตลอด ชื่อไม่เพี้ยนกลางเรื่อง</Tip>
+      </Step>
+
+      <Step n={8} title="ตั้งตอนพรีเมียม / อ่านล่วงหน้า">
         <p>ตั้งราคาเหรียญต่อตอน หรือทำ “อ่านล่วงหน้า” เหมือนกับนักเขียน — กลไกเดียวกัน</p>
         <MonetizeBlock />
       </Step>
 
-      <Step n={6} title="รับรายได้ + ถอนเงิน">
+      <Step n={9} title="รับรายได้ + ถอนเงิน">
         <EarningsBlock />
       </Step>
 
-      <Step n={7} title="โปรโมทเรื่องของคุณ" last>
-        <p>ในแดชบอร์ดมี <b className="text-[var(--text-primary)]">ชุดโปรโมท</b> — ลิงก์เชิญเพื่อน + รูป/แคปชันพร้อมแชร์ ดึงคนเข้ามาอ่านเรื่องคุณ</p>
-        <Mock><div className="flex items-center gap-2"><FakeBtn><Megaphone className="w-3.5 h-3.5" /> ชุดโปรโมท</FakeBtn><BadgeCheck className="w-4 h-4 text-[var(--text-muted)]" /><span className="text-xs text-[var(--text-muted)]">ลิงก์เชิญ + รูปแชร์พร้อมใช้</span></div></Mock>
+      <Step n={10} title="โปรโมทเรื่องของคุณ" last>
+        <p>ในแดชบอร์ดมี <b className="text-[var(--text-primary)]">ชุดโปรโมท</b> — ลิงก์เชิญเพื่อน + การ์ดรูป/แคปชันพร้อมแชร์ลง IG/TikTok ดึงคนเข้ามาอ่านเรื่องคุณ</p>
+        <Mock><div className="flex items-center gap-2"><FakeBtn><Megaphone className="w-3.5 h-3.5" /> ชุดโปรโมท</FakeBtn><BadgeCheck className="w-4 h-4 text-[var(--text-muted)]" /><span className="text-xs text-[var(--text-muted)]">ลิงก์เชิญ + การ์ดรูปพร้อมโพสต์</span></div></Mock>
       </Step>
     </>
   );
