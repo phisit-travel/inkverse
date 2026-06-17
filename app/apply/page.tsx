@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import ApplyClient from "./ApplyClient";
+import ApplyProvider from "./ApplyProvider";
 import ApplyStatus from "./ApplyStatus";
 import type { Metadata } from "next";
 
@@ -40,10 +41,12 @@ export default async function ApplyPage({
 
   // New application or re-apply after rejection
   return (
-    <ApplyClient
-      genres={genres.map((g) => ({ id: g.id, name: g.name, slug: g.slug }))}
-      prevApplication={application}
-      mode={mode}
-    />
+    <ApplyProvider>
+      <ApplyClient
+        genres={genres.map((g) => ({ id: g.id, name: g.name, slug: g.slug }))}
+        prevApplication={application}
+        mode={mode}
+      />
+    </ApplyProvider>
   );
 }

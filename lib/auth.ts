@@ -77,7 +77,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter,
   callbacks: {
     ...authConfig.callbacks,
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.role = (user as { role?: string }).role;
         token.id = user.id;
@@ -94,7 +94,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token.id) {
         const now = Date.now();
         const last = typeof token.refreshedAt === "number" ? token.refreshedAt : 0;
-        if (now - last > 60_000) {
+        // `trigger === "update"` = a client called useSession().update() (e.g. right
+        // after creator auto-approval) — refresh the role NOW, bypassing the 60s
+        // throttle, so a just-approved creator can enter /dashboard immediately.
+        if (trigger === "update" || now - last > 60_000) {
           const u = await prisma.user.findUnique({
             where: { id: token.id as string },
             select: { username: true, role: true },

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { PenTool, BookOpen, Heart, ChevronRight, ChevronLeft, Check, AlertCircle, Percent, FileText } from "lucide-react";
 import clsx from "clsx";
 
@@ -28,6 +29,7 @@ export default function ApplyClient({ genres, prevApplication, mode = "translato
   mode?: "translator" | "writer";
 }) {
   const router = useRouter();
+  const { update } = useSession();
   const isWriter = mode === "writer";
   const role = isWriter ? "นักเขียน" : "นักแปล";
   const [step, setStep] = useState(1);
@@ -76,9 +78,13 @@ export default function ApplyClient({ genres, prevApplication, mode = "translato
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "เกิดข้อผิดพลาด");
       if (data.autoApproved) {
-        // Instant approval → straight to the creator dashboard.
-        router.push("/dashboard");
-        router.refresh();
+        // Instant approval → refresh the session so the role flips to TRANSLATOR
+        // NOW; otherwise the stale READER token gets bounced off /dashboard for
+        // up to 60s. Pass an arg to update() so it hits the jwt `trigger:"update"`
+        // path (re-fetches role from DB), then do a full navigation so the fresh
+        // session cookie is what the dashboard middleware reads.
+        await update({});
+        window.location.href = "/dashboard";
         return;
       }
       setDone(true);
