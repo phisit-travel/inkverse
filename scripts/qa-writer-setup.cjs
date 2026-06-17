@@ -11,11 +11,13 @@ const prisma = new PrismaClient({
 });
 
 (async () => {
+  const kind = process.argv[2] === "TRANSLATOR" ? "TRANSLATOR" : "WRITER";
+  const tag = kind === "TRANSLATOR" ? "tl" : "writer";
   const ts = Date.now();
-  const email = `qa-writer-${ts}@inkverse.test`;
+  const email = `qa-${tag}-${ts}@inkverse.test`;
   const password = `Qa!${ts}`;
   const passwordHash = await bcrypt.hash(password, 10);
-  const username = `qa_writer_${ts}`;
+  const username = `qa_${tag}_${ts}`;
 
   const user = await prisma.user.create({
     data: {
@@ -25,7 +27,7 @@ const prisma = new PrismaClient({
       role: "TRANSLATOR",
       emailVerified: new Date(),
       translator: {
-        create: { penName: `QA Writer ${ts}`, kind: "WRITER", bio: "qa throwaway" },
+        create: { penName: `QA ${kind} ${ts}`, kind, bio: "qa throwaway" },
       },
     },
     include: { translator: true },
