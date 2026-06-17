@@ -21,8 +21,11 @@ export async function createNotification({
 }
 
 /**
- * Notify every user who bookmarked a manga that a new chapter is out.
- * One bulk insert (createMany) — cheap even for thousands of bookmarkers.
+ * Notify a new chapter to: everyone who bookmarked the manga AND everyone who
+ * follows the creator (deduped, creator excluded). The follower path is what
+ * makes following a creator a real retention loop — and it covers "new work"
+ * too (a creator's followers get pinged on the first chapter of a new title).
+ * One bulk insert — cheap even for thousands of recipients.
  */
 export async function notifyNewChapter(opts: {
   mangaId: string;
@@ -31,28 +34,37 @@ export async function notifyNewChapter(opts: {
   chapterNum: number;
 }) {
   try {
-    const bookmarks = await prisma.bookmark.findMany({
-      where: { mangaId: opts.mangaId },
-      select: { userId: true },
-    });
-    if (bookmarks.length === 0) return;
+    const [bookmarks, manga] = await Promise.all([
+      prisma.bookmark.findMany({ where: { mangaId: opts.mangaId }, select: { userId: true } }),
+      prisma.manga.findUnique({ where: { id: opts.mangaId }, select: { translator: { select: { userId: true } } } }),
+    ]);
+
+    const creatorUserId = manga?.translator?.userId ?? null;
+    let followerIds: string[] = [];
+    if (creatorUserId) {
+      const follows = await prisma.follow.findMany({
+        where: { followingId: creatorUserId },
+        select: { followerId: true },
+      });
+      followerIds = follows.map((f) => f.followerId);
+    }
+
+    // Bookmarkers + followers, deduped, and never notify the creator themselves.
+    const userIds = [...new Set([...bookmarks.map((b) => b.userId), ...followerIds])].filter(
+      (id) => id !== creatorUserId
+    );
+    if (userIds.length === 0) return;
 
     const link = `/content/${opts.mangaSlug}/${opts.chapterNum}`;
     const body = `${opts.mangaTitle} ตอนที่ ${opts.chapterNum} ออกแล้ว`;
     await prisma.notification.createMany({
-      data: bookmarks.map((b) => ({
-        userId: b.userId,
-        type: "NEW_CHAPTER",
-        title: "มีตอนใหม่!",
-        body,
-        link,
-      })),
+      data: userIds.map((userId) => ({ userId, type: "NEW_CHAPTER", title: "มีตอนใหม่!", body, link })),
     });
 
     // Push to the Android app too (lazy import; no-op if Firebase isn't set up).
     try {
       const { sendPushToUsers } = await import("./push");
-      await sendPushToUsers(bookmarks.map((b) => b.userId), "มีตอนใหม่!", body, link);
+      await sendPushToUsers(userIds, "มีตอนใหม่!", body, link);
     } catch {
       /* push is optional */
     }
