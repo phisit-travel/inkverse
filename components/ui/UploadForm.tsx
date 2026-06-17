@@ -287,6 +287,70 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
     e.target.value = "";
   };
 
+  // Without a drop handler the browser navigates to (opens a new tab for) every
+  // file dropped on the page — dropping 165 images = 165 tabs. Swallow drops
+  // window-wide, and handle them in the real drop zones below.
+  const [dragKind, setDragKind] = useState<"" | "pages" | "bulk">("");
+  useEffect(() => {
+    const prevent = (e: DragEvent) => e.preventDefault();
+    window.addEventListener("dragover", prevent);
+    window.addEventListener("drop", prevent);
+    return () => {
+      window.removeEventListener("dragover", prevent);
+      window.removeEventListener("drop", prevent);
+    };
+  }, []);
+
+  // Drop images onto the single-chapter pages area.
+  const onDropPages = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragKind("");
+    const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/") || IMG_RE.test(f.name));
+    if (files.length === 0) return;
+    setPageFiles((prev) => [...prev, ...files]);
+    setPagePreviews((prev) => [...prev, ...files.map((f) => URL.createObjectURL(f))]);
+  };
+
+  // Recursively read a dropped folder (DataTransferItem → FileSystemEntry),
+  // attaching a webkitRelativePath so groupFilesByChapter can read the sub-folder.
+  async function readEntry(entry: any, prefix: string, out: File[]): Promise<void> {
+    if (!entry) return;
+    if (entry.isFile) {
+      await new Promise<void>((res) =>
+        entry.file((f: File) => {
+          try { Object.defineProperty(f, "webkitRelativePath", { value: prefix + entry.name, configurable: true }); } catch {}
+          out.push(f);
+          res();
+        }, () => res())
+      );
+    } else if (entry.isDirectory) {
+      const reader = entry.createReader();
+      // readEntries returns at most 100 per call — loop until it's drained.
+      for (;;) {
+        const batch: any[] = await new Promise((res) => reader.readEntries((e: any[]) => res(e), () => res([])));
+        if (!batch.length) break;
+        for (const child of batch) await readEntry(child, prefix + entry.name + "/", out);
+      }
+    }
+  }
+
+  const onDropBulk = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragKind("");
+    // Snapshot entries synchronously — dataTransfer is emptied after the event.
+    const entries = Array.from(e.dataTransfer.items)
+      .map((it) => (it.webkitGetAsEntry ? it.webkitGetAsEntry() : null))
+      .filter(Boolean);
+    const out: File[] = [];
+    if (entries.length) {
+      for (const entry of entries) await readEntry(entry, "", out);
+    } else {
+      // No directory entries (rare) — fall back to flat files.
+      out.push(...Array.from(e.dataTransfer.files));
+    }
+    if (out.length) { setBulkChapters(groupFilesByChapter(out)); setBulkResult(null); }
+  };
+
   const onSubmitBulk = async () => {
     setChapterError("");
     if (!selectedSlug) { setChapterError("กรุณาเลือกมังงะ"); return; }
@@ -783,12 +847,17 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
                 <p className="text-xs text-[var(--text-secondary)] bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-3 leading-relaxed">
                   เลือกโฟลเดอร์ที่ข้างในมีโฟลเดอร์ย่อยแต่ละตอน เช่น <span className="text-[var(--text-primary)]">ตอนที่ 1/</span> · <span className="text-[var(--text-primary)]">ตอนที่ 2/</span> … ระบบจะสร้างและอัปทุกตอนให้อัตโนมัติ (ตอนที่มีอยู่แล้วจะข้าม)
                 </p>
-                <label className="flex flex-col items-center justify-center h-32 rounded-xl border-2 border-dashed border-white/20 hover:border-[var(--text-primary)]/50 cursor-pointer transition-colors bg-[var(--bg-card)]">
+                <label
+                  onDragOver={(e) => { e.preventDefault(); setDragKind("bulk"); }}
+                  onDragLeave={() => setDragKind("")}
+                  onDrop={onDropBulk}
+                  className={`flex flex-col items-center justify-center h-32 rounded-xl border-2 border-dashed cursor-pointer transition-colors bg-[var(--bg-card)] ${dragKind === "bulk" ? "border-[var(--text-primary)] bg-[var(--bg-surface)]" : "border-white/20 hover:border-[var(--text-primary)]/50"}`}
+                >
                   <Upload className="w-8 h-8 text-[var(--text-secondary)] mb-2" />
                   <span className="text-sm text-[var(--text-secondary)]">
                     {bulkChapters.length > 0
                       ? `เลือกแล้ว ${bulkChapters.length} ตอน · ${bulkChapters.reduce((s, c) => s + c.files.length, 0)} รูป`
-                      : "คลิกเพื่อเลือกโฟลเดอร์มังงะ"}
+                      : "คลิก หรือ ลากโฟลเดอร์มังงะมาวางที่นี่"}
                   </span>
                   {/* @ts-expect-error non-standard directory attributes */}
                   <input type="file" className="hidden" webkitdirectory="" directory="" multiple onChange={handleBulkFolderChange} />
@@ -903,7 +972,12 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
             </div>
 
             {/* Pages upload */}
-            <div>
+            <div
+              onDragOver={(e) => { e.preventDefault(); setDragKind("pages"); }}
+              onDragLeave={() => setDragKind("")}
+              onDrop={onDropPages}
+              className={dragKind === "pages" ? "rounded-xl ring-2 ring-[var(--text-primary)]/60" : ""}
+            >
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-medium text-[var(--text-primary)]">
                   หน้ามังงะ *{" "}
@@ -923,8 +997,8 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
               {pageFiles.length === 0 ? (
                 <label className="flex flex-col items-center justify-center h-36 rounded-xl border-2 border-dashed border-white/20 hover:border-[var(--text-primary)]/50 cursor-pointer transition-colors bg-[var(--bg-card)]">
                   <ImageIcon className="w-10 h-10 text-[var(--text-secondary)] mb-2" />
-                  <span className="text-sm text-[var(--text-secondary)]">คลิกเพื่อเลือกรูปหน้ามังงะ</span>
-                  <span className="text-xs text-[var(--text-muted)] mt-1">JPG, PNG, WebP — รองรับหลายไฟล์</span>
+                  <span className="text-sm text-[var(--text-secondary)]">คลิก หรือ ลากรูปหน้ามังงะมาวางที่นี่</span>
+                  <span className="text-xs text-[var(--text-muted)] mt-1">JPG, PNG, WebP — เลือก/ลากทีละหลายไฟล์ได้</span>
                   <input type="file" accept="image/*" multiple className="hidden" onChange={handlePageFilesChange} />
                 </label>
               ) : (
