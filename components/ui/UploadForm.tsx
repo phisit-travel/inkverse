@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Upload, Plus, X, ImageIcon, Loader2, CheckCircle2, Lock, Unlock, StopCircle } from "lucide-react";
+import { Upload, Plus, X, ImageIcon, Loader2, CheckCircle2, Lock, Unlock, StopCircle, Pause, Play } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -143,10 +143,12 @@ async function uploadPagesToChapter(
   files: File[],
   split: boolean,
   onProgress?: (msg: string) => void,
-  shouldCancel?: () => boolean
+  shouldCancel?: () => boolean,
+  awaitResume?: () => Promise<void>
 ): Promise<{ ok: boolean; error?: string; cancelled?: boolean }> {
   const prepared: { blob: Blob; contentType: string; width: number; height: number }[] = [];
   for (let i = 0; i < files.length; i++) {
+    await awaitResume?.();
     if (shouldCancel?.()) return { ok: false, cancelled: true };
     onProgress?.(`เตรียมรูป ${i + 1}/${files.length}`);
     prepared.push(...(await prepareImage(files[i], split)));
@@ -161,6 +163,7 @@ async function uploadPagesToChapter(
   };
   const registered: { pageNum: number; key: string; width: number; height: number }[] = [];
   for (let i = 0; i < uploads.length; i++) {
+    await awaitResume?.();
     if (shouldCancel?.()) {
       // Save whatever already uploaded so it isn't lost, then stop.
       if (registered.length > 0) {
@@ -242,7 +245,19 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
   // ref so the running async loop sees it immediately); the current page finishes,
   // then the loop bails and keeps whatever already uploaded.
   const cancelRef = useRef(false);
-  const cancelUpload = () => { cancelRef.current = true; setUploadProgress("กำลังหยุด..."); };
+  // Pause/resume: the loop parks at the current page boundary while paused, then
+  // continues from where it left off (no restart). cancel breaks out of the pause.
+  const pausedRef = useRef(false);
+  const [paused, setPaused] = useState(false);
+  const cancelUpload = () => { cancelRef.current = true; pausedRef.current = false; setPaused(false); setUploadProgress("กำลังหยุด..."); };
+  const togglePause = () => {
+    pausedRef.current = !pausedRef.current;
+    setPaused(pausedRef.current);
+    if (pausedRef.current) setUploadProgress("⏸ พักไว้ — กด 'เล่นต่อ' เพื่ออัปต่อ");
+  };
+  const waitWhilePaused = async () => {
+    while (pausedRef.current && !cancelRef.current) await new Promise((r) => setTimeout(r, 250));
+  };
 
   const { register, handleSubmit, formState: { errors }, setValue, reset } = useForm<MangaForm>({
     resolver: zodResolver(mangaSchema),
@@ -377,9 +392,11 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
     setChapterSuccess(null);
     setBulkResult(null);
     cancelRef.current = false;
+    pausedRef.current = false; setPaused(false);
     let ok = 0, skipped = 0, failed = 0, cancelled = false;
     const errors: string[] = [];
     for (let i = 0; i < bulkChapters.length; i++) {
+      await waitWhilePaused();
       if (cancelRef.current) { cancelled = true; break; }
       const { num, files } = bulkChapters[i];
       setUploadProgress(`ตอน ${num} (${i + 1}/${bulkChapters.length}) — กำลังสร้าง`);
@@ -391,7 +408,7 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
       if (!createRes.ok) { failed++; errors.push(`ตอน ${num}: สร้างไม่สำเร็จ`); continue; }
       const chapter = await createRes.json();
       const res = await uploadPagesToChapter(chapter.id, files, splitLong, (m) =>
-        setUploadProgress(`ตอน ${num} (${i + 1}/${bulkChapters.length}) — ${m}`), () => cancelRef.current);
+        setUploadProgress(`ตอน ${num} (${i + 1}/${bulkChapters.length}) — ${m}`), () => cancelRef.current, waitWhilePaused);
       if (res.cancelled) { cancelled = true; break; }
       if (res.ok) ok++;
       else { failed++; errors.push(`ตอน ${num}: ${res.error}`); }
@@ -402,6 +419,7 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
     setBulkChapters([]);
     setMangasFetched(false); // refresh latest-chapter hints
     setChapterLoading(false);
+    pausedRef.current = false; setPaused(false);
   };
 
   const onSubmitManga = async (data: MangaForm) => {
@@ -450,6 +468,7 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
     setChapterLoading(true);
     setChapterSuccess(null);
     cancelRef.current = false;
+    pausedRef.current = false; setPaused(false);
     try {
       setUploadProgress("กำลังสร้างตอน...");
       const createRes = await fetch(`/api/manga/${selectedSlug}/chapters`, {
@@ -473,6 +492,7 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
       // via presigned URLs — bytes never pass through the server (no size limit).
       const prepared: { blob: Blob; contentType: string; width: number; height: number }[] = [];
       for (let i = 0; i < pageFiles.length; i++) {
+        await waitWhilePaused();
         if (cancelRef.current) {
           setChapterError(`⏹ หยุดแล้ว — ตอน ${chapterNum} ถูกสร้างไว้แล้วแต่ยังไม่ได้อัปหน้า เพิ่มหน้าได้ที่ 'จัดการตอน'`);
           return;
@@ -499,6 +519,7 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
 
       const registered: { pageNum: number; key: string; width: number; height: number }[] = [];
       for (let i = 0; i < uploads.length; i++) {
+        await waitWhilePaused();
         if (cancelRef.current) {
           // Keep the pages already uploaded so they aren't wasted.
           if (registered.length > 0) {
@@ -583,6 +604,7 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
     } finally {
       setChapterLoading(false);
       setUploadProgress("");
+      pausedRef.current = false; setPaused(false);
     }
   };
 
@@ -1079,16 +1101,28 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
               </div>
             )}
 
-            {/* Stop/cancel — appears while an upload is running (single or bulk).
-                Stops after the current page finishes; pages already uploaded are kept. */}
+            {/* Pause/resume + stop — appear while an upload is running (single or bulk).
+                Pause parks at the current page; resume continues from there.
+                Stop bails after the current page; pages already uploaded are kept. */}
             {chapterLoading && (
-              <button
-                type="button"
-                onClick={cancelUpload}
-                className="w-full py-2.5 rounded-xl border border-[var(--text-primary)]/40 text-[var(--text-primary)] text-sm font-semibold flex items-center justify-center gap-2 hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] transition-colors"
-              >
-                <StopCircle className="w-4 h-4" /> หยุด / ยกเลิกการอัปโหลด
-              </button>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={togglePause}
+                  className="flex-1 py-2.5 rounded-xl border border-[var(--text-primary)]/40 text-[var(--text-primary)] text-sm font-semibold flex items-center justify-center gap-2 hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] transition-colors"
+                >
+                  {paused
+                    ? (<><Play className="w-4 h-4" /> เล่นต่อ</>)
+                    : (<><Pause className="w-4 h-4" /> พักชั่วคราว</>)}
+                </button>
+                <button
+                  type="button"
+                  onClick={cancelUpload}
+                  className="flex-1 py-2.5 rounded-xl border border-[var(--text-primary)]/40 text-[var(--text-primary)] text-sm font-semibold flex items-center justify-center gap-2 hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] transition-colors"
+                >
+                  <StopCircle className="w-4 h-4" /> หยุด / ยกเลิก
+                </button>
+              </div>
             )}
 
             {chapterMode === "single" && (
