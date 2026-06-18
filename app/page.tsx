@@ -36,7 +36,10 @@ const getData = unstable_cache(async () => {
       prisma.chapter.findMany({
         take: 10,
         orderBy: { publishedAt: "desc" },
-        where: { manga: { contentRating: { not: "ADULT" } }, ...liveChapterWhere() },
+        // Keep admin-uploaded (non-original) works out of the Latest Updates feed
+        // — it's reserved for real creators' releases. NOT(...) still includes
+        // works with no translator.
+        where: { manga: { contentRating: { not: "ADULT" }, NOT: { translator: { user: { role: "ADMIN" } } } }, ...liveChapterWhere() },
         include: {
           manga: { select: { title: true, slug: true, coverUrl: true, type: true } },
         },
@@ -175,7 +178,8 @@ export default async function HomePage() {
       {/* Main content grid */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
         <div className="xl:col-span-3 space-y-10">
-          {/* Latest Updates */}
+          {/* Latest Updates — hidden entirely when there are no creator releases yet */}
+          {latestChapters.length > 0 && (
           <section>
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-[0.18em] uppercase flex items-center gap-3">
@@ -205,6 +209,7 @@ export default async function HomePage() {
               ))}
             </div>
           </section>
+          )}
 
           {/* Top This Week */}
           <section>
