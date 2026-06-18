@@ -136,8 +136,126 @@ function groupFilesByChapter(files: File[]): { num: number; files: File[] }[] {
     .sort((a, b) => a.num - b.num);
 }
 
-// Upload all page images for ONE chapter: direct-to-R2 (presigned PUT) with a
-// through-server fallback. Same path as single-chapter upload.
+type Prepared = { blob: Blob; contentType: string; width: number; height: number };
+type PresignUpload = { pageNum: number; key: string; contentType: string; uploadUrl: string };
+
+// Compress/split a chapter's pages and upload them — both phases run with bounded
+// concurrency (instead of one page at a time) so a 30-page chapter no longer pays
+// the sum of every page's round-trip serially. Order is preserved via pageNum.
+const PREPARE_CONCURRENCY = 3; // images compressed/decoded in parallel (CPU-bound)
+const UPLOAD_CONCURRENCY = 4;  // PUTs in flight at once (browsers allow ~6 per host)
+
+// Run an async task over items with bounded concurrency. Results keep input order.
+// shouldStop() (checked before each task is picked up) ends the pool early.
+async function mapPool<T, R>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T, index: number) => Promise<R>,
+  shouldStop?: () => boolean
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (true) {
+      if (shouldStop?.()) return;
+      const i = next++;
+      if (i >= items.length) return;
+      results[i] = await fn(items[i], i);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, () => worker()));
+  return results;
+}
+
+// Phase 1: compress (and optionally split) every page file, in parallel.
+async function preparePages(
+  files: File[],
+  split: boolean,
+  onProgress?: (done: number, total: number) => void,
+  shouldCancel?: () => boolean,
+  awaitResume?: () => Promise<void>
+): Promise<{ prepared: Prepared[]; cancelled: boolean }> {
+  let done = 0;
+  let cancelled = false;
+  const per = await mapPool(
+    files,
+    PREPARE_CONCURRENCY,
+    async (file): Promise<Prepared[]> => {
+      await awaitResume?.();
+      if (shouldCancel?.()) { cancelled = true; return []; }
+      const out = await prepareImage(file, split);
+      onProgress?.(++done, files.length);
+      return out;
+    },
+    () => cancelled || !!shouldCancel?.()
+  );
+  return { prepared: cancelled ? [] : per.flat(), cancelled };
+}
+
+// Phase 2: upload prepared blobs to R2 (presigned PUT) with a through-server
+// fallback, UPLOAD_CONCURRENCY at a time. Pages that upload directly are batch-
+// registered at the end; on cancel/failure whatever finished is still saved.
+async function uploadPreparedPages(
+  chapterId: string,
+  prepared: Prepared[],
+  uploads: PresignUpload[],
+  onProgress?: (done: number, total: number) => void,
+  shouldCancel?: () => boolean,
+  awaitResume?: () => Promise<void>
+): Promise<{ ok: boolean; cancelled?: boolean; uploadedCount: number; error?: string; errorStatus?: number }> {
+  const registered: { pageNum: number; key: string; width: number; height: number }[] = [];
+  let done = 0, next = 0, stop = false, cancelled = false;
+  let failureMsg = "", failureStatus = 0;
+
+  const worker = async () => {
+    while (true) {
+      await awaitResume?.();
+      if (shouldCancel?.()) { cancelled = true; stop = true; return; }
+      if (stop) return;
+      const i = next++;
+      if (i >= uploads.length) return;
+      const u = uploads[i], p = prepared[i];
+      let directOk = false;
+      try {
+        const put = await fetch(u.uploadUrl, { method: "PUT", headers: { "Content-Type": u.contentType }, body: p.blob });
+        directOk = put.ok;
+      } catch { directOk = false; }
+      if (directOk) {
+        registered.push({ pageNum: u.pageNum, key: u.key, width: p.width, height: p.height });
+      } else {
+        const fd = new FormData();
+        fd.append("chapterId", chapterId);
+        fd.append("startPage", String(u.pageNum));
+        fd.append("files", new File([p.blob], `${u.pageNum}.webp`, { type: p.contentType }));
+        const fb = await fetch("/api/upload/pages", { method: "POST", body: fd });
+        if (!fb.ok) {
+          const d = await fb.json().catch(() => ({} as { error?: string }));
+          failureMsg = d?.error || `อัปหน้า ${u.pageNum} ล้มเหลว`;
+          failureStatus = fb.status;
+          stop = true;
+          return;
+        }
+      }
+      onProgress?.(++done, uploads.length);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(UPLOAD_CONCURRENCY, uploads.length) }, () => worker()));
+
+  // Save the pages that went straight to R2 (kept even on partial stop).
+  if (registered.length > 0) {
+    const reg = await fetch("/api/upload/pages", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chapterId, pages: registered }),
+    }).catch(() => null);
+    if ((!reg || !reg.ok) && !cancelled && !failureMsg) return { ok: false, error: "บันทึกหน้าไม่สำเร็จ", uploadedCount: done };
+  }
+  if (cancelled) return { ok: false, cancelled: true, uploadedCount: done };
+  if (failureMsg) return { ok: false, error: failureMsg, errorStatus: failureStatus, uploadedCount: done };
+  return { ok: true, uploadedCount: uploads.length };
+}
+
+// Upload all page images for ONE chapter: prepare → presign → upload (both phases
+// concurrent). Same path used by single-chapter and bulk-folder upload.
 async function uploadPagesToChapter(
   chapterId: string,
   files: File[],
@@ -146,63 +264,22 @@ async function uploadPagesToChapter(
   shouldCancel?: () => boolean,
   awaitResume?: () => Promise<void>
 ): Promise<{ ok: boolean; error?: string; cancelled?: boolean }> {
-  const prepared: { blob: Blob; contentType: string; width: number; height: number }[] = [];
-  for (let i = 0; i < files.length; i++) {
-    await awaitResume?.();
-    if (shouldCancel?.()) return { ok: false, cancelled: true };
-    onProgress?.(`เตรียมรูป ${i + 1}/${files.length}`);
-    prepared.push(...(await prepareImage(files[i], split)));
-  }
+  const { prepared, cancelled } = await preparePages(
+    files, split, (d, t) => onProgress?.(`เตรียมรูป ${d}/${t}`), shouldCancel, awaitResume
+  );
+  if (cancelled) return { ok: false, cancelled: true };
+
   const presignRes = await fetch("/api/upload/presign", {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ chapterId, files: prepared.map((p, i) => ({ pageNum: i + 1, contentType: p.contentType })) }),
   });
   if (!presignRes.ok) return { ok: false, error: "เตรียมอัปโหลดไม่สำเร็จ" };
-  const { uploads } = (await presignRes.json()) as {
-    uploads: { pageNum: number; key: string; contentType: string; uploadUrl: string }[];
-  };
-  const registered: { pageNum: number; key: string; width: number; height: number }[] = [];
-  for (let i = 0; i < uploads.length; i++) {
-    await awaitResume?.();
-    if (shouldCancel?.()) {
-      // Save whatever already uploaded so it isn't lost, then stop.
-      if (registered.length > 0) {
-        await fetch("/api/upload/pages", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chapterId, pages: registered }),
-        }).catch(() => {});
-      }
-      return { ok: false, cancelled: true };
-    }
-    const u = uploads[i], p = prepared[i];
-    onProgress?.(`อัปหน้า ${i + 1}/${uploads.length}`);
-    let directOk = false;
-    try {
-      const put = await fetch(u.uploadUrl, { method: "PUT", headers: { "Content-Type": u.contentType }, body: p.blob });
-      directOk = put.ok;
-    } catch { directOk = false; }
-    if (directOk) {
-      registered.push({ pageNum: u.pageNum, key: u.key, width: p.width, height: p.height });
-    } else {
-      const fd = new FormData();
-      fd.append("chapterId", chapterId);
-      fd.append("startPage", String(u.pageNum));
-      fd.append("files", new File([p.blob], `${u.pageNum}.webp`, { type: p.contentType }));
-      const fb = await fetch("/api/upload/pages", { method: "POST", body: fd });
-      if (!fb.ok) {
-        const d = await fb.json().catch(() => ({} as { error?: string }));
-        return { ok: false, error: d?.error || `อัปหน้า ${i + 1} ล้มเหลว` };
-      }
-    }
-  }
-  if (registered.length > 0) {
-    const reg = await fetch("/api/upload/pages", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chapterId, pages: registered }),
-    });
-    if (!reg.ok) return { ok: false, error: "บันทึกหน้าไม่สำเร็จ" };
-  }
-  return { ok: true };
+  const { uploads } = (await presignRes.json()) as { uploads: PresignUpload[] };
+
+  const res = await uploadPreparedPages(
+    chapterId, prepared, uploads, (d, t) => onProgress?.(`อัปหน้า ${d}/${t}`), shouldCancel, awaitResume
+  );
+  return { ok: res.ok, error: res.error, cancelled: res.cancelled };
 }
 
 export default function UploadForm({ genres }: { genres: Genre[] }) {
@@ -407,8 +484,9 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
       if (createRes.status === 409) { skipped++; continue; } // already exists → skip
       if (!createRes.ok) { failed++; errors.push(`ตอน ${num}: สร้างไม่สำเร็จ`); continue; }
       const chapter = await createRes.json();
-      const res = await uploadPagesToChapter(chapter.id, files, splitLong, (m) =>
-        setUploadProgress(`ตอน ${num} (${i + 1}/${bulkChapters.length}) — ${m}`), () => cancelRef.current, waitWhilePaused);
+      const res = await uploadPagesToChapter(chapter.id, files, splitLong, (m) => {
+        if (!pausedRef.current) setUploadProgress(`ตอน ${num} (${i + 1}/${bulkChapters.length}) — ${m}`);
+      }, () => cancelRef.current, waitWhilePaused);
       if (res.cancelled) { cancelled = true; break; }
       if (res.ok) ok++;
       else { failed++; errors.push(`ตอน ${num}: ${res.error}`); }
@@ -488,17 +566,18 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
       }
       const chapter = await createRes.json();
 
-      // Compress each page in the browser (→ WebP), then upload straight to R2
-      // via presigned URLs — bytes never pass through the server (no size limit).
-      const prepared: { blob: Blob; contentType: string; width: number; height: number }[] = [];
-      for (let i = 0; i < pageFiles.length; i++) {
-        await waitWhilePaused();
-        if (cancelRef.current) {
-          setChapterError(`⏹ หยุดแล้ว — ตอน ${chapterNum} ถูกสร้างไว้แล้วแต่ยังไม่ได้อัปหน้า เพิ่มหน้าได้ที่ 'จัดการตอน'`);
-          return;
-        }
-        setUploadProgress(`กำลังเตรียมรูป ${i + 1}/${pageFiles.length}...`);
-        prepared.push(...(await prepareImage(pageFiles[i], splitLong)));
+      // Compress each page in the browser (→ WebP), then upload straight to R2 via
+      // presigned URLs — both phases run concurrently (see preparePages /
+      // uploadPreparedPages). Progress updates are skipped while paused so the
+      // "⏸ พักไว้" message isn't overwritten by in-flight pages finishing.
+      const prep = await preparePages(
+        pageFiles, splitLong,
+        (d, t) => { if (!pausedRef.current) setUploadProgress(`กำลังเตรียมรูป ${d}/${t}...`); },
+        () => cancelRef.current, waitWhilePaused
+      );
+      if (prep.cancelled) {
+        setChapterError(`⏹ หยุดแล้ว — ตอน ${chapterNum} ถูกสร้างไว้แล้วแต่ยังไม่ได้อัปหน้า เพิ่มหน้าได้ที่ 'จัดการตอน'`);
+        return;
       }
 
       const presignRes = await fetch("/api/upload/presign", {
@@ -506,82 +585,28 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chapterId: chapter.id,
-          files: prepared.map((p, i) => ({ pageNum: i + 1, contentType: p.contentType })),
+          files: prep.prepared.map((p, i) => ({ pageNum: i + 1, contentType: p.contentType })),
         }),
       });
       if (!presignRes.ok) {
         setChapterError("สร้างตอนแล้ว แต่เตรียมอัปโหลดไม่สำเร็จ");
         return;
       }
-      const { uploads } = (await presignRes.json()) as {
-        uploads: { pageNum: number; key: string; contentType: string; uploadUrl: string }[];
-      };
+      const { uploads } = (await presignRes.json()) as { uploads: PresignUpload[] };
 
-      const registered: { pageNum: number; key: string; width: number; height: number }[] = [];
-      for (let i = 0; i < uploads.length; i++) {
-        await waitWhilePaused();
-        if (cancelRef.current) {
-          // Keep the pages already uploaded so they aren't wasted.
-          if (registered.length > 0) {
-            await fetch("/api/upload/pages", {
-              method: "POST", headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ chapterId: chapter.id, pages: registered }),
-            }).catch(() => {});
-          }
-          setChapterError(`⏹ หยุดแล้ว — อัปไป ${registered.length} หน้า (ตอน ${chapterNum} สร้างไว้แล้ว) เพิ่มหน้าที่เหลือได้ที่ 'จัดการตอน'`);
-          return;
-        }
-        const u = uploads[i];
-        const p = prepared[i];
-        setUploadProgress(`กำลังอัปโหลดหน้า ${i + 1}/${uploads.length}...`);
-
-        // Try direct-to-R2 first; if the browser can't reach R2 (CORS/network),
-        // fall back to uploading through our own API (same-origin, no CORS).
-        let directOk = false;
-        try {
-          const putRes = await fetch(u.uploadUrl, {
-            method: "PUT",
-            headers: { "Content-Type": u.contentType },
-            body: p.blob,
-          });
-          directOk = putRes.ok;
-        } catch {
-          directOk = false;
-        }
-
-        if (directOk) {
-          registered.push({ pageNum: u.pageNum, key: u.key, width: p.width, height: p.height });
-        } else {
-          const fd = new FormData();
-          fd.append("chapterId", chapter.id);
-          fd.append("startPage", String(u.pageNum));
-          fd.append("files", new File([p.blob], `${u.pageNum}.webp`, { type: p.contentType }));
-          const fb = await fetch("/api/upload/pages", { method: "POST", body: fd });
-          if (!fb.ok) {
-            const data = await fb.json().catch(() => ({} as { error?: string }));
-            const msg =
-              fb.status === 413
-                ? `หน้า ${i + 1} ไฟล์ใหญ่เกินไป`
-                : data?.error || `อัปโหลดหน้า ${i + 1} ล้มเหลว (${fb.status})`;
-            setChapterError(`สร้างตอนแล้ว แต่${msg} (สำเร็จ ${i} หน้า — เพิ่มที่เหลือได้ที่จัดการตอน)`);
-            return;
-          }
-          // The server path already created the Page record.
-        }
+      const res = await uploadPreparedPages(
+        chapter.id, prep.prepared, uploads,
+        (d, t) => { if (!pausedRef.current) setUploadProgress(`กำลังอัปโหลดหน้า ${d}/${t}...`); },
+        () => cancelRef.current, waitWhilePaused
+      );
+      if (res.cancelled) {
+        setChapterError(`⏹ หยุดแล้ว — อัปไป ${res.uploadedCount} หน้า (ตอน ${chapterNum} สร้างไว้แล้ว) เพิ่มหน้าที่เหลือได้ที่ 'จัดการตอน'`);
+        return;
       }
-
-      // Register the pages that uploaded directly to R2.
-      if (registered.length > 0) {
-        setUploadProgress("กำลังบันทึก...");
-        const regRes = await fetch("/api/upload/pages", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chapterId: chapter.id, pages: registered }),
-        });
-        if (!regRes.ok) {
-          setChapterError("อัปโหลดรูปสำเร็จ แต่บันทึกหน้าไม่สำเร็จ");
-          return;
-        }
+      if (!res.ok) {
+        const msg = res.errorStatus === 413 ? "ไฟล์ใหญ่เกินไป" : (res.error || "อัปโหลดหน้าล้มเหลว");
+        setChapterError(`สร้างตอนแล้ว แต่${msg} (สำเร็จ ${res.uploadedCount} หน้า — เพิ่มที่เหลือได้ที่จัดการตอน)`);
+        return;
       }
 
       setChapterSuccess({ mangaSlug: selectedSlug, chapterNum: parseFloat(chapterNum) });
