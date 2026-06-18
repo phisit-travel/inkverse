@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { MessageCircle, X, Send, Bot } from "lucide-react";
 
 interface Faq {
@@ -84,12 +85,17 @@ function findAnswer(input: string): Faq | null {
 }
 
 export default function HelpChatbot() {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [msgs, setMsgs] = useState<Msg[]>([{ from: "bot", text: GREETING }]);
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, open]);
+
+  // Only show on the homepage — elsewhere (esp. the reader) the bottom-right
+  // launcher covered the "next chapter" button. Hooks run first (rules of hooks).
+  if (pathname !== "/") return null;
 
   function ask(text: string) {
     const t = text.trim();
