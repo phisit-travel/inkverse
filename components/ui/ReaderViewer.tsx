@@ -136,7 +136,11 @@ function MangaCanvas({
   return (
     <div
       ref={wrapRef}
-      className={full ? "relative w-full" : "relative"}
+      // Webtoon pages stack vertically; `aspect-ratio` yields fractional heights
+      // that WebKit/iOS rounds inconsistently, leaving a hairline gap between
+      // pages. Overlap each page 1px (-mb-px) so the seam disappears. Desktop
+      // Chrome rounds differently and never showed it.
+      className={full ? "relative w-full block -mb-px" : "relative"}
       style={full ? { aspectRatio: `${w} / ${h}` } : { aspectRatio: `${w} / ${h}`, height: "calc(100vh - 140px)" }}
     >
       <canvas
