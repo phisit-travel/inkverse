@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Upload, Plus, X, ImageIcon, Loader2, CheckCircle2, Lock, Unlock } from "lucide-react";
+import { Upload, Plus, X, ImageIcon, Loader2, CheckCircle2, Lock, Unlock, StopCircle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -142,10 +142,12 @@ async function uploadPagesToChapter(
   chapterId: string,
   files: File[],
   split: boolean,
-  onProgress?: (msg: string) => void
-): Promise<{ ok: boolean; error?: string }> {
+  onProgress?: (msg: string) => void,
+  shouldCancel?: () => boolean
+): Promise<{ ok: boolean; error?: string; cancelled?: boolean }> {
   const prepared: { blob: Blob; contentType: string; width: number; height: number }[] = [];
   for (let i = 0; i < files.length; i++) {
+    if (shouldCancel?.()) return { ok: false, cancelled: true };
     onProgress?.(`เตรียมรูป ${i + 1}/${files.length}`);
     prepared.push(...(await prepareImage(files[i], split)));
   }
@@ -159,6 +161,16 @@ async function uploadPagesToChapter(
   };
   const registered: { pageNum: number; key: string; width: number; height: number }[] = [];
   for (let i = 0; i < uploads.length; i++) {
+    if (shouldCancel?.()) {
+      // Save whatever already uploaded so it isn't lost, then stop.
+      if (registered.length > 0) {
+        await fetch("/api/upload/pages", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chapterId, pages: registered }),
+        }).catch(() => {});
+      }
+      return { ok: false, cancelled: true };
+    }
     const u = uploads[i], p = prepared[i];
     onProgress?.(`อัปหน้า ${i + 1}/${uploads.length}`);
     let directOk = false;
@@ -225,6 +237,12 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
   const [bulkPremium, setBulkPremium] = useState(false);
   const [bulkCoinCost, setBulkCoinCost] = useState("5");
   const [bulkResult, setBulkResult] = useState<{ ok: number; skipped: number; failed: number; errors: string[] } | null>(null);
+
+  // Stop/cancel an in-progress upload. Checked between pages/chapters (synchronous
+  // ref so the running async loop sees it immediately); the current page finishes,
+  // then the loop bails and keeps whatever already uploaded.
+  const cancelRef = useRef(false);
+  const cancelUpload = () => { cancelRef.current = true; setUploadProgress("กำลังหยุด..."); };
 
   const { register, handleSubmit, formState: { errors }, setValue, reset } = useForm<MangaForm>({
     resolver: zodResolver(mangaSchema),
@@ -358,9 +376,11 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
     setChapterLoading(true);
     setChapterSuccess(null);
     setBulkResult(null);
-    let ok = 0, skipped = 0, failed = 0;
+    cancelRef.current = false;
+    let ok = 0, skipped = 0, failed = 0, cancelled = false;
     const errors: string[] = [];
     for (let i = 0; i < bulkChapters.length; i++) {
+      if (cancelRef.current) { cancelled = true; break; }
       const { num, files } = bulkChapters[i];
       setUploadProgress(`ตอน ${num} (${i + 1}/${bulkChapters.length}) — กำลังสร้าง`);
       const createRes = await fetch(`/api/manga/${selectedSlug}/chapters`, {
@@ -371,11 +391,13 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
       if (!createRes.ok) { failed++; errors.push(`ตอน ${num}: สร้างไม่สำเร็จ`); continue; }
       const chapter = await createRes.json();
       const res = await uploadPagesToChapter(chapter.id, files, splitLong, (m) =>
-        setUploadProgress(`ตอน ${num} (${i + 1}/${bulkChapters.length}) — ${m}`));
+        setUploadProgress(`ตอน ${num} (${i + 1}/${bulkChapters.length}) — ${m}`), () => cancelRef.current);
+      if (res.cancelled) { cancelled = true; break; }
       if (res.ok) ok++;
       else { failed++; errors.push(`ตอน ${num}: ${res.error}`); }
     }
     setUploadProgress("");
+    if (cancelled) errors.unshift("⏹ หยุดโดยผู้ใช้ — ตอนที่อัปไม่ครบเพิ่มหน้าที่เหลือได้ที่ 'จัดการตอน'");
     setBulkResult({ ok, skipped, failed, errors });
     setBulkChapters([]);
     setMangasFetched(false); // refresh latest-chapter hints
@@ -427,6 +449,7 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
 
     setChapterLoading(true);
     setChapterSuccess(null);
+    cancelRef.current = false;
     try {
       setUploadProgress("กำลังสร้างตอน...");
       const createRes = await fetch(`/api/manga/${selectedSlug}/chapters`, {
@@ -450,6 +473,10 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
       // via presigned URLs — bytes never pass through the server (no size limit).
       const prepared: { blob: Blob; contentType: string; width: number; height: number }[] = [];
       for (let i = 0; i < pageFiles.length; i++) {
+        if (cancelRef.current) {
+          setChapterError(`⏹ หยุดแล้ว — ตอน ${chapterNum} ถูกสร้างไว้แล้วแต่ยังไม่ได้อัปหน้า เพิ่มหน้าได้ที่ 'จัดการตอน'`);
+          return;
+        }
         setUploadProgress(`กำลังเตรียมรูป ${i + 1}/${pageFiles.length}...`);
         prepared.push(...(await prepareImage(pageFiles[i], splitLong)));
       }
@@ -472,6 +499,17 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
 
       const registered: { pageNum: number; key: string; width: number; height: number }[] = [];
       for (let i = 0; i < uploads.length; i++) {
+        if (cancelRef.current) {
+          // Keep the pages already uploaded so they aren't wasted.
+          if (registered.length > 0) {
+            await fetch("/api/upload/pages", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ chapterId: chapter.id, pages: registered }),
+            }).catch(() => {});
+          }
+          setChapterError(`⏹ หยุดแล้ว — อัปไป ${registered.length} หน้า (ตอน ${chapterNum} สร้างไว้แล้ว) เพิ่มหน้าที่เหลือได้ที่ 'จัดการตอน'`);
+          return;
+        }
         const u = uploads[i];
         const p = prepared[i];
         setUploadProgress(`กำลังอัปโหลดหน้า ${i + 1}/${uploads.length}...`);
@@ -1039,6 +1077,18 @@ export default function UploadForm({ genres }: { genres: Genre[] }) {
                 <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
                 {uploadProgress}
               </div>
+            )}
+
+            {/* Stop/cancel — appears while an upload is running (single or bulk).
+                Stops after the current page finishes; pages already uploaded are kept. */}
+            {chapterLoading && (
+              <button
+                type="button"
+                onClick={cancelUpload}
+                className="w-full py-2.5 rounded-xl border border-[var(--text-primary)]/40 text-[var(--text-primary)] text-sm font-semibold flex items-center justify-center gap-2 hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] transition-colors"
+              >
+                <StopCircle className="w-4 h-4" /> หยุด / ยกเลิกการอัปโหลด
+              </button>
             )}
 
             {chapterMode === "single" && (
