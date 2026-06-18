@@ -518,6 +518,23 @@ export default async function MangaProfilePage({ params }: Props) {
               </p>
             </div>
 
+            {/* Good-faith notice on works uploaded by the site admin (not the
+                admin's own translation; free, non-commercial; removed on request). */}
+            {manga.translator?.user?.role === "ADMIN" && (
+              <div className="bg-[var(--bg-surface)] rounded-xl p-4 border border-[var(--border)] text-xs text-[var(--text-secondary)] leading-relaxed">
+                <p className="text-[var(--text-primary)] font-semibold mb-1.5">หมายเหตุ</p>
+                <p>
+                  ผลงานนี้ไม่ใช่ผลงานแปลของผู้ดูแลเว็บเอง และไม่มีเจตนานำมาใช้เพื่อแสวงหารายได้
+                  เผยแพร่ผ่านเว็บเพื่อให้อ่านฟรีเท่านั้น
+                </p>
+                <p className="mt-1.5">
+                  หากนักแปลท่านใดต้องการลงผลงานแปล (original) ของเรื่องเดียวกันนี้
+                  ทางเว็บยินดีลบงานนี้ให้ทันทีเพื่อให้ท่านได้ลงผลงานของท่านเอง — ติดต่อได้ที่{" "}
+                  <Link href="/contact" className="text-[var(--text-primary)] underline hover:no-underline">หน้าติดต่อ</Link>
+                </p>
+              </div>
+            )}
+
             {/* Attribution for openly-licensed works (CC-BY etc.) */}
             {manga.license && (
               <div className="bg-[var(--bg-surface)] rounded-xl p-3 border border-[var(--border)] text-xs text-[var(--text-secondary)]">
