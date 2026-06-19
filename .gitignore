@@ -80,3 +80,6 @@ mobile/.idea/
 .claude/settings.local.json
 /zz-*.cjs
 /zz-*.js
+
+.vercel
+.env*
