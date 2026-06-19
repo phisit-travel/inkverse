@@ -6,10 +6,13 @@ import {
 } from "lucide-react";
 import type { Metadata } from "next";
 
+const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inksverse.com";
+
 export const metadata: Metadata = {
   title: "ลงงานกับ INKVERSE — ได้ 80% + เครื่องมือครบ | สมัครนักแปล/นักเขียน",
   description:
     "ลงมังงะแปลหรือเขียนนิยายบน INKVERSE รับส่วนแบ่ง 80% (สูงสุดในไทย) เครื่องมือเขียนระดับโปร ถอนเงินเข้าบัญชี และเราช่วยโปรโมตให้",
+  alternates: { canonical: `${BASE_URL}/creators` },
 };
 
 export const revalidate = 3600;

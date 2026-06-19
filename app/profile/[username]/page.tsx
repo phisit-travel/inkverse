@@ -42,9 +42,15 @@ interface Props {
   params: Promise<{ username: string }>;
 }
 
+const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inksverse.com";
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { username } = await params;
-  return { title: `โปรไฟล์ ${username}` };
+  return {
+    title: `โปรไฟล์ ${username}`,
+    description: `ผลงานและช่องของ ${username} บน INKVERSE — ดูมังงะ นิยาย ยศ ความสำเร็จ และกิจกรรมการอ่านทั้งหมด`,
+    alternates: { canonical: `${BASE_URL}/profile/${username}` },
+  };
 }
 
 const ROLES = {

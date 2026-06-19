@@ -4,7 +4,14 @@ import ContactForm from "@/components/ui/ContactForm";
 import { Mail, MessageSquare } from "lucide-react";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "ติดต่อแอดมิน | INKVERSE" };
+const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inksverse.com";
+
+export const metadata: Metadata = {
+  title: "ติดต่อแอดมิน",
+  description:
+    "ติดต่อทีมงาน INKVERSE มีปัญหาการใช้งาน เติมเงิน ปลดล็อกตอน หรือเรื่องลิขสิทธิ์? ส่งข้อความถึงเราได้โดยตรง ทีมงานยินดีช่วยเหลือคุณอย่างรวดเร็ว",
+  alternates: { canonical: `${BASE_URL}/contact` },
+};
 
 export default async function ContactPage() {
   const session = await auth();

@@ -34,6 +34,30 @@ const securityHeaders = [
   },
 ];
 
+// Tell search engines NOT to index private/transactional/app-only routes.
+// This is a response-header fix so it also covers client-component pages that
+// can't export `metadata` (which would otherwise inherit the root layout's
+// `robots: { index: true }`).
+const noindexHeaders = [{ key: "X-Robots-Tag", value: "noindex, nofollow" }];
+
+// Source patterns for routes that must NOT be indexed. Patterns are precise so
+// they never catch the indexable siblings (e.g. /topup landing, /download
+// marketing page) — see the keep-indexable list in the SEO audit.
+const noindexSources = [
+  "/dashboard",
+  "/dashboard/:path*",
+  "/admin",
+  "/admin/:path*",
+  "/auth/:path*",
+  "/settings",
+  "/upload",
+  "/topup/checkout/:path*",
+  "/topup/processing/:path*",
+  "/topup/success/:path*",
+  "/downloads",
+  "/offline",
+];
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   serverExternalPackages: ["better-sqlite3", "@prisma/adapter-better-sqlite3"],
@@ -76,6 +100,8 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=43200" },
         ],
       },
+      // Keep private/transactional/app-only routes out of search indexes.
+      ...noindexSources.map((source) => ({ source, headers: noindexHeaders })),
     ];
   },
   async redirects() {

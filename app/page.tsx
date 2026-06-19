@@ -13,6 +13,15 @@ import TranslatorRanking from "@/components/ui/TranslatorRanking";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { unstable_cache } from "next/cache";
+import type { Metadata } from "next";
+
+const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inksverse.com";
+
+export const metadata: Metadata = {
+  description:
+    "INKVERSE ศูนย์รวมมังงะ มังฮวา มันฮวา และนิยายแปลไทยครบทุกแนว อ่านออนไลน์ฟรี อัปเดตทุกวัน รองรับมือถือ พร้อมระบบติดตามเรื่องที่คุณชอบ",
+  alternates: { canonical: BASE_URL },
+};
 
 export const revalidate = 300; // 5 minutes
 

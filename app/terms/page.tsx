@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "ข้อกำหนดการใช้งาน | INKVERSE" };
+const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inksverse.com";
+
+export const metadata: Metadata = {
+  title: "ข้อกำหนดการใช้งาน",
+  description:
+    "ข้อกำหนดและเงื่อนไขการใช้งาน INKVERSE ครอบคลุมบัญชีผู้ใช้ ระบบเหรียญและการชำระเงิน ส่วนแบ่งรายได้นักแปล ลิขสิทธิ์เนื้อหา และข้อจำกัดความรับผิด",
+  alternates: { canonical: `${BASE_URL}/terms` },
+};
 
 const sections: { h: string; p: string[] }[] = [
   { h: "1. การยอมรับข้อกำหนด", p: ["การใช้งาน INKVERSE ถือว่าคุณยอมรับข้อกำหนดเหล่านี้ หากไม่ยอมรับ กรุณางดใช้บริการ"] },

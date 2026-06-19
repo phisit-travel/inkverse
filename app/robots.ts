@@ -8,7 +8,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin", "/upload", "/dashboard", "/api/", "/auth/", "/topup/checkout"],
+        disallow: ["/admin", "/upload", "/dashboard", "/api/", "/auth/", "/topup/checkout", "/settings", "/topup/processing", "/topup/success", "/downloads", "/offline"],
       },
       {
         // Block AI training crawlers from the whole site.

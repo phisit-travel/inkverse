@@ -6,7 +6,11 @@ import ApplyProvider from "./ApplyProvider";
 import ApplyStatus from "./ApplyStatus";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "สมัครนักแปล / นักเขียน | INKVERSE" };
+export const metadata: Metadata = {
+  title: "สมัครนักแปล / นักเขียน | INKVERSE",
+  description:
+    "สมัครเป็นนักแปลหรือนักเขียนกับ INKVERSE ลงมังงะแปลหรือเขียนนิยายของคุณเอง รับส่วนแบ่งรายได้ 80% พร้อมเครื่องมือเขียนระดับโปรและระบบถอนเงินจริง",
+};
 
 export default async function ApplyPage({
   searchParams,

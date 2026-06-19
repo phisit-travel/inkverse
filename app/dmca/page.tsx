@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "นโยบายลิขสิทธิ์ (DMCA) | INKVERSE" };
+const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inksverse.com";
+
+export const metadata: Metadata = {
+  title: "นโยบายลิขสิทธิ์ (DMCA)",
+  description:
+    "นโยบายลิขสิทธิ์ของ INKVERSE หากผลงานของคุณถูกเผยแพร่โดยละเมิดลิขสิทธิ์ เรียนรู้วิธีส่งคำร้อง DMCA และขั้นตอนที่เราใช้ลบเนื้อหาที่ละเมิดอย่างรวดเร็ว",
+  alternates: { canonical: `${BASE_URL}/dmca` },
+};
 
 export default function DmcaPage() {
   return (

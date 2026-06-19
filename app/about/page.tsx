@@ -8,7 +8,7 @@ import {
 const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inksverse.com";
 
 export const metadata: Metadata = {
-  title: "เกี่ยวกับเรา — ทำไมครีเอเตอร์เชื่อใจ INKVERSE | INKVERSE",
+  title: "เกี่ยวกับเรา — ทำไมครีเอเตอร์เชื่อใจ INKVERSE",
   description:
     "INKVERSE คือแพลตฟอร์มอ่าน/ลงงานที่ครีเอเตอร์ไว้ใจได้ — ลิขสิทธิ์เป็นของคุณ 100%, รายได้โปร่งใส 80%, สมัครฟรีไม่มีค่าแรกเข้า, มีระบบปกป้องผลงาน และทีมงานที่ติดต่อได้จริง",
   alternates: { canonical: `${BASE_URL}/about` },

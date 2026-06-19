@@ -6,9 +6,13 @@ import RankChip from "@/components/ui/RankChip";
 import { BookOpen, Trophy, Medal, BadgeCheck } from "lucide-react";
 import type { Metadata } from "next";
 
+const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inksverse.com";
+
 export const metadata: Metadata = {
-  title: "อันดับนักอ่าน — INKVERSE",
-  description: "จัดอันดับนักอ่านตัวยงของ INKVERSE ใครอ่านเยอะที่สุด",
+  title: "อันดับนักอ่าน",
+  description:
+    "อันดับนักอ่านตัวยงของ INKVERSE จัดอันดับจากจำนวนตอนที่อ่านมากที่สุด อ่านให้เยอะเพื่อไต่อันดับ เลื่อนยศนักอ่าน และปลดล็อกกรอบโปรไฟล์สุดพิเศษ",
+  alternates: { canonical: `${BASE_URL}/leaderboard` },
 };
 
 // Refresh hourly — leaderboards don't need to be real-time.

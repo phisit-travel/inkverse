@@ -2,10 +2,13 @@ import { ShieldCheck, Smartphone, RefreshCw, Download, Gift, Share, WifiOff } fr
 import type { Metadata } from "next";
 import { LATEST_APK } from "@/lib/appVersion";
 
+const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inksverse.com";
+
 export const metadata: Metadata = {
-  title: "ดาวน์โหลดแอป Android — อ่านแบบกันแคปหน้าจอ | INKVERSE",
+  title: "ดาวน์โหลดแอป Android — อ่านแบบกันแคปหน้าจอ",
   description:
-    "แอป INKVERSE สำหรับ Android — อ่านมังงะ/นิยายแบบกันแคปหน้าจอ (FLAG_SECURE) ลื่นกว่า อัปเดตอัตโนมัติ",
+    "ดาวน์โหลดแอป INKVERSE สำหรับ Android — อ่านมังงะและนิยายแบบกันแคปหน้าจอ (FLAG_SECURE) ลื่นกว่าเว็บ อัปเดตอัตโนมัติ และโหลดตอนเก็บอ่านออฟไลน์ได้",
+  alternates: { canonical: `${BASE_URL}/download` },
 };
 
 // Single source of truth (lib/appVersion) — same version the in-app updater checks.

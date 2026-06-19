@@ -6,7 +6,14 @@ import { Search, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "ค้นหามังงะ" };
+const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inksverse.com";
+
+export const metadata: Metadata = {
+  title: "ค้นพบเรื่องใหม่ มังงะ มังฮวา มาแรง",
+  description:
+    "ค้นพบมังงะ มังฮวา มันฮวา และนิยายเรื่องใหม่มาแรงบน INKVERSE ค้นหาด้วยชื่อเรื่อง กรองตามแนว ประเทศ และความนิยม เจอเรื่องโปรดเรื่องต่อไปของคุณ",
+  alternates: { canonical: `${BASE_URL}/discover` },
+};
 
 interface SearchParams {
   q?: string;

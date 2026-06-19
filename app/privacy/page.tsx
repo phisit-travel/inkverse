@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "นโยบายความเป็นส่วนตัว | INKVERSE" };
+const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inksverse.com";
+
+export const metadata: Metadata = {
+  title: "นโยบายความเป็นส่วนตัว",
+  description:
+    "นโยบายความเป็นส่วนตัวของ INKVERSE อธิบายข้อมูลที่เราเก็บ วิธีใช้และปกป้องข้อมูล การใช้คุกกี้ และสิทธิ์ของคุณในการเข้าถึง แก้ไข หรือลบข้อมูลส่วนบุคคล",
+  alternates: { canonical: `${BASE_URL}/privacy` },
+};
 
 const sections: { h: string; p: string[] }[] = [
   { h: "1. ข้อมูลที่เราเก็บ", p: ["ข้อมูลบัญชี (ชื่อผู้ใช้ อีเมล), ข้อมูลการใช้งาน (ประวัติการอ่าน บุ๊กมาร์ก), ข้อมูลธุรกรรมเหรียญ และข้อมูลบัญชีธนาคารสำหรับนักแปลที่ขอถอนเงิน เราไม่เก็บเลขบัตรเครดิตของคุณ — การชำระเงินดำเนินการและจัดเก็บโดย Omise"] },
