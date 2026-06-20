@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 export interface ContinueItem {
   slug: string;
@@ -49,5 +49,7 @@ export default function ReadingProgressProvider({
     };
   }, []);
 
-  return <Ctx.Provider value={data}>{children}</Ctx.Provider>;
+  const value = useMemo(() => data, [data]);
+
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

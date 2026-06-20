@@ -19,9 +19,18 @@ export async function GET(req: NextRequest) {
     },
     take: limit,
     orderBy: { totalViews: "desc" },
-    include: {
+    // Only the card fields — no full `description`, and use the denormalized
+    // latestChapterNum instead of a per-row chapters subquery.
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      coverUrl: true,
+      type: true,
+      status: true,
+      totalViews: true,
+      latestChapterNum: true,
       genres: { include: { genre: { select: { name: true } } } },
-      chapters: { orderBy: { chapterNum: "desc" }, take: 1, select: { chapterNum: true } },
     },
   });
 
@@ -34,7 +43,7 @@ export async function GET(req: NextRequest) {
       type: m.type,
       status: m.status,
       totalViews: m.totalViews,
-      latestChapter: m.chapters[0]?.chapterNum ?? null,
+      latestChapter: m.latestChapterNum ?? null,
       genres: m.genres.map((g) => g.genre.name),
     })),
   });

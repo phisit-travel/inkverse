@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import clsx from "clsx";
@@ -18,9 +19,10 @@ interface MangaCardProps {
   contentRating?: string;
   className?: string;
   variant?: "default" | "compact" | "large";
+  priority?: boolean;
 }
 
-export default function MangaCard({
+function MangaCard({
   slug,
   title,
   coverUrl,
@@ -32,6 +34,7 @@ export default function MangaCard({
   contentRating,
   className,
   variant = "default",
+  priority = false,
 }: MangaCardProps) {
   const isCompact = variant === "compact";
   const isLarge = variant === "large";
@@ -64,6 +67,7 @@ export default function MangaCard({
             alt={title}
             fill
             unoptimized
+            priority={priority}
             className={clsx(
               "object-cover transition-transform duration-500 group-hover:scale-105",
               isLarge && "opacity-60"
@@ -173,3 +177,5 @@ export default function MangaCard({
     </Link>
   );
 }
+
+export default React.memo(MangaCard);

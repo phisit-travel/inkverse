@@ -35,7 +35,6 @@ export async function GET(
     include: {
       genres: { include: { genre: { select: { id: true, name: true, slug: true } } } },
       chapters: { where: liveChapterWhere(), orderBy: { chapterNum: "asc" } },
-      ratings: { select: { score: true } },
       translator: {
         select: { penName: true, bio: true },
       },
@@ -46,14 +45,11 @@ export async function GET(
     return apiError("READ-004", 404);
   }
 
-  const avgRating =
-    manga.ratings.length > 0
-      ? manga.ratings.reduce((a, b) => a + b.score, 0) / manga.ratings.length
-      : 0;
-
+  // avgRating is already a denormalized column on Manga (lib/mangaStats) —
+  // include it explicitly so the response shape is unchanged.
   return NextResponse.json({
     ...manga,
-    avgRating,
+    avgRating: manga.avgRating,
     genres: manga.genres.map((g) => g.genre),
   });
 }

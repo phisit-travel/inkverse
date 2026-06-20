@@ -93,7 +93,6 @@ function getMangaProfile(slug: string) {
               coinCost: true, viewCount: true, publishedAt: true, freeAt: true,
             },
           },
-          ratings: { select: { score: true } },
           translator: { include: { user: { select: { username: true, verifiedAt: true, role: true } } } },
         },
       });
@@ -223,10 +222,9 @@ export default async function MangaProfilePage({ params }: Props) {
       ? Math.round((readCount / manga.chapters.length) * 100)
       : 0;
 
-  const avgRating =
-    manga.ratings.length > 0
-      ? manga.ratings.reduce((a, b) => a + b.score, 0) / manga.ratings.length
-      : 0;
+  // Denormalized stats (lib/mangaStats) — no per-title ratings load.
+  const avgRating = manga.avgRating;
+  const ratingCount = manga.ratingCount;
 
   const isBookmarked = !!bookmarkRow;
 
@@ -297,7 +295,7 @@ export default async function MangaProfilePage({ params }: Props) {
           updatedAt: manga.updatedAt,
           genres: manga.genres,
           avgRating,
-          ratingCount: manga.ratings.length,
+          ratingCount,
           chapters: manga.chapters,
         }}
       />
@@ -411,7 +409,7 @@ export default async function MangaProfilePage({ params }: Props) {
               </div>
               <StarRating value={avgRating} readOnly />
               <p className="text-xs text-[var(--text-secondary)] mt-1">
-                จาก {manga.ratings.length} คนให้คะแนน
+                จาก {ratingCount} คนให้คะแนน
               </p>
             </div>
           </div>

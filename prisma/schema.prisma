@@ -231,6 +231,7 @@ model Manga {
   @@index([totalViews])
   @@index([avgRating])
   @@index([bookmarkCount])
+  @@index([updatedAt])
 }
 
 // Private worldbuilding notes for the writer — characters, places, timeline.
@@ -333,6 +334,7 @@ model Chapter {
   revisions        ChapterRevision[]
 
   @@unique([mangaId, chapterNum])
+  @@index([status, publishedAt])
 }
 
 // Periodic snapshots of a chapter's text so writers can review/restore past
@@ -401,6 +403,7 @@ model Comment {
   likedBy   CommentLike[]
 
   @@index([mangaId])
+  @@index([chapterId, createdAt])
 }
 
 // One row per (user, comment) like — makes liking idempotent + toggleable, and

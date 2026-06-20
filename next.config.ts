@@ -100,6 +100,20 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=43200" },
         ],
       },
+      {
+        // APK is versioned by filename — safe to cache for a week.
+        source: "/downloads/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=86400" },
+        ],
+      },
+      {
+        // PromptPay QR rarely changes — cache for 30 days.
+        source: "/promptpay-qr.jpg",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=2592000" },
+        ],
+      },
       // Keep private/transactional/app-only routes out of search indexes.
       ...noindexSources.map((source) => ({ source, headers: noindexHeaders })),
     ];

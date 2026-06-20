@@ -4,6 +4,7 @@ import { loadThaiFont } from "@/lib/og";
 // Prisma (pg adapter) isn't edge-safe; this one needs no DB but we keep nodejs
 // for consistency with the per-manga image.
 export const runtime = "nodejs";
+export const revalidate = 86400;
 export const alt = "INKVERSE — อ่านมังงะออนไลน์ฟรี";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
@@ -25,7 +26,7 @@ export default async function Image() {
           fontFamily: font ? "Noto Sans Thai" : "sans-serif",
         }}
       >
-        <div style={{ fontSize: 80, fontWeight: 900, color: "#ff2d55", letterSpacing: 8 }}>
+        <div style={{ fontSize: 80, fontWeight: 900, color: "#ffffff", letterSpacing: 8 }}>
           INKVERSE
         </div>
         <div style={{ fontSize: 28, color: "#9a9db0", marginTop: 20 }}>

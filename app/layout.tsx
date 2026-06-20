@@ -9,8 +9,8 @@ import { auth } from "@/lib/auth";
 import { getUserCoins } from "@/lib/coins";
 import { getUserRankBadge } from "@/lib/ranks";
 import { WebsiteJsonLd } from "@/components/seo/JsonLd";
-import HelpChatbot from "@/components/ui/HelpChatbot";
 import ReadingProgressProvider from "@/components/ui/ReadingProgressProvider";
+import HelpChatbotLazy from "@/components/ui/HelpChatbotLazy";
 import AchievementToaster from "@/components/ui/AchievementToaster";
 import TrafficBeacon from "@/components/ui/TrafficBeacon";
 import PushRegister from "@/components/ui/PushRegister";
@@ -143,7 +143,7 @@ export default async function RootLayout({
           )}
         </main>
         <Footer />
-        <HelpChatbot />
+        <HelpChatbotLazy />
         <NativeShell />
         <ServiceWorkerRegister />
         <UpdateChecker />

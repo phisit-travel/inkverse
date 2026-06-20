@@ -88,8 +88,23 @@ export default function NotificationBell() {
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      if (document.visibilityState !== "hidden") {
+        fetchNotifications();
+      }
+    }, 30000);
+
+    function onVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        fetchNotifications();
+      }
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, [fetchNotifications]);
 
   // Close on outside click

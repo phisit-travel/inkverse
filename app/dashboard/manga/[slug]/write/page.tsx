@@ -3,8 +3,8 @@ import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import NovelEditor from "@/components/ui/NovelEditor";
 import { decodeSlug } from "@/lib/slug";
+import NovelEditorLazy from "@/components/ui/NovelEditorLazy";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -68,7 +68,7 @@ export default async function WriteNovelPage({ params, searchParams }: Props) {
       <Link href={`/dashboard/manga/${slug}/chapters`} className="inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
         <ArrowLeft className="w-3.5 h-3.5" /> จัดการตอน
       </Link>
-      <NovelEditor mangaSlug={slug} suggestedNum={suggestedNum} existing={existing} />
+      <NovelEditorLazy mangaSlug={slug} suggestedNum={suggestedNum} existing={existing} />
     </div>
   );
 }

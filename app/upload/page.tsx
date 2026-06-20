@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import UploadForm from "@/components/ui/UploadForm";
+import UploadFormLazy from "@/components/ui/UploadFormLazy";
 
 export const metadata = { title: "อัปโหลดผลงาน" };
 
@@ -26,7 +26,7 @@ export default async function UploadPage() {
       <p className="text-[var(--text-secondary)] mb-8">
         เพิ่มมังงะใหม่หรืออัปโหลดตอนใหม่ให้กับผลงานที่มีอยู่
       </p>
-      <UploadForm genres={genres} />
+      <UploadFormLazy genres={genres} />
     </div>
   );
 }

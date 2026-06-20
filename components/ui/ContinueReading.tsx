@@ -24,7 +24,7 @@ export default function ContinueReading() {
             <div className="relative aspect-[3/4] rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--bg-card)]">
               {it.coverUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={it.coverUrl} alt={it.title} className="w-full h-full object-cover" />
+                <img src={it.coverUrl} alt={it.title} width={112} height={149} loading="lazy" className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-2xl opacity-30">📖</div>
               )}

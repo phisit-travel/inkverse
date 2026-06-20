@@ -21,6 +21,7 @@ async function coverPng(url: string | null): Promise<string | null> {
 
 // nodejs (NOT edge): Prisma uses the pg adapter which is not edge-compatible.
 export const runtime = "nodejs";
+export const revalidate = 86400;
 export const alt = "INKVERSE";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";

@@ -123,6 +123,7 @@ export default function FeaturedTitles({ items }: { items: FeaturedItem[] }) {
                     alt={it.title}
                     fill
                     unoptimized
+                    priority={idx === 0}
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
                     sizes="220px"
                   />
