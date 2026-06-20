@@ -5,9 +5,6 @@ import Navbar from "@/components/ui/Navbar";
 import AppInstallBanner from "@/components/ui/AppInstallBanner";
 import ServiceWorkerRegister from "@/components/ui/ServiceWorkerRegister";
 import Footer from "@/components/layout/Footer";
-import { auth } from "@/lib/auth";
-import { getUserCoins } from "@/lib/coins";
-import { getUserRankBadge } from "@/lib/ranks";
 import { WebsiteJsonLd } from "@/components/seo/JsonLd";
 import ReadingProgressProvider from "@/components/ui/ReadingProgressProvider";
 import HelpChatbotLazy from "@/components/ui/HelpChatbotLazy";
@@ -102,18 +99,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
-  const userId = session?.user ? (session.user as { id: string }).id : null;
-  const userRole = session?.user ? (session.user as { role?: string }).role : undefined;
-  const [userCoins, rankBadge] = userId
-    ? await Promise.all([getUserCoins(userId), getUserRankBadge(userId, userRole)])
-    : [0, null];
-
   return (
     <html
       lang="th"
@@ -133,14 +123,10 @@ export default async function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col bg-[var(--bg-primary)] text-[var(--text-primary)] font-[family-name:var(--font-noto)]">
         <WebsiteJsonLd />
-        <Navbar user={session?.user} userCoins={userCoins} rankBadge={rankBadge} />
+        <Navbar />
         <AppInstallBanner />
         <main className="flex-1">
-          {userId ? (
-            <ReadingProgressProvider>{children}</ReadingProgressProvider>
-          ) : (
-            children
-          )}
+          <ReadingProgressProvider>{children}</ReadingProgressProvider>
         </main>
         <Footer />
         <HelpChatbotLazy />
@@ -149,9 +135,9 @@ export default async function RootLayout({
         <UpdateChecker />
         <CookieConsent />
         <TrafficBeacon />
-        {userId && <AchievementToaster />}
-        {userId && <PushRegister />}
-        <WelcomePopup isCreator={userRole === "TRANSLATOR" || userRole === "ADMIN"} />
+        <AchievementToaster />
+        <PushRegister />
+        <WelcomePopup />
       </body>
     </html>
   );
