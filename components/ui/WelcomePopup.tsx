@@ -4,28 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { X, PenTool, Languages, ArrowRight } from "lucide-react";
 
-export default function WelcomePopup() {
+export default function WelcomePopup({ isCreator }: { isCreator: boolean }) {
   const [show, setShow] = useState(false);
-  // Default to true (creator) while loading so we don't accidentally show the
-  // popup to a creator on first render. Once /api/me resolves and confirms the
-  // user is NOT a creator, the effect below may schedule the popup.
-  const [isCreator, setIsCreator] = useState(true);
-
-  // Fetch auth state once on mount.
-  useEffect(() => {
-    let alive = true;
-    fetch("/api/me")
-      .then((r) => r.json())
-      .then((d: { user?: { role?: string } | null }) => {
-        if (!alive) return;
-        const role = d.user?.role;
-        setIsCreator(role === "TRANSLATOR" || role === "ADMIN");
-      })
-      .catch(() => {
-        if (alive) setIsCreator(false);
-      });
-    return () => { alive = false; };
-  }, []);
 
   useEffect(() => {
     if (isCreator) return;

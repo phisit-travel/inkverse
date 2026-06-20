@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { getRanking } from "@/lib/ranking";
 import { getRankBadges } from "@/lib/ranks";
@@ -171,14 +170,12 @@ export default async function HomePage() {
 
       {/* Genre chip filter */}
       <section className="mb-8">
-        <Suspense fallback={<div className="h-9" />}>
-          <GenreFilterBar
-            genres={[
-              { label: "ทั้งหมด", value: "all" },
-              ...genres.map((g) => ({ label: g.name, value: g.slug })),
-            ]}
-          />
-        </Suspense>
+        <GenreFilterBar
+          genres={[
+            { label: "ทั้งหมด", value: "all" },
+            ...genres.map((g) => ({ label: g.name, value: g.slug })),
+          ]}
+        />
       </section>
 
       {/* Featured titles — rotating cover-art showcase (เรื่องเด่น) */}
