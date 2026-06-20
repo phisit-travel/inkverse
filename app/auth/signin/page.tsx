@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Logo from "@/components/ui/Logo";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 
-export default function SignInPage() {
+function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
@@ -214,5 +214,35 @@ export default function SignInPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function SignInFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] px-4">
+      <div className="w-full max-w-md">
+        <div className="flex justify-center mb-8">
+          <Logo size="lg" href="/" />
+        </div>
+        <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-8">
+          <div className="h-8 w-40 mx-auto bg-[var(--accent)] mb-6" />
+          <div className="h-12 w-full bg-[var(--accent)] rounded-xl mb-6" />
+          <div className="h-px w-full bg-[var(--border)] mb-6" />
+          <div className="space-y-4">
+            <div className="h-12 w-full bg-[var(--accent)] rounded-xl" />
+            <div className="h-12 w-full bg-[var(--accent)] rounded-xl" />
+            <div className="h-12 w-full bg-[var(--accent)] rounded-xl" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<SignInFallback />}>
+      <SignInForm />
+    </Suspense>
   );
 }

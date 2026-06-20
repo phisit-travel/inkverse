@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import { authConfig } from "@/lib/auth.config";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import type { NextRequest, NextFetchEvent } from "next/server";
 
 const { auth } = NextAuth(authConfig);
 
@@ -78,38 +78,13 @@ function floodGuard(req: NextRequest): NextResponse | null {
   return null;
 }
 
-export const proxy = auth((req) => {
-  // 0) Canonical host: force www → apex. NEXTAUTH_URL is the apex domain, so the
-  // OAuth flow must stay on apex — if /api/auth/signin runs on www, NextAuth's
-  // PKCE/state cookies get scoped to www and are unreadable when Google sends the
-  // user back to the apex callback → error=Configuration. Redirecting early keeps
-  // the whole flow (and the rest of the site) on one host.
-  const host = req.headers.get("host");
-
-  // 0a) Close the Cloudflare-bypass hole: the bare Vercel origin is publicly
-  // reachable and skips Cloudflare's edge bot protection (Bot Fight Mode / AI-bot
-  // blocking). Send its stable production alias to the real proxied domain so all
-  // traffic goes through Cloudflare. Per-deploy *.vercel.app hash URLs (used by
-  // preview builds) are intentionally left alone.
-  if (host === "inkverse-tau.vercel.app") {
-    const url = req.nextUrl.clone();
-    url.protocol = "https:";
-    url.host = "inksverse.com";
-    url.port = "";
-    return NextResponse.redirect(url, 308);
-  }
-
-  if (host && host.startsWith("www.")) {
-    const url = req.nextUrl.clone();
-    url.host = host.slice(4); // drop "www."
-    return NextResponse.redirect(url, 308);
-  }
-
-  // 1) Rate limit first — cheapest rejection, protects everything incl. /api.
-  const blocked = floodGuard(req);
-  if (blocked) return blocked;
-
-  // 2) Access control for protected areas.
+// ── Auth gate (protected paths only) ─────────────────────────────────────────
+// Wrapped in auth() so NextAuth reads the session. CRITICAL: this initializes a
+// session and sets authjs.* cookies on the response, which makes it uncacheable.
+// We therefore invoke it ONLY for protected paths (see `proxy` below) so public
+// responses stay CDN-cacheable.
+const authGate = auth((req) => {
+  // Access control for protected areas.
   // NOTE: only the login check lives here. The ROLE check is intentionally done
   // per-page (each /dashboard + /upload page calls auth() and re-checks role
   // against the DB). The edge token's `role` can be stale right after a creator
@@ -142,6 +117,52 @@ export const proxy = auth((req) => {
 
   return NextResponse.next();
 });
+
+export async function proxy(req: NextRequest, event: NextFetchEvent) {
+  // 0) Canonical host: force www → apex. NEXTAUTH_URL is the apex domain, so the
+  // OAuth flow must stay on apex — if /api/auth/signin runs on www, NextAuth's
+  // PKCE/state cookies get scoped to www and are unreadable when Google sends the
+  // user back to the apex callback → error=Configuration. Redirecting early keeps
+  // the whole flow (and the rest of the site) on one host.
+  const host = req.headers.get("host");
+
+  // 0a) Close the Cloudflare-bypass hole: the bare Vercel origin is publicly
+  // reachable and skips Cloudflare's edge bot protection (Bot Fight Mode / AI-bot
+  // blocking). Send its stable production alias to the real proxied domain so all
+  // traffic goes through Cloudflare. Per-deploy *.vercel.app hash URLs (used by
+  // preview builds) are intentionally left alone.
+  if (host === "inkverse-tau.vercel.app") {
+    const url = req.nextUrl.clone();
+    url.protocol = "https:";
+    url.host = "inksverse.com";
+    url.port = "";
+    return NextResponse.redirect(url, 308);
+  }
+
+  if (host && host.startsWith("www.")) {
+    const url = req.nextUrl.clone();
+    url.host = host.slice(4); // drop "www."
+    return NextResponse.redirect(url, 308);
+  }
+
+  // 1) Rate limit first — cheapest rejection, protects everything incl. /api.
+  const blocked = floodGuard(req);
+  if (blocked) return blocked;
+
+  // 2) Only protected paths need the session. Running auth() here (and nowhere
+  // else) keeps authjs.* cookies off public responses so the CDN can cache them.
+  const { pathname } = req.nextUrl;
+  if (
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/upload") ||
+    pathname.startsWith("/admin")
+  ) {
+    return authGate(req as any, event as any);
+  }
+
+  // Public paths: auth untouched → no auth cookie set → CDN-cacheable.
+  return NextResponse.next();
+}
 
 export const config = {
   // Run on every route except Next's static output (cheap & cacheable).

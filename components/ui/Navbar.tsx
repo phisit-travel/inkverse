@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Search, Menu, X, LogIn, Download, ChevronDown, WifiOff } from "lucide-react";
 import Logo from "./Logo";
@@ -12,16 +12,19 @@ import UserMenu from "./UserMenu";
 import type { RankBadge } from "@/lib/ranks";
 import clsx from "clsx";
 
-interface NavbarProps {
-  user?: {
-    name?: string | null;
-    username?: string | null;
-    email?: string | null;
-    image?: string | null;
-    role?: string;
-  } | null;
-  userCoins?: number;
-  rankBadge?: RankBadge | null;
+interface MeUser {
+  id: string;
+  username?: string | null;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  role?: string;
+}
+
+interface MeState {
+  user: MeUser | null;
+  coins: number;
+  rankBadge: RankBadge | null;
 }
 
 const typeLinks = [
@@ -102,11 +105,26 @@ function MobileSection({
   );
 }
 
-export default function Navbar({ user, userCoins = 0, rankBadge = null }: NavbarProps) {
+export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   // One section open at a time, like the avatar dropdown.
   const [navSection, setNavSection] = useState<string | null>(null);
+  // Me state — null user = logged out (default, matches SSR render so no hydration mismatch)
+  const [me, setMe] = useState<MeState>({ user: null, coins: 0, rankBadge: null });
+
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/me")
+      .then((r) => r.json())
+      .then((d: MeState) => {
+        if (alive) setMe({ user: d.user ?? null, coins: d.coins ?? 0, rankBadge: d.rankBadge ?? null });
+      })
+      .catch(() => {/* silent — stays logged-out */});
+    return () => { alive = false; };
+  }, []);
+
+  const { user, coins: userCoins, rankBadge } = me;
   const toggleNav = (key: string) => setNavSection((s) => (s === key ? null : key));
   const isStaff = user?.role === "TRANSLATOR" || user?.role === "ADMIN";
   const closeMenu = () => setMenuOpen(false);
