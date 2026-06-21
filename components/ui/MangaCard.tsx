@@ -110,7 +110,7 @@ function MangaCard({
                 ? "bg-[var(--bg-card)] text-[var(--text-primary)]"
                 : status === "COMPLETED"
                 ? "bg-[var(--bg-card)] text-[var(--text-primary)]"
-                : "bg-[var(--bg-card)] text-black"
+                : "bg-[var(--bg-card)] text-[var(--text-primary)]"
             )}
           >
             {status}

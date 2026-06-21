@@ -27,12 +27,19 @@ export default function StarRating({
   const display = readOnly ? value : hover || value;
 
   return (
-    <div className="flex items-center gap-0.5">
+    <div
+      className="flex items-center gap-0.5"
+      {...(readOnly
+        ? { role: "img", "aria-label": `คะแนน ${value} จาก 5 ดาว` }
+        : {})}
+    >
       {[1, 2, 3, 4, 5].map((star) => (
         <button
           key={star}
           type="button"
           disabled={readOnly}
+          aria-label={readOnly ? undefined : `ให้คะแนน ${star} ดาว`}
+          aria-hidden={readOnly || undefined}
           onClick={() => !readOnly && onChange?.(star)}
           onMouseEnter={() => !readOnly && setHover(star)}
           onMouseLeave={() => !readOnly && setHover(0)}

@@ -22,7 +22,9 @@
     --accent-to: #ffffff;
     --text-primary: #ffffff;
     --text-secondary: #9a9a9a;
-    --text-muted: #767676;
+    /* #7d7d7d clears 4.5:1 on the dark card bg (#161616 → 4.68:1); plain
+       #767676 only passed on pure black, falling to 4.3:1 on real surfaces. */
+    --text-muted: #7d7d7d;
     --border: rgba(255, 255, 255, 0.16);
   }
 
