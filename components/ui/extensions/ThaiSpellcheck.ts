@@ -26,6 +26,8 @@ export interface MappedIssue extends Issue {
   offendingText: string;
   /** Node-level index — for deduplication if multiple passes run. */
   nodeIndex: number;
+  /** Transient flash highlight when the writer presses "ไปที่" (jump). */
+  active?: boolean;
 }
 
 // ── public key so the editor component can dispatch meta updates ──────────────
@@ -53,7 +55,7 @@ export const ThaiSpellcheck = Extension.create({
               if (issues.length === 0) return DecorationSet.empty;
               const decos = issues.map((issue) =>
                 Decoration.inline(issue.from, issue.to, {
-                  class: `thai-typo thai-typo-${issue.severity}`,
+                  class: `thai-typo thai-typo-${issue.severity}${issue.active ? " thai-typo-active" : ""}`,
                   "data-typo-type": issue.type,
                   "data-typo-message": issue.message,
                 })

@@ -324,7 +324,22 @@ export default function NovelEditor({
 
   function jumpTo(issue: MappedIssue) {
     if (!editor) return;
-    editor.chain().focus().setTextSelection({ from: issue.from, to: issue.to }).run();
+    // Cursor at the start (NOT a selection — selecting pops the mobile copy/paste
+    // toolbar over the text) + scroll the spot into view…
+    editor.chain().focus().setTextSelection(issue.from).scrollIntoView().run();
+    // …then flash a strong monochrome (inverted) highlight on the exact span so
+    // the writer instantly sees WHICH word, instead of re-reading the sentence.
+    const flash = (on: boolean) => {
+      if (!editor || editor.isDestroyed) return;
+      editor.view.dispatch(
+        editor.state.tr.setMeta(
+          thaiSpellcheckKey,
+          spellIssues.map((i) => ({ ...i, active: on && i.from === issue.from && i.to === issue.to }))
+        )
+      );
+    };
+    flash(true);
+    window.setTimeout(() => flash(false), 2200);
   }
 
   function computeFreeAt(baseMs: number): string | null {
@@ -546,7 +561,7 @@ export default function NovelEditor({
               <span className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
                 <SpellCheck className="w-4 h-4" />
                 ตรวจคำผิด
-                <span className="ml-1 px-1.5 py-0.5 border border-[#b7860b] text-[#b7860b] text-[9px] uppercase tracking-widest font-bold leading-none">
+                <span className="ml-1 px-1.5 py-0.5 border border-[var(--border)] text-[var(--text-muted)] text-[9px] uppercase tracking-widest font-bold leading-none">
                   เบต้า
                 </span>
                 {spellIssues.length > 0 && (
@@ -581,7 +596,7 @@ export default function NovelEditor({
                   >
                     <span className="min-w-0 flex-1">
                       <span
-                        className={`inline-block px-1 mr-1.5 text-[10px] uppercase tracking-wide border ${issue.severity === "error" ? "border-[#c0392b] text-[#c0392b]" : "border-[#b7860b] text-[#b7860b]"}`}
+                        className={`inline-block px-1 mr-1.5 text-[10px] uppercase tracking-wide border ${issue.severity === "error" ? "bg-[var(--text-primary)] text-[var(--bg-primary)] border-[var(--text-primary)]" : "border-[var(--border)] text-[var(--text-secondary)]"}`}
                       >
                         {issue.severity === "error" ? "ผิด" : "เตือน"}
                       </span>

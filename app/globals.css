@@ -197,20 +197,33 @@
   .tiptap img { max-width: 100%; height: auto; margin: 0.5rem 0; }
   .tiptap a { text-decoration: underline; }
 
-  /* ── Thai spell-check decorations ── */
-  /* Errors: restrained red wavy underline (functional signal, not decorative) */
+  /* ── Thai spell-check decorations (monochrome — error vs warn by STYLE) ── */
+  /* Errors: bold wavy underline in the primary ink (high contrast). */
   .thai-typo-error {
-    text-decoration: underline wavy #c0392b;
+    text-decoration: underline wavy var(--text-primary);
     text-underline-offset: 3px;
     text-decoration-thickness: 1.5px;
     cursor: pointer;
   }
-  /* Warnings: amber dotted underline */
+  /* Warnings: faint dotted underline in muted grey (softer signal). */
   .thai-typo-warn {
-    text-decoration: underline dotted #b7860b;
+    text-decoration: underline dotted var(--text-muted);
     text-underline-offset: 3px;
     text-decoration-thickness: 1.5px;
     cursor: pointer;
+  }
+  /* "ไปที่" flash: invert the exact span (Balenciaga invert) so the writer can't
+     miss it, pulsing a few times. Monochrome + theme-aware. */
+  .thai-typo-active {
+    background: var(--text-primary);
+    color: var(--bg-primary);
+    text-decoration: none;
+    border-radius: 1px;
+    animation: thaiTypoFlash 0.55s ease-in-out 0s 3;
+  }
+  @keyframes thaiTypoFlash {
+    0%, 100% { background: var(--text-primary); color: var(--bg-primary); }
+    50%      { background: transparent; color: inherit; }
   }
 
   .snake-glint { animation: snake-slither 3.2s linear infinite; }
