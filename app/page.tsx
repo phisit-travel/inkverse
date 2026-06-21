@@ -42,7 +42,11 @@ const getData = unstable_cache(async () => {
           genres: { include: { genre: true } },
         },
       }),
-      prisma.genre.findMany({ orderBy: { name: "asc" } }),
+      // Popular genres first (most-tagged) so the home single-row genre bar shows
+      // what readers browse most without scrolling; alphabetical tie-break.
+      prisma.genre.findMany({
+        orderBy: [{ mangas: { _count: "desc" } }, { name: "asc" }],
+      }),
       prisma.chapter.findMany({
         take: 10,
         orderBy: { publishedAt: "desc" },
