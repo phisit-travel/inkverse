@@ -489,7 +489,7 @@ export default function NovelEditor({
           <button
             onClick={() => { setShowSpellcheck((v) => !v); if (!showSpellcheck) runSpellcheck(); }}
             className={`${tb} ${active(showSpellcheck)} relative`}
-            title="ตรวจคำผิด"
+            title="ตรวจคำผิด (เบต้า — กำลังพัฒนา)"
           >
             <SpellCheck className="w-4 h-4" />
             {spellIssues.length > 0 && (
@@ -546,6 +546,9 @@ export default function NovelEditor({
               <span className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
                 <SpellCheck className="w-4 h-4" />
                 ตรวจคำผิด
+                <span className="ml-1 px-1.5 py-0.5 border border-[#b7860b] text-[#b7860b] text-[9px] uppercase tracking-widest font-bold leading-none">
+                  เบต้า
+                </span>
                 {spellIssues.length > 0 && (
                   <span className="ml-1 px-1.5 py-0.5 bg-[var(--bg-card)] border border-[var(--border)] text-xs text-[var(--text-secondary)]">
                     พบ {spellIssues.length} จุด
@@ -564,6 +567,9 @@ export default function NovelEditor({
                 </button>
               </div>
             </div>
+            <p className="text-[11px] text-[var(--text-muted)] mb-2 leading-relaxed">
+              เครื่องมือทดลอง (beta) — กำลังพัฒนา อาจตรวจไม่ครบหรือแนะนำพลาดบ้าง ใช้เป็นตัวช่วยเบื้องต้น
+            </p>
             {spellIssues.length === 0 ? (
               <p className="text-xs text-[var(--text-muted)]">ไม่พบคำผิด ✓</p>
             ) : (
