@@ -197,6 +197,22 @@
   .tiptap img { max-width: 100%; height: auto; margin: 0.5rem 0; }
   .tiptap a { text-decoration: underline; }
 
+  /* ── Thai spell-check decorations ── */
+  /* Errors: restrained red wavy underline (functional signal, not decorative) */
+  .thai-typo-error {
+    text-decoration: underline wavy #c0392b;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1.5px;
+    cursor: pointer;
+  }
+  /* Warnings: amber dotted underline */
+  .thai-typo-warn {
+    text-decoration: underline dotted #b7860b;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1.5px;
+    cursor: pointer;
+  }
+
   .snake-glint { animation: snake-slither 3.2s linear infinite; }
   .snake-tongue { transform-origin: 50% 100%; animation: snake-tongue 2.6s ease-in-out infinite; }
   .snake-eye { animation: snake-eye 2s ease-in-out infinite; }

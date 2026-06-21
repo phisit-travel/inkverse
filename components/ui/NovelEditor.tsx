@@ -12,8 +12,10 @@ import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough, Heading2, Heading3,
   List, ListOrdered, Quote, Minus, Link2, ImagePlus, AlignLeft, AlignCenter, AlignRight,
   Undo2, Redo2, Maximize2, Search, Save, Send, Clock, Loader2, Coins, Target, X,
-  History, RotateCcw, Eye,
+  History, RotateCcw, Eye, SpellCheck,
 } from "lucide-react";
+import { ThaiSpellcheck, thaiSpellcheckKey, type MappedIssue } from "./extensions/ThaiSpellcheck";
+import { checkThaiRules } from "@/lib/thaiSpellcheck/rules";
 
 interface Existing {
   id: string;
@@ -56,6 +58,9 @@ export default function NovelEditor({
   const [findText, setFindText] = useState("");
   const [replaceText, setReplaceText] = useState("");
   const [showHistory, setShowHistory] = useState(false);
+  const [showSpellcheck, setShowSpellcheck] = useState(false);
+  const [spellIssues, setSpellIssues] = useState<MappedIssue[]>([]);
+  const [ignoredWords, setIgnoredWords] = useState<Set<string>>(() => new Set());
   const [revisions, setRevisions] = useState<{ id: string; title: string | null; words: number; createdAt: string }[]>([]);
   const [revsLoading, setRevsLoading] = useState(false);
   const [previewRev, setPreviewRev] = useState<{ id: string; title: string | null; content: string | null; createdAt: string } | null>(null);
@@ -64,6 +69,7 @@ export default function NovelEditor({
 
   const fileRef = useRef<HTMLInputElement>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const spellTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Re-rendering the whole editor on every keystroke makes the page jump/scroll
   // on mobile. Throttle the toolbar/word-count refresh to ~5×/sec instead.
   const forceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -86,6 +92,7 @@ export default function NovelEditor({
   useEffect(() => () => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     if (forceTimer.current) clearTimeout(forceTimer.current);
+    if (spellTimer.current) clearTimeout(spellTimer.current);
   }, []);
 
   useEffect(() => {
@@ -94,15 +101,22 @@ export default function NovelEditor({
 
   const editor = useEditor({
     immediatelyRender: false,
+    editorProps: {
+      attributes: {
+        // Disable native browser spellcheck red squiggles — our checker draws its own.
+        spellcheck: "false",
+      },
+    },
     extensions: [
       StarterKit.configure({ heading: { levels: [2, 3] } }),
       Image,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Placeholder.configure({ placeholder: "เริ่มเขียนเรื่องของคุณ... (เลือกข้อความแล้วกดปุ่มด้านบนเพื่อจัดรูปแบบ)" }),
       CharacterCount,
+      ThaiSpellcheck,
     ],
     content: existing?.content ?? "",
-    onUpdate: () => { scheduleForce(); scheduleSave(); },
+    onUpdate: () => { scheduleForce(); scheduleSave(); scheduleSpellcheck(); },
     onSelectionUpdate: () => scheduleForce(),
   });
 
@@ -170,6 +184,146 @@ export default function NovelEditor({
   function scheduleSave() {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => doSave(), 2000);
+  }
+
+  // ── Thai spell-check (debounced 800ms, separate from autosave) ───────────────
+  /**
+   * Walk the doc, collect text runs with their base doc positions, run
+   * checkThaiRules on each text node, then POST the full chapter text to
+   * the API for dictionary-layer issues. Merge both sets, filter ignored words,
+   * dispatch a meta transaction with mapped doc positions.
+   */
+  const runSpellcheck = useCallback(async () => {
+    if (!editor) return;
+
+    // ── Step 1: walk doc and build text runs ──────────────────────────────────
+    interface TextRun { text: string; docPos: number }
+    const runs: TextRun[] = [];
+    editor.state.doc.descendants((node, pos) => {
+      if (node.isText && node.text) {
+        runs.push({ text: node.text, docPos: pos });
+      }
+    });
+
+    // ── Step 2: client-side rule check (per text node) ────────────────────────
+    const clientMapped: MappedIssue[] = [];
+    runs.forEach((run, nodeIndex) => {
+      const issues = checkThaiRules(run.text);
+      for (const issue of issues) {
+        const offendingText = run.text.slice(issue.start, issue.end);
+        // Skip words the user chose to ignore this session.
+        if (ignoredWords.has(offendingText)) continue;
+        clientMapped.push({
+          ...issue,
+          from: run.docPos + issue.start,
+          to: run.docPos + issue.end,
+          offendingText,
+          nodeIndex,
+        });
+      }
+    });
+
+    // ── Step 3: API dictionary check (whole-chapter text, offset mapping) ─────
+    // Build the full text by concatenating runs separated by '\n' (one char each)
+    // and track each run's base offset in the concatenated string.
+    const cid = chapterIdRef.current;
+    let apiMapped: MappedIssue[] = [];
+    if (cid && runs.length > 0) {
+      const SEPARATOR = "\n";
+      // Track each run's base offset in the concatenated string alongside its doc position.
+      interface RunOffset { strBase: number; docBase: number }
+      const offsets: RunOffset[] = [];
+      let fullText = "";
+      runs.forEach((run, i) => {
+        offsets.push({ strBase: fullText.length, docBase: run.docPos });
+        fullText += run.text;
+        if (i < runs.length - 1) fullText += SEPARATOR;
+      });
+
+      try {
+        const res = await fetch(`/api/chapters/${cid}/spellcheck`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: fullText }),
+        });
+        if (res.ok) {
+          // The API returns Issue[] (start/end as whole-text offsets); we map them to doc positions.
+          const data: { issues: Array<{ start: number; end: number; type: string; message: string; suggestion?: string; severity: "error" | "warn" }> } =
+            await res.json().catch(() => ({ issues: [] }));
+          // Map whole-text offsets back to doc positions.
+          apiMapped = (data.issues ?? []).flatMap((issue, nodeIndex) => {
+            // Find which run the issue falls in (last run whose strBase <= issue.start).
+            let runIdx = offsets.length - 1;
+            for (let i = 0; i < offsets.length; i++) {
+              const next = offsets[i + 1];
+              if (next === undefined || issue.start < next.strBase) {
+                runIdx = i;
+                break;
+              }
+            }
+            const runOffset = offsets[runIdx];
+            const charStart = issue.start - runOffset.strBase;
+            const charEnd = issue.end - runOffset.strBase;
+            if (charStart < 0 || charEnd > runs[runIdx].text.length) return [];
+            const offendingText = runs[runIdx].text.slice(charStart, charEnd);
+            if (ignoredWords.has(offendingText)) return [];
+            return [{
+              ...issue,
+              from: runOffset.docBase + charStart,
+              to: runOffset.docBase + charEnd,
+              offendingText,
+              nodeIndex,
+            }];
+          });
+        }
+      } catch {
+        // Network failure — carry on with client-only results.
+      }
+    }
+
+    // ── Step 4: merge, deduplicate overlapping ranges ─────────────────────────
+    const all = [...clientMapped, ...apiMapped];
+    const seen = new Set<string>();
+    const merged: MappedIssue[] = [];
+    for (const issue of all) {
+      const key = `${issue.from}:${issue.to}:${issue.type}`;
+      if (!seen.has(key)) { seen.add(key); merged.push(issue); }
+    }
+    merged.sort((a, b) => a.from - b.from);
+
+    // ── Step 5: dispatch meta transaction → decoration plugin picks it up ─────
+    editor.view.dispatch(
+      editor.state.tr.setMeta(thaiSpellcheckKey, merged)
+    );
+    setSpellIssues(merged);
+  }, [editor, ignoredWords]);
+
+  function scheduleSpellcheck() {
+    if (spellTimer.current) clearTimeout(spellTimer.current);
+    spellTimer.current = setTimeout(() => runSpellcheck(), 800);
+  }
+
+  function ignoreWord(word: string) {
+    setIgnoredWords((prev) => new Set([...prev, word]));
+    // Remove from current panel list immediately.
+    setSpellIssues((prev) => prev.filter((i) => i.offendingText !== word));
+    // Dispatch empty meta to clear decorations for that word without full re-check.
+    // A full re-check will fire on the next keystroke anyway.
+    if (editor) {
+      const remaining = spellIssues.filter((i) => i.offendingText !== word);
+      editor.view.dispatch(editor.state.tr.setMeta(thaiSpellcheckKey, remaining));
+    }
+  }
+
+  function applyFix(issue: MappedIssue) {
+    if (!editor || !issue.suggestion) return;
+    editor.chain().focus().setTextSelection({ from: issue.from, to: issue.to }).insertContent(issue.suggestion).run();
+    // Re-check will fire from onUpdate via scheduleSpellcheck.
+  }
+
+  function jumpTo(issue: MappedIssue) {
+    if (!editor) return;
+    editor.chain().focus().setTextSelection({ from: issue.from, to: issue.to }).run();
   }
 
   function computeFreeAt(baseMs: number): string | null {
@@ -331,6 +485,18 @@ export default function NovelEditor({
           <span className="w-px bg-[var(--border)] mx-0.5" />
           <button onClick={() => setShowFind((v) => !v)} className={`${tb} ${active(showFind)}`} title="ค้นหา-แทนที่"><Search className="w-4 h-4" /></button>
           {chapterId && <button onClick={() => (showHistory ? setShowHistory(false) : openHistory())} className={`${tb} ${active(showHistory)}`} title="ประวัติเวอร์ชัน"><History className="w-4 h-4" /></button>}
+          <button
+            onClick={() => { setShowSpellcheck((v) => !v); if (!showSpellcheck) runSpellcheck(); }}
+            className={`${tb} ${active(showSpellcheck)} relative`}
+            title="ตรวจคำผิด"
+          >
+            <SpellCheck className="w-4 h-4" />
+            {spellIssues.length > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-0.5 bg-[var(--text-primary)] text-[var(--bg-primary)] text-[9px] flex items-center justify-center leading-none">
+                {spellIssues.length > 9 ? "9+" : spellIssues.length}
+              </span>
+            )}
+          </button>
           <button onClick={() => setFocus((v) => !v)} className={`${tb} ${active(focus)}`} title="โหมดโฟกัส"><Maximize2 className="w-4 h-4" /></button>
         </div>
 
@@ -369,6 +535,88 @@ export default function NovelEditor({
                 ))}
               </ul>
             )}
+          </div>
+        )}
+
+        {/* ── Thai Spellcheck panel ── */}
+        {showSpellcheck && (
+          <div className="mb-2 p-3 bg-[var(--bg-surface)] border border-[var(--border)]">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
+                <SpellCheck className="w-4 h-4" />
+                ตรวจคำผิด
+                {spellIssues.length > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 bg-[var(--bg-card)] border border-[var(--border)] text-xs text-[var(--text-secondary)]">
+                    พบ {spellIssues.length} จุด
+                  </span>
+                )}
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => runSpellcheck()}
+                  className="px-2 py-1 border border-[var(--border)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1"
+                >
+                  <SpellCheck className="w-3 h-3" /> ตรวจใหม่
+                </button>
+                <button onClick={() => setShowSpellcheck(false)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] ml-1">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            {spellIssues.length === 0 ? (
+              <p className="text-xs text-[var(--text-muted)]">ไม่พบคำผิด ✓</p>
+            ) : (
+              <ul className="flex flex-col gap-1.5 max-h-64 overflow-y-auto">
+                {spellIssues.map((issue, idx) => (
+                  <li
+                    key={`${issue.from}-${issue.to}-${issue.type}-${idx}`}
+                    className="flex items-start justify-between gap-2 text-xs border border-[var(--border)] px-2.5 py-2"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span
+                        className={`inline-block px-1 mr-1.5 text-[10px] uppercase tracking-wide border ${issue.severity === "error" ? "border-[#c0392b] text-[#c0392b]" : "border-[#b7860b] text-[#b7860b]"}`}
+                      >
+                        {issue.severity === "error" ? "ผิด" : "เตือน"}
+                      </span>
+                      <span className="text-[var(--text-primary)] font-medium">&ldquo;{issue.offendingText}&rdquo;</span>
+                      <span className="text-[var(--text-secondary)] ml-1.5">{issue.message}</span>
+                      {issue.suggestion && (
+                        <span className="text-[var(--text-muted)] ml-1">→ &ldquo;{issue.suggestion}&rdquo;</span>
+                      )}
+                    </span>
+                    <span className="flex items-center gap-1 shrink-0 mt-0.5">
+                      <button
+                        onClick={() => jumpTo(issue)}
+                        className="px-2 py-0.5 border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                      >
+                        ไปที่
+                      </button>
+                      {issue.suggestion && (
+                        <button
+                          onClick={() => applyFix(issue)}
+                          className="px-2 py-0.5 border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                        >
+                          แก้
+                        </button>
+                      )}
+                      <button
+                        onClick={() => ignoreWord(issue.offendingText)}
+                        className="px-2 py-0.5 border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                        title="ข้ามคำนี้ตลอดเซสชัน"
+                      >
+                        ข้าม
+                      </button>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="text-[10px] text-[var(--text-muted)] mt-2 leading-relaxed">
+              &ldquo;ข้าม&rdquo; ข้ามคำนี้ในเซสชันนี้ ·{" "}
+              {/* TODO: wire "เพิ่มลงพจนานุกรม" to POST /api/chapters/[id]/spellcheck/ignore
+                  (backend endpoint) once that route is deployed; for now session-ignore handles it. */}
+              การเพิ่มลงพจนานุกรมถาวรจะเปิดให้เร็วๆ นี้
+            </p>
           </div>
         )}
 
