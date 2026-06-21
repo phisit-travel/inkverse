@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Lock, Unlock, Coins, ArrowUpDown, Check, X, Loader2,
-  ChevronRight, GripVertical, Edit3, Trash2, Clock, ChevronDown, Layers, Eye,
+  ChevronRight, GripVertical, Edit3, Trash2, Clock, ChevronDown, Layers, Eye, EyeOff, Send,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -72,7 +72,7 @@ function ChapterRow({
     setEarlyAt(d.toISOString());
   }
 
-  async function patchChapter(data: Partial<Chapter>): Promise<{ ok: boolean; error?: string }> {
+  async function patchChapter(data: Partial<Chapter> & { publishAt?: string | null }): Promise<{ ok: boolean; error?: string }> {
     setLoading(true);
     try {
       const res = await fetch(`/api/chapters/${chapter.id}`, {
@@ -107,6 +107,21 @@ function ChapterRow({
       isPremium: next,
       coinCost: next ? parseInt(priceInput) || 2 : 0,
     });
+  }
+
+  // Publish (DRAFT → live) / Unpublish (live → DRAFT). Unpublishing hides the
+  // chapter from readers but keeps it fully editable in the owner's dashboard —
+  // the content is untouched and it can be re-published anytime.
+  async function setPublishState(next: "DRAFT" | "PUBLISHED") {
+    if (
+      next === "DRAFT" &&
+      !confirm(
+        `เลิกเผยแพร่ตอนที่ ${chapter.chapterNum}${chapter.title ? ` "${chapter.title}"` : ""}?\n\nตอนจะกลับเป็น "ร่าง" และซ่อนจากผู้อ่านทันที — เนื้อหาไม่หาย คุณยังแก้ต่อในแดชบอร์ดได้ และเผยแพร่ใหม่ได้ทุกเมื่อ`
+      )
+    )
+      return;
+    // Publishing now also clears any pending schedule so it goes live immediately.
+    await patchChapter(next === "PUBLISHED" ? { status: "PUBLISHED", publishAt: null } : { status: "DRAFT" });
   }
 
   async function savePrice() {
@@ -309,6 +324,29 @@ function ChapterRow({
             : <Unlock className="w-3.5 h-3.5" />}
           {chapter.isPremium ? "ล็อค" : "ฟรี"}
         </button>
+
+        {/* Publish / Unpublish — drafts stay editable in the dashboard */}
+        {chapter.status === "DRAFT" ? (
+          <button
+            onClick={() => setPublishState("PUBLISHED")}
+            disabled={loading}
+            title="เผยแพร่ตอนนี้ให้ผู้อ่านเห็น"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all border bg-[var(--text-primary)] text-[var(--bg-primary)] border-[var(--text-primary)] hover:opacity-90"
+          >
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+            เผยแพร่
+          </button>
+        ) : (
+          <button
+            onClick={() => setPublishState("DRAFT")}
+            disabled={loading}
+            title="เลิกเผยแพร่ — กลับเป็นร่าง ซ่อนจากผู้อ่าน (ยังแก้ต่อในแดชบอร์ดได้)"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all border bg-white/5 border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
+          >
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <EyeOff className="w-3.5 h-3.5" />}
+            เลิกเผยแพร่
+          </button>
+        )}
 
         {/* Preview — opens the real reader; the owner can see drafts too */}
         <Link
