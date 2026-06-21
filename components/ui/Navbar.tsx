@@ -165,6 +165,7 @@ export default function Navbar() {
 
           {/* Mobile search toggle */}
           <button
+            aria-label="ค้นหา"
             className="md:hidden p-2 rounded-lg hover:bg-white/10 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
             onClick={() => setSearchOpen(!searchOpen)}
           >
@@ -189,6 +190,7 @@ export default function Navbar() {
 
           {/* Mobile menu */}
           <button
+            aria-label={menuOpen ? "ปิดเมนู" : "เปิดเมนู"}
             className="lg:hidden p-2 rounded-lg hover:bg-white/10 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
             onClick={() => setMenuOpen(!menuOpen)}
           >

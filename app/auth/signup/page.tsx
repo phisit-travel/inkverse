@@ -212,6 +212,7 @@ export default function SignUpPage() {
               <button
                 type="button"
                 onClick={() => setShowPw(!showPw)}
+                aria-label={showPw ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
               >
                 {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -236,7 +237,7 @@ export default function SignUpPage() {
 
           <p className="text-center text-sm text-[var(--text-secondary)] mt-6">
             มีบัญชีแล้ว?{" "}
-            <Link href="/auth/signin" className="text-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors">
+            <Link href="/auth/signin" className="text-[var(--text-primary)] underline hover:text-[var(--text-primary)] transition-colors">
               เข้าสู่ระบบ
             </Link>
           </p>

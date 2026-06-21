@@ -257,6 +257,7 @@ export default function ReaderViewer({
             )}
             <button
               onClick={() => setMode(mode === "webtoon" ? "page" : "webtoon")}
+              aria-label={mode === "webtoon" ? "เปลี่ยนเป็นโหมดหน้า" : "เปลี่ยนเป็นโหมด Webtoon"}
               className="p-2 rounded-lg hover:bg-white/10 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
               title={mode === "webtoon" ? "เปลี่ยนเป็นโหมดหน้า" : "เปลี่ยนเป็นโหมด Webtoon"}
             >
@@ -268,6 +269,7 @@ export default function ReaderViewer({
             </button>
             <button
               onClick={() => setShowSettings(!showSettings)}
+              aria-label="ตั้งค่าการอ่าน"
               className="p-2 rounded-lg hover:bg-white/10 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
             >
               <Settings className="w-4 h-4" />
@@ -381,6 +383,7 @@ export default function ReaderViewer({
             <button
               onClick={() => goTo(currentPage - 1)}
               disabled={currentPage === 0}
+              aria-label="หน้าก่อนหน้า"
               className="absolute left-2 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/60 text-[var(--text-primary)] disabled:opacity-20 hover:bg-black/80 transition-all"
             >
               <ChevronLeft className="w-6 h-6" />
@@ -388,6 +391,7 @@ export default function ReaderViewer({
             <button
               onClick={() => goTo(currentPage + 1)}
               disabled={currentPage === pages.length - 1}
+              aria-label="หน้าถัดไป"
               className="absolute right-2 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/60 text-[var(--text-primary)] disabled:opacity-20 hover:bg-black/80 transition-all"
             >
               <ChevronRight className="w-6 h-6" />

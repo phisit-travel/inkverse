@@ -120,6 +120,7 @@ export default async function MangaPage({
       <div className="flex flex-wrap gap-3 mb-6 p-4 bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)]">
         <select
           name="status"
+          aria-label="กรองตามสถานะ"
           defaultValue={params.status || ""}
           className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none"
         >
@@ -133,6 +134,7 @@ export default async function MangaPage({
 
         <select
           name="type"
+          aria-label="กรองตามประเภท"
           defaultValue={params.type || ""}
           className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none"
         >
@@ -146,6 +148,7 @@ export default async function MangaPage({
 
         <select
           name="sort"
+          aria-label="เรียงลำดับ"
           defaultValue={params.sort || "latest"}
           className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none"
         >

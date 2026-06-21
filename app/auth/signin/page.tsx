@@ -168,6 +168,7 @@ function SignInForm() {
               <button
                 type="button"
                 onClick={() => setShowPw(!showPw)}
+                aria-label={showPw ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
               >
                 {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -206,7 +207,7 @@ function SignInForm() {
             ยังไม่มีบัญชี?{" "}
             <Link
               href="/auth/signup"
-              className="text-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors"
+              className="text-[var(--text-primary)] underline hover:text-[var(--text-primary)] transition-colors"
             >
               สมัครสมาชิก
             </Link>

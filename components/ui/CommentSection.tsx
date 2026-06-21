@@ -227,6 +227,7 @@ function CommentItem({
             <button
               onClick={handleDelete}
               disabled={deleting}
+              aria-label="ลบความคิดเห็น"
               className="flex items-center gap-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors ml-auto"
             >
               <Trash2 className="w-3 h-3" />
@@ -391,7 +392,7 @@ export default function CommentSection({
         </form>
       ) : (
         <div className="mb-8 py-4 text-center text-sm text-[var(--text-secondary)] bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)]">
-          <a href="/auth/signin" className="text-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors">เข้าสู่ระบบ</a>
+          <a href="/auth/signin" className="text-[var(--text-primary)] underline hover:text-[var(--text-primary)] transition-colors">เข้าสู่ระบบ</a>
           {" "}เพื่อแสดงความคิดเห็น
         </div>
       )}

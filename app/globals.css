@@ -22,7 +22,7 @@
     --accent-to: #ffffff;
     --text-primary: #ffffff;
     --text-secondary: #9a9a9a;
-    --text-muted: #6a6a6a;
+    --text-muted: #767676;
     --border: rgba(255, 255, 255, 0.16);
   }
 
@@ -36,7 +36,7 @@
     --accent-to: #000000;
     --text-primary: #000000;
     --text-secondary: #5a5a5a;
-    --text-muted: #8a8a8a;
+    --text-muted: #767676;
     --border: rgba(0, 0, 0, 0.16);
   }
 

@@ -179,6 +179,7 @@ export default function HelpChatbot() {
             />
             <button
               type="submit"
+              aria-label="ส่งข้อความ"
               className="w-9 h-9 rounded-xl bal-btn flex items-center justify-center shrink-0 hover:opacity-90"
             >
               <Send className="w-4 h-4" />
