@@ -105,3 +105,27 @@ export function withdrawalEmail(opts: { amount: number; status: "submitted" | "p
      <p style="margin:20px 0;font-size:28px;font-weight:bold">฿${opts.amount.toFixed(2)}</p>`
   );
 }
+
+// Admin-facing: a new "ขอใบเสนอราคา" from the /services page.
+export function serviceQuoteEmail(opts: {
+  name: string;
+  contact: string;
+  services: string;
+  wordCount: string;
+  message: string;
+}) {
+  const row = (k: string, v: string) =>
+    `<p style="margin:6px 0"><span style="color:#888">${esc(k)}:</span> <span style="color:#fff">${esc(v)}</span></p>`;
+  return shell(
+    "ขอใบเสนอราคา (บริการ)",
+    `<p>มีคำขอใบเสนอราคาบริการเข้ามาใหม่:</p>
+     <div style="border:1px solid #2a2a2a;padding:16px;margin:18px 0">
+       ${row("ชื่อ", opts.name)}
+       ${row("ช่องทางติดต่อ", opts.contact)}
+       ${row("บริการที่สนใจ", opts.services)}
+       ${row("จำนวนคำโดยประมาณ", opts.wordCount || "-")}
+     </div>
+     <p style="color:#888;font-size:12px">รายละเอียด/ลิงก์:</p>
+     <p style="white-space:pre-wrap;color:#ccc">${esc(opts.message) || "-"}</p>`
+  );
+}

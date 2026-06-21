@@ -13,6 +13,7 @@ const links = {
     { href: "/auth/signin", label: "เข้าสู่ระบบ" },
     { href: "/auth/signup", label: "สมัครสมาชิก" },
     { href: "/creators", label: "ลงงานกับเรา (รับ 80%)" },
+    { href: "/services", label: "รับพิสูจน์อักษร/จัดหน้า" },
   ],
   ข้อมูล: [
     { href: "/about", label: "เกี่ยวกับเรา" },
