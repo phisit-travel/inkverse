@@ -28,9 +28,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const slug = decodeSlug(rawSlug);
   const manga = await prisma.manga.findUnique({
     where: { slug },
-    select: { title: true, coverUrl: true },
+    select: { title: true, coverUrl: true, published: true },
   });
   if (!manga) return { title: "ไม่พบมังงะ" };
+  // Unpublished story → don't leak the title in <head> (body 404s for non-owners).
+  if (!manga.published) return { title: "INKVERSE", robots: { index: false } };
 
   const chapterNum = parseFloat(chapter);
   const chapterTitle = `ตอนที่ ${chapterNum}`;
@@ -56,9 +58,17 @@ export default async function ReaderPage({ params }: Props) {
 
   const manga = await prisma.manga.findUnique({
     where: { slug },
-    select: { id: true, title: true, slug: true, type: true, coverUrl: true, translator: { select: { userId: true } } },
+    select: { id: true, title: true, slug: true, type: true, coverUrl: true, published: true, translator: { select: { userId: true } } },
   });
   if (!manga) notFound();
+
+  const userId = session?.user ? (session.user as { id: string }).id : null;
+  const isAdmin = (session?.user as { role?: string } | undefined)?.role === "ADMIN";
+  const isOwnerPreview = (!!userId && manga.translator?.userId === userId) || isAdmin;
+
+  // Story-level unpublish: a hidden เรื่อง's chapters 404 for everyone except the
+  // owner/admin (live preview) — mirrors the per-chapter draft gate below.
+  if (!manga.published && !isOwnerPreview) notFound();
 
   const chapterData = await prisma.chapter.findUnique({
     where: { mangaId_chapterNum: { mangaId: manga.id, chapterNum } },
@@ -69,13 +79,8 @@ export default async function ReaderPage({ params }: Props) {
   if (!chapterData) notFound();
 
   // ── Premium gate ──────────────────────────────────────────────
-  const userId = session?.user ? (session.user as { id: string }).id : null;
-
   // Drafts / not-yet-released chapters are visible only to the owner (preview).
-  if (!isChapterLive(chapterData)) {
-    const isOwnerPreview = !!userId && manga.translator?.userId === userId;
-    if (!isOwnerPreview) notFound();
-  }
+  if (!isChapterLive(chapterData) && !isOwnerPreview) notFound();
 
   // Premium / early-access: still paid while freeAt is null (permanent) or in the future.
   // Once freeAt passes, the chapter is free for everyone.

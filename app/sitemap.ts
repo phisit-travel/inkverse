@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
+import { listedMangaWhere } from "@/lib/chapters";
 
 const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inksverse.com";
 
@@ -8,13 +9,14 @@ export const revalidate = 3600;
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [mangas, genres, chapters] = await Promise.all([
     prisma.manga.findMany({
+      where: { ...listedMangaWhere() },
       select: { slug: true, updatedAt: true },
       orderBy: { updatedAt: "desc" },
     }),
     prisma.genre.findMany({ select: { slug: true } }),
     // Every live chapter is its own indexable page ("อ่าน X ตอนที่ Y") — long-tail SEO.
     prisma.chapter.findMany({
-      where: { status: { not: "DRAFT" }, OR: [{ publishAt: null }, { publishAt: { lte: new Date() } }] },
+      where: { manga: { ...listedMangaWhere() }, status: { not: "DRAFT" }, OR: [{ publishAt: null }, { publishAt: { lte: new Date() } }] },
       select: { chapterNum: true, publishedAt: true, manga: { select: { slug: true } } },
       orderBy: { publishedAt: "desc" },
       take: 40000,

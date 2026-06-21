@@ -125,7 +125,11 @@ export default async function ProfilePage({ params }: Props) {
   // Translators only earn the "VERIFIED" eyebrow once actually verified.
   const eyebrow = user.role === "TRANSLATOR" && !isVerified ? "CREATOR" : role.eyebrow;
 
-  const works = user.translator?.mangas ?? [];
+  // The creator (and admin) sees all their works incl. story-level-unpublished
+  // ones; other visitors only see published works.
+  const viewerIsAdmin = (session?.user as { role?: string } | undefined)?.role === "ADMIN";
+  const allWorks = user.translator?.mangas ?? [];
+  const works = isOwner || viewerIsAdmin ? allWorks : allWorks.filter((m) => m.published);
   const isCreator = !!user.translator;
   const totalViews = works.reduce((s, m) => s + m.totalViews, 0);
   const totalChapters = works.reduce((s, m) => s + m._count.chapters, 0);
@@ -530,11 +534,14 @@ export default async function ProfilePage({ params }: Props) {
       )}
 
       {/* ── Bookmarks ──────────────────────────────────────────────── */}
-      {user.bookmarks.length > 0 && (
+      {/* Story-level-unpublished works are hidden so the grid never links to a
+          page that 404s. The bookmark row itself is kept (re-appears if
+          republished) — we only hide it from this public display. */}
+      {user.bookmarks.some((b) => b.manga.published) && (
         <section className="mb-10">
           <SectionTitle>บุ๊กมาร์ก</SectionTitle>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {user.bookmarks.map(({ manga }) => {
+            {user.bookmarks.filter(({ manga }) => manga.published).map(({ manga }) => {
               return (
                 <MangaCard
                   key={manga.id}

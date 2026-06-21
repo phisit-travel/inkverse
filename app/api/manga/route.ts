@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { cleanTags } from "@/lib/tags";
+import { listedMangaWhere } from "@/lib/chapters";
 import { apiError } from "@/lib/apiError";
 
 export async function GET(req: NextRequest) {
@@ -27,6 +28,8 @@ export async function GET(req: NextRequest) {
   }
 
   if (mine === "1") {
+    // Owner/admin dashboard dropdown — must include UNPUBLISHED works, so no
+    // listedMangaWhere() filter here.
     const session = await auth();
     if (!session?.user) {
       return NextResponse.json({ data: [], total: 0, page: 1, totalPages: 0 });
@@ -40,6 +43,9 @@ export async function GET(req: NextRequest) {
       }
       where.translatorId = translator.id;
     }
+  } else {
+    // Public list — hide story-level-unpublished works.
+    Object.assign(where, listedMangaWhere());
   }
 
   // The "mine" list feeds the chapter-upload dropdown, so it must show ALL of

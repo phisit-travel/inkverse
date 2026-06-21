@@ -20,7 +20,9 @@ export async function GET() {
         select: {
           chapterNum: true,
           mangaId: true,
-          manga: { select: { slug: true, title: true, coverUrl: true } },
+          // published is read so a story-level-unpublished work drops out of the
+          // "อ่านต่อ" row + progress badges (its page would 404 anyway).
+          manga: { select: { slug: true, title: true, coverUrl: true, published: true } },
         },
       },
     },
@@ -33,6 +35,7 @@ export async function GET() {
   >();
   for (const r of reads) {
     const c = r.chapter;
+    if (!c.manga.published) continue; // hide story-level-unpublished works
     const e = perManga.get(c.mangaId);
     if (e) e.count++;
     else

@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { getRanking } from "@/lib/ranking";
 import { getRankBadges } from "@/lib/ranks";
-import { liveChapterWhere } from "@/lib/chapters";
+import { liveChapterWhere, listedMangaWhere } from "@/lib/chapters";
 import MangaCard from "@/components/ui/MangaCard";
 import FeaturedTitles, { type FeaturedItem } from "@/components/ui/FeaturedTitles";
 import UpdateRow from "@/components/ui/UpdateRow";
@@ -36,7 +36,7 @@ const getData = unstable_cache(async () => {
     await Promise.all([
       prisma.manga.findMany({
         take: 12,
-        where: { contentRating: { not: "ADULT" }, type: { not: "NOVEL" } },
+        where: { ...listedMangaWhere(), contentRating: { not: "ADULT" }, type: { not: "NOVEL" } },
         orderBy: { totalViews: "desc" },
         include: {
           genres: { include: { genre: true } },
@@ -53,7 +53,7 @@ const getData = unstable_cache(async () => {
         // Keep admin-uploaded (non-original) works out of the Latest Updates feed
         // — it's reserved for real creators' releases. NOT(...) still includes
         // works with no translator.
-        where: { manga: { contentRating: { not: "ADULT" }, NOT: { translator: { user: { role: "ADMIN" } } } }, ...liveChapterWhere() },
+        where: { manga: { ...listedMangaWhere(), contentRating: { not: "ADULT" }, NOT: { translator: { user: { role: "ADMIN" } } } }, ...liveChapterWhere() },
         include: {
           manga: { select: { title: true, slug: true, coverUrl: true, type: true } },
         },
@@ -63,7 +63,7 @@ const getData = unstable_cache(async () => {
       getRanking("ALL", 10),
       prisma.manga.findMany({
         take: 6,
-        where: { contentRating: { not: "ADULT" }, type: "NOVEL" },
+        where: { ...listedMangaWhere(), contentRating: { not: "ADULT" }, type: "NOVEL" },
         orderBy: { totalViews: "desc" },
         include: {
           genres: { include: { genre: true } },
@@ -74,7 +74,7 @@ const getData = unstable_cache(async () => {
   // Top translators ranked by total views across their works.
   const agg = await prisma.manga.groupBy({
     by: ["translatorId"],
-    where: { translatorId: { not: null }, contentRating: { not: "ADULT" } },
+    where: { ...listedMangaWhere(), translatorId: { not: null }, contentRating: { not: "ADULT" } },
     _sum: { totalViews: true },
     _count: { _all: true },
     orderBy: { _sum: { totalViews: "desc" } },

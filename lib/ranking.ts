@@ -1,10 +1,13 @@
 import { prisma } from "@/lib/prisma";
+import { listedMangaWhere } from "@/lib/chapters";
 
 type StatPeriod = "WEEK" | "MONTH" | "ALL";
 
 export async function getRanking(period: StatPeriod, limit = 10) {
   return prisma.weeklyStats.findMany({
-    where: { period },
+    // Guard at read-time too: a work unpublished since the last recalc must drop
+    // out of the ranking panel immediately, not wait for the next recalc.
+    where: { period, manga: { ...listedMangaWhere() } },
     orderBy: { rank: "asc" },
     take: limit,
     include: {
@@ -28,6 +31,8 @@ export async function recalculateRanking(period: StatPeriod) {
   // Read from the denormalized stat columns on Manga (bookmarkCount/ratingCount)
   // instead of running a _count subquery per row.
   const mangas = await prisma.manga.findMany({
+    // Don't rank story-level-unpublished works.
+    where: { ...listedMangaWhere() },
     select: {
       id: true,
       totalViews: true,

@@ -211,6 +211,11 @@ model Manga {
   bookmarkCount    Int      @default(0)
   latestChapterNum Float?
   contentRating String      @default("EVERYONE") // EVERYONE | TEEN | ADULT
+  // Story-level visibility. false = the whole เรื่อง is hidden from all reader-
+  // facing surfaces (home/listing/search/sitemap/story page/reader) while staying
+  // fully manageable in the owner's dashboard. Default true so every existing work
+  // stays visible. Apply via lib/manga.listedMangaWhere() on every public query.
+  published     Boolean     @default(true)
   tags          String[]    @default([]) // free-form creator tags (tropes etc.) for tag browsing
   // Attribution for openly-licensed (e.g. CC-BY) imported works
   author        String?
@@ -232,6 +237,9 @@ model Manga {
   @@index([avgRating])
   @@index([bookmarkCount])
   @@index([updatedAt])
+  // Public list/sort queries always filter published=true then order by a stat —
+  // a composite keeps those index-only instead of scanning unpublished rows.
+  @@index([published, totalViews])
 }
 
 // Private worldbuilding notes for the writer — characters, places, timeline.

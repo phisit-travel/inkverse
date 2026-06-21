@@ -5,6 +5,7 @@ import { liveChapterWhere } from "@/lib/chapters";
 import { cleanTags } from "@/lib/tags";
 import { apiError } from "@/lib/apiError";
 import { decodeSlug } from "@/lib/slug";
+import { revalidateMangaCache } from "@/lib/revalidate";
 
 // Returns the manga only if the signed-in user owns it (translator) or is admin.
 async function getMangaOwnership(slug: string) {
@@ -78,6 +79,9 @@ export async function PATCH(
   if (RATINGS.includes(body.contentRating)) data.contentRating = body.contentRating;
   if (["JP", "KR", "CN", "TH", "FR"].includes(body.originCountry)) data.originCountry = body.originCountry;
   if (Array.isArray(body.tags)) data.tags = cleanTags(body.tags);
+  // Story-level publish/unpublish. true = visible to readers; false = the whole
+  // เรื่อง is hidden everywhere public (owner/admin still manage + preview it).
+  if (typeof body.published === "boolean") data.published = body.published;
 
   // Optional: replace the genre set
   if (Array.isArray(body.genreIds)) {
@@ -92,6 +96,12 @@ export async function PATCH(
   }
 
   const updated = await prisma.manga.update({ where: { id: manga.id }, data });
+
+  // Bust the cached story page + home feed so a publish/unpublish (and any other
+  // edit here) appears/disappears for readers immediately instead of waiting out
+  // the cache TTL.
+  revalidateMangaCache(manga.slug);
+
   return NextResponse.json(updated);
 }
 

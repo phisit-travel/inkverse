@@ -13,6 +13,23 @@ export function liveChapterWhere(): Prisma.ChapterWhereInput {
   };
 }
 
+/**
+ * Prisma `where` fragment for manga that are publicly listed/readable.
+ * A story-level unpublish (Manga.published = false) hides the ENTIRE เรื่อง from
+ * every reader-facing surface (home/listing/search/sitemap/story page/reader)
+ * while the owner/admin keep full dashboard access + preview. Spread this into
+ * EVERY public manga query (`{ ...listedMangaWhere(), ... }`) — a missed query
+ * leaks an unpublished work to the public. Owner/admin paths must NOT use it.
+ */
+export function listedMangaWhere() {
+  return { published: true } as const;
+}
+
+/** Whether a loaded manga is publicly listed (false = story-level unpublished). */
+export function isMangaListed(m: { published: boolean }): boolean {
+  return m.published;
+}
+
 /** Whether a single loaded chapter is live for readers right now. */
 export function isChapterLive(ch: { status: string; publishAt: Date | null }): boolean {
   return ch.status !== "DRAFT" && (!ch.publishAt || ch.publishAt.getTime() <= Date.now());

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import MangaCard from "@/components/ui/MangaCard";
 import Pagination from "@/components/ui/Pagination";
 import { Suspense } from "react";
+import { listedMangaWhere } from "@/lib/chapters";
 import type { Metadata } from "next";
 
 const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inksverse.com";
@@ -32,7 +33,7 @@ async function MangaGrid({ searchParams }: { searchParams: SearchParams }) {
   const take = 24;
   const skip = (page - 1) * take;
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = { ...listedMangaWhere() };
   if (searchParams.status) where.status = searchParams.status;
   if (searchParams.type) where.type = searchParams.type;
   if (searchParams.tag) where.tags = { has: searchParams.tag };

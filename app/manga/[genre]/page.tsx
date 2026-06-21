@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import MangaCard from "@/components/ui/MangaCard";
 import Pagination from "@/components/ui/Pagination";
 import { notFound } from "next/navigation";
+import { listedMangaWhere } from "@/lib/chapters";
 import type { Metadata } from "next";
 
 const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inksverse.com";
@@ -37,6 +38,7 @@ export default async function GenrePage({ params, searchParams }: Props) {
   if (!genreRecord) notFound();
 
   const where = {
+    ...listedMangaWhere(),
     genres: { some: { genreId: genreRecord.id } },
     contentRating: { not: "ADULT" as const },
   };

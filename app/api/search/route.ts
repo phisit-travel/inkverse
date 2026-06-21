@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { listedMangaWhere } from "@/lib/chapters";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
@@ -12,6 +13,7 @@ export async function GET(req: NextRequest) {
 
   const mangas = await prisma.manga.findMany({
     where: {
+      ...listedMangaWhere(),
       OR: [
         { title: { contains: q } },
         { description: { contains: q } },

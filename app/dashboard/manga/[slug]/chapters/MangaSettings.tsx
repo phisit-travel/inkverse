@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Settings, Check, Loader2, Trash2, AlertTriangle, ChevronDown, Upload, ImageIcon } from "lucide-react";
+import { Settings, Check, Loader2, Trash2, AlertTriangle, ChevronDown, Upload, ImageIcon, EyeOff, Send } from "lucide-react";
 import clsx from "clsx";
 import TagInput from "@/components/ui/TagInput";
 
@@ -14,6 +14,7 @@ interface MangaData {
   contentRating: string;
   coverUrl: string | null;
   tags: string[];
+  published?: boolean;
 }
 
 const STATUS = [
@@ -79,6 +80,29 @@ export default function MangaSettings({
   const [cover, setCover] = useState(manga.coverUrl);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [genreIds, setGenreIds] = useState<string[]>(initialGenreIds);
+  const [published, setPublished] = useState(manga.published ?? true);
+  const [togglingPublish, setTogglingPublish] = useState(false);
+
+  async function togglePublish() {
+    const next = !published;
+    if (!next && !confirm(
+      `เลิกเผยแพร่ทั้งเรื่อง "${manga.title}"?\n\nเรื่องจะซ่อนจากหน้าแรก รายการ ค้นหา และหน้าอ่านทันที — เนื้อหาและตอนทั้งหมดไม่หาย คุณยังแก้ต่อในแดชบอร์ดได้ และเผยแพร่ใหม่ได้ทุกเมื่อ`
+    )) return;
+    setTogglingPublish(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/manga/${slug}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ published: next }),
+      });
+      if (!res.ok) { setError("เปลี่ยนสถานะไม่สำเร็จ"); return; }
+      setPublished(next);
+      router.refresh();
+    } catch { setError("เกิดข้อผิดพลาด"); }
+    finally { setTogglingPublish(false); }
+  }
+
   const toggleGenre = (id: string) => {
     setGenreIds((g) => (g.includes(id) ? g.filter((x) => x !== id) : [...g, id]));
     setSaved(false);
@@ -257,6 +281,41 @@ export default function MangaSettings({
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : null}
               {saved ? "บันทึกแล้ว" : "บันทึก"}
             </button>
+          </div>
+
+          {/* Visibility — publish / unpublish whole story */}
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-[var(--text-primary)] mb-0.5">การมองเห็นเรื่อง</p>
+                {published ? (
+                  <p className="text-xs text-[var(--text-secondary)]">เผยแพร่แล้ว — ผู้อ่านเห็นเรื่องนี้</p>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 border border-[var(--border)] text-[var(--text-secondary)] uppercase tracking-widest">
+                    <EyeOff className="w-2.5 h-2.5" /> ซ่อนอยู่ / ไม่เผยแพร่
+                  </span>
+                )}
+              </div>
+              {published ? (
+                <button
+                  onClick={togglePublish}
+                  disabled={togglingPublish}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border)] text-[var(--text-primary)] text-xs font-medium hover:bg-[var(--bg-surface)] disabled:opacity-50 transition-colors shrink-0"
+                >
+                  {togglingPublish ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <EyeOff className="w-3.5 h-3.5" />}
+                  เลิกเผยแพร่ทั้งเรื่อง
+                </button>
+              ) : (
+                <button
+                  onClick={togglePublish}
+                  disabled={togglingPublish}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bal-btn text-xs font-semibold disabled:opacity-50 shrink-0"
+                >
+                  {togglingPublish ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                  เผยแพร่ทั้งเรื่อง
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Danger zone */}

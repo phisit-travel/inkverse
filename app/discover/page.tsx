@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import MangaCard from "@/components/ui/MangaCard";
 import DiscoverFilters from "@/components/ui/DiscoverFilters";
 import { Search, ShieldAlert } from "lucide-react";
+import { listedMangaWhere } from "@/lib/chapters";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -44,7 +45,7 @@ export default async function DiscoverPage({
 
   const genres = await prisma.genre.findMany({ orderBy: { name: "asc" } });
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = { ...listedMangaWhere() };
   if (q) {
     where.title = { contains: q, mode: "insensitive" };
   }

@@ -15,7 +15,7 @@ import ChapterRow from "@/components/ui/ChapterRow";
 import AgeGate from "@/components/ui/AgeGate";
 import { getUserCoins } from "@/lib/coins";
 import { getUserRankBadge, getRankBadges } from "@/lib/ranks";
-import { liveChapterWhere, isChapterLocked } from "@/lib/chapters";
+import { liveChapterWhere, isChapterLocked, listedMangaWhere } from "@/lib/chapters";
 import CommentSection from "@/components/ui/CommentSection";
 import MangaCard from "@/components/ui/MangaCard";
 import RankChip from "@/components/ui/RankChip";
@@ -47,6 +47,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     include: { genres: { include: { genre: true } } },
   });
   if (!manga) return { title: "ไม่พบมังงะ", description: "ไม่พบมังงะที่ต้องการ" };
+  // Story unpublished → don't leak its title/description in <head> (the page
+  // body already 404s for non-owners; metadata runs before that gate).
+  if (!manga.published) return { title: "INKVERSE", robots: { index: false } };
 
   const genreNames = manga.genres.map((g) => g.genre.name).join(", ");
   const description = `อ่าน ${manga.title} แปลไทย ออนไลน์ฟรี — ${manga.description.slice(0, 120)}`;
@@ -109,7 +112,7 @@ function getMangaProfile(slug: string) {
       const genreIds = m.genres.map((g) => g.genreId);
       let related = genreIds.length
         ? await prisma.manga.findMany({
-            where: { id: { not: m.id }, ...notAdult, genres: { some: { genreId: { in: genreIds } } } },
+            where: { ...listedMangaWhere(), id: { not: m.id }, ...notAdult, genres: { some: { genreId: { in: genreIds } } } },
             orderBy: { totalViews: "desc" },
             take: 8,
             select: relSelect,
@@ -117,7 +120,7 @@ function getMangaProfile(slug: string) {
         : [];
       if (related.length < 4) {
         const fill = await prisma.manga.findMany({
-          where: { id: { notIn: [m.id, ...related.map((r) => r.id)] }, ...notAdult, type: m.type },
+          where: { ...listedMangaWhere(), id: { notIn: [m.id, ...related.map((r) => r.id)] }, ...notAdult, type: m.type },
           orderBy: { totalViews: "desc" },
           take: 8 - related.length,
           select: relSelect,
@@ -162,7 +165,12 @@ export default async function MangaProfilePage({ params }: Props) {
     }
   }
 
+  const isAdmin = (session?.user as { role?: string } | undefined)?.role === "ADMIN";
   const isOwner = !!userId && manga.translator?.userId === userId;
+
+  // Story-level unpublish: the whole เรื่อง is hidden from readers. Owner (and
+  // admin) keep a live preview — mirrors the chapter-draft owner-preview gate.
+  if (!manga.published && !isOwner && !isAdmin) notFound();
 
   // Scope the per-user chapter lookups to THIS manga's chapters (PK-bounded `in`)
   // instead of scanning the reader's entire site-wide unlock/read history. A heavy

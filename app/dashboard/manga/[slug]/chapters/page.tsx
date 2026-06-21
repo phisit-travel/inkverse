@@ -155,6 +155,7 @@ export default async function MangaChaptersPage({ params }: Props) {
           contentRating: manga.contentRating,
           coverUrl: manga.coverUrl ?? null,
           tags: manga.tags ?? [],
+          published: manga.published,
         }}
         allGenres={allGenres}
         initialGenreIds={manga.genres.map((g) => g.genreId)}
