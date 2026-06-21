@@ -31,7 +31,7 @@ export default function GenreFilterBar({ genres }: GenreFilterBarProps) {
 
   return (
     <div className="overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide">
-      <ChipFilter chips={genres} selected={selected} onChange={handleChange} />
+      <ChipFilter chips={genres} selected={selected} onChange={handleChange} nowrap />
     </div>
   );
 }
