@@ -21,7 +21,7 @@ export default function TranslatorRanking({ entries }: { entries: TranslatorRank
     <section className="mb-10">
       <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-wider mb-4 flex items-center gap-2">
         <span className="w-1 h-6 bg-[var(--accent)] rounded-full" />
-        อันดับนักแปล
+        อันดับครีเอเตอร์
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {entries.map((t, i) => (
