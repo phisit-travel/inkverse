@@ -26,10 +26,17 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     return apiError("IMG-001", 403);
   }
 
-  // Behavioral throttle: the token binds the reader's id, so we can cap sustained
-  // per-user volume. A human reading never pulls this many pages over 10 minutes;
-  // a ripper grabbing whole series does. (Per-IP burst limit above still applies.)
-  if (u && u !== "anon" && !rateLimit(`img:u:${u}`, 1200, 600_000).ok) {
+  // Behavioral throttle: cap sustained volume over 10 min — a human reading never
+  // pulls this many *uncached* pages; a ripper grabbing whole series does. (Per-IP
+  // burst limit above still applies.) Logged-in readers key on their stable id;
+  // anonymous readers (free chapters, u=anon) key on IP with a looser cap so a
+  // shared/CGNAT IP of real readers isn't blocked, while bulk scraping of the free
+  // catalogue still trips the limit and slows to a crawl. Tune anon cap if needed.
+  const sustained =
+    u && u !== "anon"
+      ? rateLimit(`img:u:${u}`, 1200, 600_000)
+      : rateLimit(`img:anon:${clientIp(req)}`, 600, 600_000);
+  if (!sustained.ok) {
     return apiError("IMG-003", 429);
   }
 
