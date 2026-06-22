@@ -3,16 +3,22 @@
  * public site, you control the token budget).
  *
  * Usage:
- *   npx tsx scripts/proofread.mts <manuscript.txt> [--ai]
+ *   npx tsx scripts/proofread.mts <chapter.txt> [--ai] [--style <styleSheet.txt>]
  *
  * Steps:
  *   1) Rule-based pre-pass (FREE, instant) — lib/thaiSpellcheck: mechanical
  *      errors + curated common misspellings.
- *   2) Optional AI pass (--ai, needs ANTHROPIC_API_KEY) — Opus does a careful,
- *      voice-preserving proofread on top, chunked. Prints token usage so you can
- *      watch the spend.
- *   3) Writes an HTML correction report next to the input (open in a browser,
- *      review, then apply/send to the client).
+ *   2) Optional AI pass (--ai, needs ANTHROPIC_API_KEY) — Opus proofreads on top,
+ *      chunked, and returns ONLY a list of corrections (diff-only — it never
+ *      echoes the manuscript back, so output tokens stay tiny). Prints token use.
+ *   3) Writes an HTML correction report next to the input.
+ *
+ * --style <file>: a Style Sheet (character/place names, special terms, the
+ *   author's tone) is injected as context so EACH chapter is proofread
+ *   consistently WITHOUT carrying previous chapters in context. This is the key
+ *   to running a 200-chapter book at FLAT token cost: every chapter call =
+ *   [Style Sheet] + [one chapter], nothing accumulates. Reuse the SAME style
+ *   sheet for every chapter; append new names/terms to it as you go.
  *
  * Input: plain .txt (export a Google Doc / .docx to .txt first).
  */
@@ -48,28 +54,34 @@ function rulePass(text: string): { issues: Issue[] } {
 }
 
 // ── 2) AI pass (optional) ─────────────────────────────────────────────────────
-const PROMPT = `คุณคือนักพิสูจน์อักษรภาษาไทยมืออาชีพ ตรวจข้อความนิยายต่อไปนี้
+const RULES = `คุณคือนักพิสูจน์อักษรภาษาไทยมืออาชีพ ตรวจข้อความนิยายต่อไปนี้
 
 กฎเหล็ก:
 - แก้เฉพาะ: คำสะกดผิด, วรรณยุกต์, การันต์, เว้นวรรค, คำตก/คำเกิน, เครื่องหมายวรรคตอน
 - ห้ามเด็ดขาด: เปลี่ยนสำนวน/คำที่ผู้เขียนเลือกใช้, รีไรต์ประโยค, เปลี่ยนความหมาย, เพิ่ม-ลดเนื้อหา
 - ถ้าไม่มั่นใจว่าผิด ให้ข้าม (เลี่ยง false positive — เรายอมพลาดดีกว่าจู้จี้)
 
-ตอบเป็น JSON array เท่านั้น ห้ามมีข้อความอื่น:
+ตอบเป็น JSON array เท่านั้น ห้ามมีข้อความอื่น และห้ามพิมพ์ต้นฉบับกลับมา — ส่งเฉพาะจุดที่แก้:
 [{"wrong":"<ข้อความเดิมที่ผิด สั้นๆ>","right":"<ที่ถูก>","reason":"<เหตุผลสั้นๆ>"}]
-ถ้าไม่พบที่ผิดเลย ตอบ []
+ถ้าไม่พบที่ผิดเลย ตอบ []`;
 
-ข้อความ:
----
-`;
+// Build the prompt prefix once per run; the Style Sheet (if any) rides along as
+// context so a chapter is proofread consistently without needing prior chapters.
+function buildPrompt(styleSheet: string): string {
+  const s = styleSheet.trim();
+  const styleBlock = s
+    ? `\n\nSTYLE SHEET ของเรื่องนี้ — ยึดตามนี้เสมอ (ชื่อตัวละคร/สถานที่/คำเฉพาะ + โทน-สำนวนของผู้เขียน). อะไรที่ตรงกับ Style Sheet ถือว่าถูกต้อง ห้ามแก้:\n${s}`
+    : "";
+  return RULES + styleBlock + "\n\nข้อความ:\n---\n";
+}
 
-async function aiPass(chunk: string): Promise<{ corrections: Correction[]; tokens: { in: number; out: number } }> {
+async function aiPass(chunk: string, prompt: string): Promise<{ corrections: Correction[]; tokens: { in: number; out: number } }> {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error("ANTHROPIC_API_KEY ไม่ได้ตั้ง — ใส่ key ก่อนใช้ --ai");
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify({ model: MODEL, max_tokens: 4000, messages: [{ role: "user", content: PROMPT + chunk + "\n---" }] }),
+    body: JSON.stringify({ model: MODEL, max_tokens: 4000, messages: [{ role: "user", content: prompt + chunk + "\n---" }] }),
   });
   if (!res.ok) throw new Error(`Anthropic ${res.status}: ${(await res.text()).slice(0, 200)}`);
   const data = (await res.json()) as { content?: { text?: string }[]; usage?: { input_tokens?: number; output_tokens?: number } };
@@ -121,9 +133,14 @@ ${ai.length || aiRows ? `<h2>ชั้น AI (Opus) — ${ai.length} จุด</
 (async () => {
   const file = process.argv[2];
   const useAi = process.argv.includes("--ai");
-  if (!file) { console.error("usage: npx tsx scripts/proofread.mts <manuscript.txt> [--ai]"); process.exit(1); }
+  const styleIdx = process.argv.indexOf("--style");
+  const styleFile = styleIdx > -1 ? process.argv[styleIdx + 1] : null;
+  if (!file) { console.error("usage: npx tsx scripts/proofread.mts <chapter.txt> [--ai] [--style <styleSheet.txt>]"); process.exit(1); }
   const text = readFileSync(file, "utf8");
   console.log(`อ่าน ${file} — ${wordCount(text).toLocaleString()} คำ`);
+
+  const styleSheet = styleFile ? readFileSync(styleFile, "utf8") : "";
+  if (styleFile) console.log(`Style Sheet: ${styleFile} (${wordCount(styleSheet).toLocaleString()} คำ)`);
 
   const { issues } = rulePass(text);
   console.log(`ชั้นกฎ (ฟรี): พบ ${issues.length} จุด`);
@@ -131,11 +148,12 @@ ${ai.length || aiRows ? `<h2>ชั้น AI (Opus) — ${ai.length} จุด</
   const ai: Correction[] = [];
   const tok = { in: 0, out: 0 };
   if (useAi) {
+    const prompt = buildPrompt(styleSheet);
     const chunks = chunkText(text, CHUNK_CHARS);
     console.log(`ชั้น AI: ${chunks.length} chunk (model ${MODEL})…`);
     for (let i = 0; i < chunks.length; i++) {
       try {
-        const r = await aiPass(chunks[i]);
+        const r = await aiPass(chunks[i], prompt);
         ai.push(...r.corrections);
         tok.in += r.tokens.in; tok.out += r.tokens.out;
         console.log(`  chunk ${i + 1}/${chunks.length}: +${r.corrections.length} จุด (token ${r.tokens.in}/${r.tokens.out})`);
