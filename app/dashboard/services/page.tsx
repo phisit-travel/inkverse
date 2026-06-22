@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import type { Metadata } from "next";
 import DeliverButton from "@/components/ui/DeliverButton";
+import DeleteOrderButton from "@/components/ui/DeleteOrderButton";
 
 export const metadata: Metadata = {
   title: "บริการตรวจงาน — ออเดอร์ทั้งหมด | INKVERSE",
@@ -27,6 +28,8 @@ type ServiceOrderRow = {
   focus: string | null;
   briefNote: string | null;
   briefAt: Date | null;
+  depositPaidAt: Date | null;
+  balancePaidAt: Date | null;
   createdAt: Date;
 };
 
@@ -63,6 +66,8 @@ export default async function ServicesDashboardPage() {
       focus: true,
       briefNote: true,
       briefAt: true,
+      depositPaidAt: true,
+      balancePaidAt: true,
       createdAt: true,
     },
   })) as ServiceOrderRow[];
@@ -187,11 +192,15 @@ export default async function ServicesDashboardPage() {
                     })}
                   </td>
                   <td className="px-4 py-3">
-                    {o.status === "IN_PROGRESS" ? (
-                      <DeliverButton token={o.accessToken} />
-                    ) : (
-                      <span className="text-xs text-[var(--text-muted)]">—</span>
-                    )}
+                    <div className="space-y-2">
+                      {o.status === "IN_PROGRESS" && <DeliverButton token={o.accessToken} />}
+                      {!o.depositPaidAt && !o.balancePaidAt && (
+                        <DeleteOrderButton token={o.accessToken} />
+                      )}
+                      {o.status !== "IN_PROGRESS" && (o.depositPaidAt || o.balancePaidAt) && (
+                        <span className="text-xs text-[var(--text-muted)]">—</span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
