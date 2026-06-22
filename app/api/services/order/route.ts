@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { sendEmail, serviceOrderEmail } from "@/lib/email";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { apiError } from "@/lib/apiError";
@@ -52,6 +53,24 @@ export async function POST(req: NextRequest) {
     userId,
     briefNote: message,
   });
+
+  // Bell-notify all admins so a new order isn't missed (in addition to email).
+  try {
+    const admins = await prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true } });
+    if (admins.length > 0) {
+      await prisma.notification.createMany({
+        data: admins.map((a) => ({
+          userId: a.id,
+          type: "SERVICE_ORDER",
+          title: "ออเดอร์บริการใหม่",
+          body: `${order.customerName} · ${order.services} · ${baht(order.total)} (${order.quoteNo})`,
+          link: "/dashboard/services",
+        })),
+      });
+    }
+  } catch {
+    /* non-critical */
+  }
 
   const sent = await sendEmail({
     to: RECIPIENT,
