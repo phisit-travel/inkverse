@@ -2,6 +2,8 @@
 // Fully graceful: if RESEND_API_KEY is unset, it logs and no-ops so flows that
 // "send an email" never break in dev / before email is configured.
 
+import type { Quote } from "@/lib/services/pricing";
+
 const FROM = process.env.EMAIL_FROM || "INKVERSE <noreply@inksverse.com>";
 
 export async function sendEmail(opts: {
@@ -106,26 +108,43 @@ export function withdrawalEmail(opts: { amount: number; status: "submitted" | "p
   );
 }
 
-// Admin-facing: a new "ขอใบเสนอราคา" from the /services page.
+// Admin-facing: a new "ขอใบเสนอราคา" from the /services page, with the
+// auto-computed quote breakdown so the owner can confirm at a glance.
 export function serviceQuoteEmail(opts: {
   name: string;
   contact: string;
-  services: string;
-  wordCount: string;
+  quote: Quote;
+  quoteNo: string;
+  date: string;
+  excerpt: string;
   message: string;
 }) {
   const row = (k: string, v: string) =>
     `<p style="margin:6px 0"><span style="color:#888">${esc(k)}:</span> <span style="color:#fff">${esc(v)}</span></p>`;
+  const q = opts.quote;
+  const lineRows = q.lines
+    .map(
+      (l) =>
+        `<tr><td style="padding:6px 0;color:#fff">${esc(l.service)}</td>
+         <td style="padding:6px 0;text-align:right;color:#aaa">${l.words.toLocaleString()} คำ</td>
+         <td style="padding:6px 0;text-align:right;color:#fff">฿${l.amount.toLocaleString()}</td></tr>`
+    )
+    .join("");
   return shell(
-    "ขอใบเสนอราคา (บริการ)",
-    `<p>มีคำขอใบเสนอราคาบริการเข้ามาใหม่:</p>
+    `ใบเสนอราคา ${esc(opts.quoteNo)}`,
+    `<p>มีคำขอใบเสนอราคาบริการเข้ามาใหม่ (${esc(opts.date)}):</p>
      <div style="border:1px solid #2a2a2a;padding:16px;margin:18px 0">
        ${row("ชื่อ", opts.name)}
        ${row("ช่องทางติดต่อ", opts.contact)}
-       ${row("บริการที่สนใจ", opts.services)}
-       ${row("จำนวนคำโดยประมาณ", opts.wordCount || "-")}
+       ${row("ปริมาณงาน", `${q.words.toLocaleString()} คำ${q.freeWords ? ` (ฟรีลูกค้าใหม่ ${q.freeWords.toLocaleString()} คำ)` : ""}`)}
      </div>
-     <p style="color:#888;font-size:12px">รายละเอียด/ลิงก์:</p>
-     <p style="white-space:pre-wrap;color:#ccc">${esc(opts.message) || "-"}</p>`
+     <table style="width:100%;border-collapse:collapse;font-size:14px;margin:8px 0">
+       ${lineRows || `<tr><td style="color:#888;padding:6px 0">ยังไม่ระบุปริมาณคำ — ต้องประเมินเอง</td></tr>`}
+       <tr><td style="border-top:1px solid #fff;padding:10px 0;color:#888;text-transform:uppercase;letter-spacing:.1em;font-size:12px">รวมประเมิน</td>
+       <td style="border-top:1px solid #fff"></td>
+       <td style="border-top:1px solid #fff;padding:10px 0;text-align:right;color:#fff;font-size:20px;font-weight:bold">฿${q.total.toLocaleString()}</td></tr>
+     </table>
+     ${opts.excerpt ? `<p style="color:#888;font-size:12px;margin-top:16px">ตัวอย่างต้นฉบับ:</p><p style="white-space:pre-wrap;color:#bbb;font-size:13px;border-left:3px solid #2a2a2a;padding-left:12px">${esc(opts.excerpt)}…</p>` : ""}
+     ${opts.message ? `<p style="color:#888;font-size:12px;margin-top:16px">หมายเหตุ/ลิงก์:</p><p style="white-space:pre-wrap;color:#ccc">${esc(opts.message)}</p>` : ""}`
   );
 }

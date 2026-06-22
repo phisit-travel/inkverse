@@ -107,7 +107,7 @@ export default function ServicesPage() {
       <div className="mt-14 max-w-xl mx-auto">
         <h2 className="font-bebas text-3xl tracking-wider text-[var(--text-primary)] text-center mb-2">ขอใบเสนอราคา</h2>
         <p className="text-sm text-[var(--text-secondary)] text-center mb-6">
-          กรอกรายละเอียดสั้นๆ แล้วเราจะติดต่อกลับพร้อมใบเสนอราคา (ลูกค้าใหม่อย่าลืม 2,500 คำแรกฟรี)
+          วางข้อความนิยายเพื่อ<b className="text-[var(--text-primary)]">คำนวณราคาอัตโนมัติทันที</b> — ต้นฉบับนับในเครื่องคุณ ไม่ถูกส่งออก (ลูกค้าใหม่ฟรี 2,500 คำแรก)
         </p>
         <QuoteForm />
       </div>
