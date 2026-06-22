@@ -12,7 +12,7 @@ import PromoCarousel from "@/components/ui/PromoCarousel";
 import ContinueReading from "@/components/ui/ContinueReading";
 import TranslatorRanking from "@/components/ui/TranslatorRanking";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, SpellCheck } from "lucide-react";
 import { unstable_cache } from "next/cache";
 import type { Metadata } from "next";
 
@@ -187,6 +187,30 @@ export default async function HomePage() {
 
       {/* Featured titles — rotating cover-art showcase (เรื่องเด่น) */}
       <FeaturedTitles items={featuredTitles} />
+
+      {/* Service promo — proofreading & typesetting for writers/translators (→ /services) */}
+      <Link
+        href="/services"
+        className="group block mb-12 border border-[var(--text-primary)] bg-[var(--bg-surface)] px-6 py-7 sm:px-10 sm:py-8"
+      >
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-4">
+            <SpellCheck className="w-8 h-8 shrink-0 text-[var(--text-primary)]" />
+            <div>
+              <p className="eyebrow mb-2">บริการโดย INKVERSE · สำหรับนักเขียน &amp; นักแปล</p>
+              <h2 className="font-bebas text-2xl sm:text-3xl tracking-wider leading-none text-[var(--text-primary)]">
+                พิสูจน์อักษร &amp; จัดเรียงหน้า นิยายไทย
+              </h2>
+              <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                งานเขียนสะอาด อ่านลื่น เป็นมืออาชีพ — ลูกค้าใหม่ฟรี 2,500 คำแรก
+              </p>
+            </div>
+          </div>
+          <span className="inline-flex shrink-0 items-center gap-2 self-start border border-[var(--text-primary)] px-5 py-3 text-xs font-semibold uppercase tracking-widest text-[var(--text-primary)] transition-colors group-hover:bg-[var(--text-primary)] group-hover:text-[var(--bg-primary)] sm:self-auto">
+            ดูบริการ &amp; ขอราคาฟรี <ChevronRight className="w-4 h-4" />
+          </span>
+        </div>
+      </Link>
 
       {/* Translator ranking */}
       <TranslatorRanking entries={translatorRanking} />
