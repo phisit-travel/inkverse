@@ -103,6 +103,28 @@ export default function ServicesPage() {
         </div>
       </div>
 
+      {/* How it works — the flow from quote to delivery (incl. payment) */}
+      <div className="mt-14">
+        <h2 className="font-bebas text-3xl tracking-wider text-[var(--text-primary)] text-center mb-8">ขั้นตอนการทำงาน</h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { n: "01", t: "ขอใบเสนอราคา", d: "วางต้นฉบับ ดูราคาประเมินทันที — ฟรี ไม่มีข้อผูกมัด" },
+            { n: "02", t: "ยืนยัน & วางมัดจำ", d: "ตกลงขอบเขตงาน ชำระมัดจำ 40% ผ่าน PromptPay แล้วเราเริ่มงานทันที" },
+            { n: "03", t: "เราจัดทำให้", d: "พิสูจน์อักษร/จัดหน้าอย่างประณีต ส่งมอบภายใน 5–7 วัน" },
+            { n: "04", t: "รับงาน & ชำระส่วนที่เหลือ", d: "ตรวจงาน ชำระอีก 60% แล้วรับไฟล์ฉบับสมบูรณ์" },
+          ].map((s) => (
+            <div key={s.n} className="border border-[var(--border)] p-5">
+              <p className="font-bebas text-3xl tracking-wider text-[var(--text-muted)] leading-none mb-3">{s.n}</p>
+              <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-1.5">{s.t}</h3>
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{s.d}</p>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-[var(--text-muted)] text-center mt-4">
+          ชำระผ่าน PromptPay · มัดจำ 40% ก่อนเริ่มงาน ที่เหลือ 60% เมื่อส่งมอบ · ต้นฉบับเป็นความลับตลอดกระบวนการ
+        </p>
+      </div>
+
       {/* Quote form */}
       <div className="mt-14 max-w-xl mx-auto">
         <h2 className="font-bebas text-3xl tracking-wider text-[var(--text-primary)] text-center mb-2">ขอใบเสนอราคา</h2>

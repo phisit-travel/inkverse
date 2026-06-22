@@ -20,6 +20,9 @@ export const FREE_WORDS_NEW = 2500;
 // is entirely free, e.g. all within the new-customer 2,500 words, stays ฿0).
 export const MIN_CHARGE = 150;
 
+// Deposit taken up front to confirm a job; the rest is due on delivery.
+export const DEPOSIT_RATE = 0.4;
+
 export function isServiceKey(s: string): s is ServiceKey {
   return s in RATES;
 }
@@ -50,6 +53,8 @@ export type Quote = {
   subtotal: number;
   total: number;
   minApplied: boolean;
+  deposit: number; // 40% up front
+  balance: number; // 60% on delivery
 };
 
 export function computeQuote(opts: { words: number; services: string[]; newCustomer: boolean }): Quote {
@@ -70,7 +75,9 @@ export function computeQuote(opts: { words: number; services: string[]; newCusto
   const subtotal = lines.reduce((a, l) => a + l.amount, 0);
   const total = subtotal > 0 ? Math.max(subtotal, MIN_CHARGE) : 0;
   const minApplied = subtotal > 0 && subtotal < MIN_CHARGE;
-  return { words, freeWords, billableWords, newCustomer, lines, subtotal, total, minApplied };
+  const deposit = Math.round(total * DEPOSIT_RATE);
+  const balance = total - deposit;
+  return { words, freeWords, billableWords, newCustomer, lines, subtotal, total, minApplied, deposit, balance };
 }
 
 export function baht(n: number): string {

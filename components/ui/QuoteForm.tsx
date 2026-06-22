@@ -134,13 +134,35 @@ export default function QuoteForm() {
               * ปรับเป็นค่าบริการขั้นต่ำ {baht(MIN_CHARGE)} ต่องาน
             </p>
           )}
+          {/* Payment terms — 40% deposit up front, 60% on delivery */}
+          {q.total > 0 && (
+            <div className="border border-[var(--border)] p-4">
+              <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] mb-2">การชำระเงิน</p>
+              <div className="flex justify-between text-sm text-[var(--text-secondary)]">
+                <span>มัดจำ 40% <span className="text-[var(--text-muted)]">(ก่อนเริ่มงาน)</span></span>
+                <span className="text-[var(--text-primary)]">{baht(q.deposit)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-[var(--text-secondary)] mt-1">
+                <span>คงเหลือ 60% <span className="text-[var(--text-muted)]">(เมื่อส่งมอบงาน)</span></span>
+                <span className="text-[var(--text-primary)]">{baht(q.balance)}</span>
+              </div>
+            </div>
+          )}
+
           <p className="text-xs text-[var(--text-muted)] leading-relaxed">
             ราคานี้เป็นการ<b className="text-[var(--text-secondary)]">ประเมินเบื้องต้น</b>จากปริมาณคำที่ระบุ · ราคาสุดท้ายยืนยันหลังตรวจต้นฉบับจริง ·
             ยืนราคา 14 วัน · ส่งคืนภายใน 5–7 วัน · ไม่รีไรต์/ไม่เปลี่ยนสำนวน · ต้นฉบับเป็นความลับ
           </p>
-          <p className="text-sm text-[var(--text-primary)]">
-            เราได้รับคำขอแล้ว และจะติดต่อกลับทาง <b>{contact}</b> เพื่อยืนยันและเริ่มงาน
-          </p>
+
+          {/* What happens next */}
+          <div>
+            <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] mb-2">ขั้นตอนถัดไป</p>
+            <ol className="text-sm text-[var(--text-secondary)] space-y-1.5 list-decimal list-inside marker:text-[var(--text-muted)]">
+              <li>เราติดต่อกลับทาง <b className="text-[var(--text-primary)]">{contact}</b> เพื่อยืนยันขอบเขตงานและราคาสุดท้าย</li>
+              <li>ชำระมัดจำ 40% ผ่าน PromptPay → เราเริ่มงานทันที</li>
+              <li>ส่งมอบงานภายใน 5–7 วัน → ชำระส่วนที่เหลือ 60% → รับไฟล์ฉบับสมบูรณ์</li>
+            </ol>
+          </div>
 
           <div className="flex gap-3 pt-1 print:hidden">
             <button onClick={() => window.print()} className="inline-flex items-center gap-2 border border-[var(--border)] px-4 py-2 text-xs uppercase tracking-wider text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors">

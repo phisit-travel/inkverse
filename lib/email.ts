@@ -144,6 +144,11 @@ export function serviceQuoteEmail(opts: {
        <td style="border-top:1px solid #fff"></td>
        <td style="border-top:1px solid #fff;padding:10px 0;text-align:right;color:#fff;font-size:20px;font-weight:bold">฿${q.total.toLocaleString()}</td></tr>
      </table>
+     ${q.total > 0 ? `<div style="border:1px solid #2a2a2a;padding:12px 16px;margin:4px 0 8px">
+       <p style="margin:0 0 4px;color:#888;font-size:11px;text-transform:uppercase;letter-spacing:.1em">การชำระเงิน</p>
+       <p style="margin:3px 0;color:#ccc">มัดจำ 40% (ก่อนเริ่มงาน): <span style="color:#fff;font-weight:bold">฿${q.deposit.toLocaleString()}</span></p>
+       <p style="margin:3px 0;color:#ccc">คงเหลือ 60% (เมื่อส่งมอบ): <span style="color:#fff;font-weight:bold">฿${q.balance.toLocaleString()}</span></p>
+     </div>` : ""}
      ${opts.excerpt ? `<p style="color:#888;font-size:12px;margin-top:16px">ตัวอย่างต้นฉบับ:</p><p style="white-space:pre-wrap;color:#bbb;font-size:13px;border-left:3px solid #2a2a2a;padding-left:12px">${esc(opts.excerpt)}…</p>` : ""}
      ${opts.message ? `<p style="color:#888;font-size:12px;margin-top:16px">หมายเหตุ/ลิงก์:</p><p style="white-space:pre-wrap;color:#ccc">${esc(opts.message)}</p>` : ""}`
   );
