@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { Users, BookOpen, MessageSquare, TrendingUp, Wallet, ShoppingBag, Coins, Eye, UserCheck } from "lucide-react";
+import { Users, BookOpen, MessageSquare, TrendingUp, Wallet, ShoppingBag, Coins, Eye, UserCheck, FileText } from "lucide-react";
 import Link from "next/link";
 import RecalculateButton from "./RecalculateButton";
 import ToolkitBannerDownloads from "@/components/ui/ToolkitBannerDownloads";
@@ -18,7 +18,7 @@ export default async function AdminPage() {
   const today = new Date().toISOString().slice(0, 10);
   const [
     userCount, mangaCount, chapterCount, commentCount, pendingApps, openContacts, pendingVerifs,
-    revenue, payingUsers, trafficToday, trafficTotal, traffic7, recentMangas,
+    revenue, payingUsers, trafficToday, trafficTotal, traffic7, recentMangas, pendingServiceOrders,
   ] = await Promise.all([
       // Real users only — exclude seed/test accounts (rating bots etc.).
       prisma.user.count({
@@ -49,6 +49,8 @@ export default async function AdminPage() {
           _count: { select: { chapters: true } },
         },
       }),
+      // Service orders waiting for the owner to deliver.
+      prisma.serviceOrder.count({ where: { status: "IN_PROGRESS" } }),
     ]);
 
   const totalRevenue = revenue._sum.price ?? 0;
@@ -201,6 +203,17 @@ export default async function AdminPage() {
           {pendingVerifs > 0 && (
             <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1.5 rounded-full bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-bold flex items-center justify-center ">
               {pendingVerifs}
+            </span>
+          )}
+        </Link>
+        <Link
+          href="/dashboard/services"
+          className="relative py-3 px-5 rounded-xl bg-gradient-to-r from-[var(--bg-card)] to-[var(--bg-surface)] text-[var(--text-primary)] text-sm font-medium text-center hover:opacity-90 transition-colors inline-flex items-center justify-center gap-2"
+        >
+          <FileText className="w-4 h-4" /> ออเดอร์บริการ
+          {pendingServiceOrders > 0 && (
+            <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1.5 rounded-full bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-bold flex items-center justify-center ">
+              {pendingServiceOrders}
             </span>
           )}
         </Link>

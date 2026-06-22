@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Check, FileText, Printer } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Loader2, Check, FileText, Printer, ArrowRight } from "lucide-react";
 import {
   SERVICE_KEYS,
   MIN_CHARGE,
@@ -14,6 +15,7 @@ import {
 type ServerQuote = { quote: Quote; quoteNo: string; date: string };
 
 export default function QuoteForm() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [services, setServices] = useState<string[]>([SERVICE_KEYS[0]]);
@@ -25,6 +27,8 @@ export default function QuoteForm() {
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [error, setError] = useState("");
   const [result, setResult] = useState<ServerQuote | null>(null);
+  const [ordering, setOrdering] = useState(false);
+  const [orderError, setOrderError] = useState("");
 
   // Debounced Thai word count — counting a 50k-word paste on every keystroke
   // would jank, so settle 250ms after typing stops.
@@ -74,6 +78,28 @@ export default function QuoteForm() {
       else { setError(d.error || "ส่งไม่สำเร็จ กรุณาลองใหม่"); setState("error"); }
     } catch {
       setError("เครือข่ายขัดข้อง กรุณาลองใหม่"); setState("error");
+    }
+  }
+
+  async function placeOrder() {
+    setOrdering(true);
+    setOrderError("");
+    try {
+      const res = await fetch("/api/services/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, contact, services, newCustomer, words, message }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok && (d as { token?: string }).token) {
+        router.push(`/order/${(d as { token: string }).token}`);
+      } else {
+        setOrderError((d as { message?: string }).message ?? "เกิดข้อผิดพลาด กรุณาลองใหม่");
+      }
+    } catch {
+      setOrderError("เครือข่ายขัดข้อง กรุณาลองใหม่");
+    } finally {
+      setOrdering(false);
     }
   }
 
@@ -151,18 +177,43 @@ export default function QuoteForm() {
 
           <p className="text-xs text-[var(--text-muted)] leading-relaxed">
             ราคานี้เป็นการ<b className="text-[var(--text-secondary)]">ประเมินเบื้องต้น</b>จากปริมาณคำที่ระบุ · ราคาสุดท้ายยืนยันหลังตรวจต้นฉบับจริง ·
-            ยืนราคา 14 วัน · ส่งคืนภายใน 5–7 วัน · ไม่รีไรต์/ไม่เปลี่ยนสำนวน · ต้นฉบับเป็นความลับ
+            ยืนราคา 14 วัน · ระยะเวลาขึ้นอยู่กับปริมาณงาน · ไม่รีไรต์/ไม่เปลี่ยนสำนวน · ต้นฉบับเป็นความลับ
           </p>
 
           {/* What happens next */}
           <div>
             <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] mb-2">ขั้นตอนถัดไป</p>
             <ol className="text-sm text-[var(--text-secondary)] space-y-1.5 list-decimal list-inside marker:text-[var(--text-muted)]">
-              <li>เราติดต่อกลับทาง <b className="text-[var(--text-primary)]">{contact}</b> เพื่อยืนยันขอบเขตงานและราคาสุดท้าย</li>
+              <li>ยืนยันออเดอร์ แล้วกรอกรายละเอียดงาน</li>
               <li>ชำระมัดจำ 40% ผ่าน PromptPay → เราเริ่มงานทันที</li>
-              <li>ส่งมอบงานภายใน 5–7 วัน → ชำระส่วนที่เหลือ 60% → รับไฟล์ฉบับสมบูรณ์</li>
+              <li>แจ้งกำหนดส่งเมื่อยืนยันงาน → ชำระส่วนที่เหลือ 60% → รับไฟล์ฉบับสมบูรณ์</li>
             </ol>
           </div>
+
+          {/* Order CTA */}
+          {q.total > 0 && (
+            <div className="border-t border-[var(--border)] pt-4 space-y-2">
+              {orderError && (
+                <p className="text-xs text-[var(--text-primary)]">{orderError}</p>
+              )}
+              <button
+                type="button"
+                onClick={placeOrder}
+                disabled={ordering}
+                className="w-full bal-btn py-3 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {ordering ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ArrowRight className="w-4 h-4" />
+                )}
+                ยืนยันสั่งงาน — เริ่มต้นด้วยมัดจำ 40%
+              </button>
+              <p className="text-[11px] text-[var(--text-muted)] text-center">
+                หรือขอใบเสนอราคาเข้าอีเมลก่อนก็ได้ (ปุ่มด้านล่าง)
+              </p>
+            </div>
+          )}
 
           <div className="flex gap-3 pt-1 print:hidden">
             <button onClick={() => window.print()} className="inline-flex items-center gap-2 border border-[var(--border)] px-4 py-2 text-xs uppercase tracking-wider text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors">

@@ -153,3 +153,53 @@ export function serviceQuoteEmail(opts: {
      ${opts.message ? `<p style="color:#888;font-size:12px;margin-top:16px">หมายเหตุ/ลิงก์:</p><p style="white-space:pre-wrap;color:#ccc">${esc(opts.message)}</p>` : ""}`
   );
 }
+
+// Admin-facing: a confirmed editorial-services ORDER was just placed (the
+// customer committed to the quote). Shows the full breakdown + brief so the
+// owner can start prepping the job. money: amounts are server-derived.
+export function serviceOrderEmail(opts: {
+  quoteNo: string;
+  customerName: string;
+  contact: string;
+  services: string;
+  words: number;
+  total: number;
+  deposit: number;
+  balance: number;
+  briefNote?: string | null;
+}) {
+  const row = (k: string, v: string) =>
+    `<p style="margin:6px 0"><span style="color:#888">${esc(k)}:</span> <span style="color:#fff">${esc(v)}</span></p>`;
+  return shell(
+    `ออเดอร์ใหม่ ${esc(opts.quoteNo)}`,
+    `<p>มีออเดอร์บริการเข้ามาใหม่ (ลูกค้ายืนยันใบเสนอราคาแล้ว):</p>
+     <div style="border:1px solid #2a2a2a;padding:16px;margin:18px 0">
+       ${row("ชื่อ", opts.customerName)}
+       ${row("ช่องทางติดต่อ", opts.contact)}
+       ${row("บริการ", opts.services || "-")}
+       ${row("ปริมาณงาน", `${opts.words.toLocaleString()} คำ`)}
+     </div>
+     <div style="border:1px solid #2a2a2a;padding:12px 16px;margin:4px 0 8px">
+       <p style="margin:0 0 4px;color:#888;font-size:11px;text-transform:uppercase;letter-spacing:.1em">การชำระเงิน</p>
+       <p style="margin:3px 0;color:#ccc">ยอดรวม: <span style="color:#fff;font-weight:bold">฿${opts.total.toLocaleString()}</span></p>
+       <p style="margin:3px 0;color:#ccc">มัดจำ (ก่อนเริ่มงาน): <span style="color:#fff;font-weight:bold">฿${opts.deposit.toLocaleString()}</span></p>
+       <p style="margin:3px 0;color:#ccc">คงเหลือ (เมื่อส่งมอบ): <span style="color:#fff;font-weight:bold">฿${opts.balance.toLocaleString()}</span></p>
+     </div>
+     ${opts.briefNote ? `<p style="color:#888;font-size:12px;margin-top:16px">บรีฟ/หมายเหตุจากลูกค้า:</p><p style="white-space:pre-wrap;color:#ccc">${esc(opts.briefNote)}</p>` : ""}`
+  );
+}
+
+// Admin-facing: a customer just paid the deposit or the balance for an order.
+export function servicePaymentEmail(opts: {
+  quoteNo: string;
+  phaseLabel: string; // "มัดจำ" | "ส่วนที่เหลือ"
+  amount: number;
+  customerName: string;
+}) {
+  return shell(
+    `รับชำระ${esc(opts.phaseLabel)} ${esc(opts.quoteNo)}`,
+    `<p>ลูกค้าชำระ${esc(opts.phaseLabel)}เรียบร้อยแล้ว</p>
+     <p style="margin:6px 0;color:#888">ออเดอร์: <span style="color:#fff">${esc(opts.quoteNo)}</span> · ${esc(opts.customerName)}</p>
+     <p style="margin:20px 0;font-size:28px;font-weight:bold">฿${opts.amount.toLocaleString()}</p>`
+  );
+}

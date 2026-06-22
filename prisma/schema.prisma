@@ -44,6 +44,7 @@ model User {
   followers               Follow[]          @relation("Followers")
   pushTokens              PushToken[]
   emailVerificationTokens EmailVerificationToken[]
+  serviceOrders           ServiceOrder[]
 }
 
 // A reader following a creator. followingId = the creator's user id.
@@ -157,6 +158,53 @@ model CoinOrder {
   slipRef        String?   @unique // EasySlip transRef — prevents reusing a slip
   createdAt      DateTime  @default(now())
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Editorial-services order (proofreading / formatting). Public-facing: the
+// customer may be anonymous, so access is via a magic-link accessToken rather
+// than auth. Two-stage payment: 40% deposit up front, 60% balance on delivery —
+// each confirmed by its own EasySlip slip (unique refs prevent reuse). All money
+// figures are baht, server-computed from lib/services/pricing (never client).
+model ServiceOrder {
+  id             String    @id @default(cuid())
+  quoteNo        String    @unique
+  accessToken    String    @unique // magic-link access for the (possibly anonymous) customer
+  userId         String?   // linked when the customer was logged in
+  // customer
+  customerName   String
+  contact        String
+  // quote snapshot
+  services       String    // comma-joined service names
+  words          Int       @default(0)
+  newCustomer    Boolean   @default(true)
+  total          Int
+  deposit        Int       // 40% up front
+  balance        Int       // 60% on delivery
+  // creative brief — collected before work starts (feeds voice-preserving review)
+  genre          String?
+  voice          String?
+  focus          String?
+  briefNote      String?   // manuscript link / extra notes
+  briefAt        DateTime?
+  // status: AWAITING_DEPOSIT | IN_PROGRESS | DELIVERED | COMPLETED | CANCELLED
+  status         String    @default("AWAITING_DEPOSIT")
+  // payments
+  depositPaidAt  DateTime?
+  depositSlipRef String?   @unique // EasySlip transRef — prevents reusing a slip
+  depositSlipUrl String?
+  balancePaidAt  DateTime?
+  balanceSlipRef String?   @unique
+  balanceSlipUrl String?
+  // delivery
+  deliveredAt    DateTime?
+  deliveryUrl    String?   // final/preview file link (revealed after balance paid)
+  deliveryNote   String?
+  ownerNote      String?   // internal notes
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  user           User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
 }
 
 model Account {
