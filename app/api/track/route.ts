@@ -1,12 +1,25 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
+// Search crawlers, social unfurlers, headless automation (incl. our own
+// Playwright screenshots → "HeadlessChrome") and scripted HTTP clients. Any of
+// these that execute the page JS would otherwise fire the beacon — drop them so
+// the count reflects real human visitors only.
+const BOT_UA =
+  /bot|crawl|spider|slurp|mediapartners|bingpreview|facebookexternalhit|facebot|embedly|pinterest|telegrambot|whatsapp|discordbot|skypeuripreview|headless|phantom|puppeteer|playwright|python-requests|aiohttp|axios|node-fetch|curl|wget|go-http|java\/|libwww|okhttp|scrapy|ahrefs|semrush|mj12|dotbot|petalbot|bytespider|yandex|baidu|duckduck|applebot|amazonbot|gptbot|claudebot|ccbot|chatgpt/i;
+
 // Lightweight page-view counter. Anonymous visitors add no auth DB cost
 // (no token → auth() returns null fast). Admins browsing their own site
-// are NOT counted.
-export async function POST() {
+// and bots/crawlers are NOT counted.
+export async function POST(req: NextRequest) {
+  const ua = req.headers.get("user-agent") || "";
+  // No UA, or a known bot/crawler/headless UA → don't count.
+  if (!ua || BOT_UA.test(ua)) {
+    return NextResponse.json({ ok: true, skipped: "bot" });
+  }
+
   const session = await auth();
   if (session?.user && (session.user as { role?: string }).role === "ADMIN") {
     return NextResponse.json({ ok: true, skipped: true });
