@@ -16,8 +16,9 @@ export const SERVICE_KEYS = Object.keys(RATES) as ServiceKey[];
 // New-customer promo: first 2,500 words free (once).
 export const FREE_WORDS_NEW = 2500;
 
-// No surprise minimum — quote reflects the rate card honestly. Bump if needed.
-export const MIN_CHARGE = 0;
+// Minimum charge per job — applies only when there's billable work (a job that
+// is entirely free, e.g. all within the new-customer 2,500 words, stays ฿0).
+export const MIN_CHARGE = 150;
 
 export function isServiceKey(s: string): s is ServiceKey {
   return s in RATES;
@@ -48,6 +49,7 @@ export type Quote = {
   lines: QuoteLine[];
   subtotal: number;
   total: number;
+  minApplied: boolean;
 };
 
 export function computeQuote(opts: { words: number; services: string[]; newCustomer: boolean }): Quote {
@@ -67,7 +69,8 @@ export function computeQuote(opts: { words: number; services: string[]; newCusto
 
   const subtotal = lines.reduce((a, l) => a + l.amount, 0);
   const total = subtotal > 0 ? Math.max(subtotal, MIN_CHARGE) : 0;
-  return { words, freeWords, billableWords, newCustomer, lines, subtotal, total };
+  const minApplied = subtotal > 0 && subtotal < MIN_CHARGE;
+  return { words, freeWords, billableWords, newCustomer, lines, subtotal, total, minApplied };
 }
 
 export function baht(n: number): string {

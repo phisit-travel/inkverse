@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Loader2, Check, FileText, Printer } from "lucide-react";
 import {
   SERVICE_KEYS,
+  MIN_CHARGE,
   computeQuote,
   countThaiWords,
   baht,
@@ -128,6 +129,11 @@ export default function QuoteForm() {
               * ยังไม่ได้ระบุปริมาณงาน — นี่คือใบรับคำขอ เราจะติดต่อกลับเพื่อประเมินราคาที่แน่นอน
             </p>
           )}
+          {q.minApplied && (
+            <p className="text-xs text-[var(--text-muted)]">
+              * ปรับเป็นค่าบริการขั้นต่ำ {baht(MIN_CHARGE)} ต่องาน
+            </p>
+          )}
           <p className="text-xs text-[var(--text-muted)] leading-relaxed">
             ราคานี้เป็นการ<b className="text-[var(--text-secondary)]">ประเมินเบื้องต้น</b>จากปริมาณคำที่ระบุ · ราคาสุดท้ายยืนยันหลังตรวจต้นฉบับจริง ·
             ยืนราคา 14 วัน · ส่งคืนภายใน 5–7 วัน · ไม่รีไรต์/ไม่เปลี่ยนสำนวน · ต้นฉบับเป็นความลับ
@@ -225,6 +231,9 @@ export default function QuoteForm() {
                 <span>{l.service}</span><span>{baht(l.amount)}</span>
               </div>
             ))}
+            {preview.minApplied && (
+              <p className="text-[11px] text-[var(--text-muted)] pt-1">ปรับเป็นค่าขั้นต่ำ {baht(MIN_CHARGE)}/งาน</p>
+            )}
           </div>
         )}
       </div>
