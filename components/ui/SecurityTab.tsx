@@ -454,7 +454,6 @@ function PinSection({ pinSet, hasPassword }: { pinSet: boolean; hasPassword: boo
   const [pin, setPin] = useState("");
   const [confirm, setConfirm] = useState("");
   const [currentPin, setCurrentPin] = useState(""); // when changing
-  const [currentPassword, setCurrentPassword] = useState(""); // first PIN on a password acct
   const [removing, setRemoving] = useState(false); // remove form expanded
   const [removePin, setRemovePin] = useState("");
   const [removePassword, setRemovePassword] = useState("");
@@ -467,7 +466,7 @@ function PinSection({ pinSet, hasPassword }: { pinSet: boolean; hasPassword: boo
     setIsError(error);
   }
   function reset() {
-    setPin(""); setConfirm(""); setCurrentPin(""); setCurrentPassword("");
+    setPin(""); setConfirm(""); setCurrentPin("");
     setRemovePin(""); setRemovePassword("");
   }
 
@@ -480,7 +479,6 @@ function PinSection({ pinSet, hasPassword }: { pinSet: boolean; hasPassword: boo
     try {
       const body: Record<string, string> = { pin };
       if (enabled) body.currentPin = currentPin;
-      else if (hasPassword) body.currentPassword = currentPassword;
       const res = await fetch("/api/account/pin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -610,18 +608,10 @@ function PinSection({ pinSet, hasPassword }: { pinSet: boolean; hasPassword: boo
               {pinInput(currentPin, setCurrentPin)}
             </div>
           )}
-          {!enabled && hasPassword && (
-            <div>
-              <label className={label}>ยืนยันด้วยรหัสผ่าน</label>
-              <input
-                type="password"
-                className={field}
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                autoComplete="current-password"
-                required
-              />
-            </div>
+          {!enabled && (
+            <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+              คุณเข้าสู่ระบบอยู่แล้ว จึงตั้ง PIN ได้เลยโดยไม่ต้องกรอกรหัสผ่าน
+            </p>
           )}
           <div>
             <label className={label}>{enabled ? "PIN ใหม่ (6 หลัก)" : "PIN (6 หลัก)"}</label>

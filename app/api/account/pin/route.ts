@@ -29,12 +29,11 @@ export async function POST(req: NextRequest) {
     // Changing an existing PIN → must know the current one.
     const ok = body.currentPin ? await bcrypt.compare(body.currentPin, user.pinHash) : false;
     if (!ok) return apiError("AUTH-002", 400, { message: "PIN ปัจจุบันไม่ถูกต้อง" });
-  } else if (user.passwordHash) {
-    // First PIN on a password account → confirm with the password.
-    const ok = body.currentPassword ? await bcrypt.compare(body.currentPassword, user.passwordHash) : false;
-    if (!ok) return apiError("AUTH-002", 400, { message: "รหัสผ่านไม่ถูกต้อง" });
   }
-  // else: Google-only account, first PIN — the active session is the proof.
+  // else: FIRST PIN — the active authenticated session is sufficient proof. We
+  // deliberately do NOT require the account password here: Google/passwordless
+  // accounts have no password to enter (and a password-account user is already
+  // logged in), so demanding it just locked those users out of the feature.
 
   await prisma.user.update({ where: { id: userId }, data: { pinHash: await bcrypt.hash(pin, 10) } });
   return NextResponse.json({ ok: true });
