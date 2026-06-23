@@ -8,6 +8,7 @@ import bcrypt from "bcryptjs";
 import { OAuth2Client } from "google-auth-library";
 import { authConfig } from "./auth.config";
 import { rateLimit } from "@/lib/rate-limit";
+import { headers } from "next/headers";
 import { createUserSession, sessionValid, touchSession } from "@/lib/deviceSessions";
 import { verifyTotp, verifyBackupCode } from "@/lib/twoFactor";
 
@@ -17,6 +18,20 @@ function reqInfo(req: Request | undefined) {
     userAgent: req?.headers?.get("user-agent") ?? null,
     ip: req?.headers?.get("x-forwarded-for")?.split(",")[0]?.trim() || null,
   };
+}
+
+// Same, but read from the ambient request (next/headers) — used in the jwt
+// callback for the web-Google OAuth path, which has no `req` argument.
+async function headerInfo() {
+  try {
+    const h = await headers();
+    return {
+      userAgent: h.get("user-agent"),
+      ip: h.get("x-forwarded-for")?.split(",")[0]?.trim() || null,
+    };
+  } catch {
+    return { userAgent: null, ip: null };
+  }
 }
 
 const googleVerifier = new OAuth2Client();
@@ -99,7 +114,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // Device session id: credentials providers set it in authorize; the web
         // Google (adapter) path doesn't, so create one here (no req headers).
         token.sid = (user as { sid?: string }).sid;
-        if (!token.sid && user.id) token.sid = await createUserSession(user.id, {});
+        if (!token.sid && user.id) token.sid = await createUserSession(user.id, await headerInfo());
       }
       // Refresh role + username from the DB at most once a minute (not on every
       // request) so an approved writer becomes TRANSLATOR within ~60s without a
