@@ -12,6 +12,7 @@ import BookmarkButton from "@/components/ui/BookmarkButton";
 import DownloadMangaButton from "@/components/ui/DownloadMangaButton";
 import ShareButtons from "@/components/ui/ShareButtons";
 import ChapterRow from "@/components/ui/ChapterRow";
+import MoreChapters from "@/components/ui/MoreChapters";
 import AgeGate from "@/components/ui/AgeGate";
 import { getUserCoins } from "@/lib/coins";
 import { getUserRankBadge, getRankBadges } from "@/lib/ranks";
@@ -251,6 +252,25 @@ export default async function MangaProfilePage({ params }: Props) {
     chapterNum: ch.chapterNum,
     title: ch.title,
     locked: !isOwner && isChapterLocked(ch, unlockedSet.has(ch.id)),
+  }));
+
+  // Chapter list (latest first). Render only the newest VISIBLE_CHAPTERS on the
+  // server; older ones mount on demand via <MoreChapters> so a long series
+  // doesn't ship 200+ rows of HTML on every title-page load.
+  const orderedChapters = [...manga.chapters].reverse();
+  const VISIBLE_CHAPTERS = 30;
+  const headChapters = orderedChapters.slice(0, VISIBLE_CHAPTERS);
+  const restChapters = orderedChapters.slice(VISIBLE_CHAPTERS).map((ch) => ({
+    id: ch.id,
+    chapterNum: ch.chapterNum,
+    title: ch.title,
+    isPremium: ch.isPremium,
+    coinCost: ch.coinCost,
+    publishedAt: ch.publishedAt,
+    viewCount: ch.viewCount,
+    isUnlocked: unlockedSet.has(ch.id),
+    isRead: readSet.has(ch.id),
+    freeAt: ch.freeAt,
   }));
 
   // Premium chapters the user hasn't unlocked yet (ascending) — for bulk unlock.
@@ -622,7 +642,7 @@ export default async function MangaProfilePage({ params }: Props) {
             )}
 
             <div className="space-y-1 max-h-[600px] overflow-y-auto pr-1">
-              {[...manga.chapters].reverse().map((ch) => (
+              {headChapters.map((ch) => (
                 <ChapterRow
                   key={ch.id}
                   id={ch.id}
@@ -640,6 +660,12 @@ export default async function MangaProfilePage({ params }: Props) {
                   freeAt={ch.freeAt}
                 />
               ))}
+              <MoreChapters
+                chapters={restChapters}
+                mangaSlug={slug}
+                userCoins={userCoins}
+                isLoggedIn={!!userId}
+              />
             </div>
           </div>
         </div>
