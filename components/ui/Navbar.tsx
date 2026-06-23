@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Search, Menu, X, LogIn, Download, ChevronDown, WifiOff } from "lucide-react";
+import { Search, Menu, X, LogIn, Download, ChevronDown, WifiOff, Settings, User } from "lucide-react";
 import Logo from "./Logo";
 import CoinBadge from "./CoinBadge";
 import NotificationBell from "./NotificationBell";
@@ -228,6 +228,27 @@ export default function Navbar() {
               <WifiOff className="w-4 h-4" />
               คลังออฟไลน์
             </a>
+
+            {/* Account quick-links (logged-in) — settings was previously only in
+                the avatar dropdown's collapsed section, hard to find on mobile. */}
+            {user && (
+              <>
+                <Link
+                  href={`/profile/${user.username ?? user.name}`}
+                  onClick={closeMenu}
+                  className="flex items-center gap-2 px-3 py-2.5 mb-1 rounded-lg text-sm text-[var(--text-primary)] hover:bg-white/5 transition-colors font-medium"
+                >
+                  <User className="w-4 h-4" /> โปรไฟล์ของฉัน
+                </Link>
+                <Link
+                  href="/settings"
+                  onClick={closeMenu}
+                  className="flex items-center gap-2 px-3 py-2.5 mb-1 rounded-lg text-sm text-[var(--text-primary)] hover:bg-white/5 transition-colors font-medium"
+                >
+                  <Settings className="w-4 h-4" /> ตั้งค่าบัญชี
+                </Link>
+              </>
+            )}
 
             <MobileSection label="เรื่องทั้งหมด" open={navSection === "browse"} onToggle={() => toggleNav("browse")}>
               {typeLinks.map((link) => (
