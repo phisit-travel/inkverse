@@ -118,6 +118,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           if (token.sid && !(await sessionValid(token.sid as string))) {
             return {};
           }
+          // Backfill: sessions that predate device-tracking have no sid → give
+          // them one so they appear in the device list (label unknown until the
+          // next fresh login, which records the real device).
+          if (!token.sid && token.id) {
+            token.sid = await createUserSession(token.id as string, {});
+          }
           const u = await prisma.user.findUnique({
             where: { id: token.id as string },
             select: { username: true, role: true },
