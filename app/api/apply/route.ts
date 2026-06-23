@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notifyAdmins, createNotification } from "@/lib/notifications";
+import { nameRequiresVerification, RESERVED_NAME_MESSAGE } from "@/lib/nameGuard";
 import { apiError } from "@/lib/apiError";
 
 // TEMP growth mode: auto-approve creators to recruit fast. Flip off later by
@@ -51,6 +52,14 @@ export async function POST(req: NextRequest) {
   }
   if (acceptedTerms !== true) {
     return apiError("VAL-001", 400, { message: "กรุณายอมรับเงื่อนไขก่อนส่งใบสมัคร" });
+  }
+
+  // "official"-style pen names are reserved for identity-verified accounts.
+  if (nameRequiresVerification(penName)) {
+    const me = await prisma.user.findUnique({ where: { id: userId }, select: { verifiedAt: true } });
+    if (!me?.verifiedAt) {
+      return apiError("VAL-001", 400, { message: RESERVED_NAME_MESSAGE });
+    }
   }
 
   // Upsert (allow re-apply after rejection)

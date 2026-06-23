@@ -6,6 +6,7 @@ import crypto from "crypto";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { sendEmail, verificationEmail } from "@/lib/email";
 import { verifyTurnstile } from "@/lib/turnstile";
+import { nameRequiresVerification, RESERVED_NAME_MESSAGE } from "@/lib/nameGuard";
 import { apiError } from "@/lib/apiError";
 
 const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inksverse.com";
@@ -42,6 +43,11 @@ export async function POST(req: NextRequest) {
   }
 
   const { username, email, password, turnstileToken } = parsed.data;
+
+  // New accounts are never identity-verified yet → block official-implying names.
+  if (nameRequiresVerification(username)) {
+    return apiError("AUTH-004", 400, { message: RESERVED_NAME_MESSAGE });
+  }
 
   // Bot check ("I am human"). No-op until TURNSTILE_SECRET_KEY is configured.
   // Skipped for the app shell — the Turnstile widget can't render in the
