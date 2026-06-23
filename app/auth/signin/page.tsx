@@ -14,6 +14,7 @@ function SignInForm() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [totp, setTotp] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -36,6 +37,7 @@ function SignInForm() {
     const res = await signIn("credentials", {
       email,
       password,
+      totp: totp.trim(),
       remember: remember ? "1" : "0",
       redirect: false,
     });
@@ -173,6 +175,18 @@ function SignInForm() {
               >
                 {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
+            </div>
+
+            <div>
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                value={totp}
+                onChange={(e) => setTotp(e.target.value)}
+                placeholder="รหัส 2FA 6 หลัก (เฉพาะผู้ที่เปิดใช้งาน)"
+                className={inputCls}
+              />
             </div>
 
             {error && (
