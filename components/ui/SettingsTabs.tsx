@@ -17,6 +17,8 @@ export type UserData = {
   coverUrl: string | null;
   twoFactorEnabled: boolean;
   verifiedAt: Date | null;
+  hasPassword: boolean;
+  pinSet: boolean;
 };
 
 const TABS = [
@@ -51,7 +53,13 @@ export default function SettingsTabs({ user }: { user: UserData }) {
 
       {/* Tab content */}
       {active === "profile" && <ProfileTab user={user} />}
-      {active === "security" && <SecurityTab twoFactorEnabled={user.twoFactorEnabled} />}
+      {active === "security" && (
+        <SecurityTab
+          twoFactorEnabled={user.twoFactorEnabled}
+          hasPassword={user.hasPassword}
+          pinSet={user.pinSet}
+        />
+      )}
       {active === "devices" && <DevicesTab />}
     </div>
   );

@@ -28,6 +28,9 @@ export const authConfig: NextAuthConfig = {
         (session.user as { id?: string }).id = token.id as string;
         (session.user as { username?: string }).username =
           token.username as string;
+        // Surface the PIN gate flag to the edge middleware (it reads req.auth).
+        (session.user as { pinPending?: boolean }).pinPending =
+          token.pinPending === true;
       }
       return session;
     },

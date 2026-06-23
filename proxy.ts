@@ -95,6 +95,33 @@ const authGate = auth((req) => {
   const role = (session?.user as { role?: string } | null)?.role;
   const { pathname } = req.nextUrl;
 
+  // PIN gate: a session that set a login PIN but hasn't verified it for THIS
+  // session (token.pinPending, surfaced via auth.config) is held at /auth/pin
+  // until it enters the PIN — a 2nd factor that also covers Google logins.
+  // Checked before role/login gates so it wins for every protected area too.
+  const pinPending = (session?.user as { pinPending?: boolean } | null)?.pinPending;
+  if (pinPending) {
+    const allowed =
+      pathname.startsWith("/auth/pin") ||
+      pathname.startsWith("/api/auth") ||
+      pathname.startsWith("/api/me");
+    if (!allowed) {
+      // API calls get a clean 401 (don't bounce a fetch() to an HTML page — that
+      // just yields "unexpected token <" parse errors in the client). Page nav
+      // gets redirected to the gate.
+      if (pathname.startsWith("/api/")) {
+        return new NextResponse(
+          JSON.stringify({ error: "ต้องยืนยัน PIN ก่อน" }),
+          { status: 401, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" } }
+        );
+      }
+      const url = req.nextUrl.clone();
+      url.pathname = "/auth/pin";
+      url.search = `?callbackUrl=${encodeURIComponent(pathname)}`;
+      return NextResponse.redirect(url);
+    }
+  }
+
   if (pathname.startsWith("/dashboard") && !session) {
     return NextResponse.redirect(
       new URL(`/auth/signin?callbackUrl=/dashboard`, req.url)
@@ -149,18 +176,29 @@ export async function proxy(req: NextRequest, event: NextFetchEvent) {
   const blocked = floodGuard(req);
   if (blocked) return blocked;
 
-  // 2) Only protected paths need the session. Running auth() here (and nowhere
-  // else) keeps authjs.* cookies off public responses so the CDN can cache them.
+  // 2) Run the session gate when EITHER the path is protected, OR the request
+  // already carries a session cookie (a logged-in user). Anonymous requests to
+  // public paths skip auth() entirely → no authjs.* Set-Cookie → CDN-cacheable.
+  // We must inspect logged-in users on every path (not just protected ones) so
+  // the PIN gate can hold a pin-pending session site-wide; those responses are
+  // already personalised/uncacheable, so nothing is lost.
   const { pathname } = req.nextUrl;
-  if (
+  const isProtected =
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/upload") ||
-    pathname.startsWith("/admin")
-  ) {
+    pathname.startsWith("/admin");
+  // Session cookie names (v5): authjs.session-token / __Secure-… , plus chunked
+  // variants (…​.0, .1) for large tokens.
+  const hasSession = req.cookies
+    .getAll()
+    .some((c) =>
+      /^(?:__Secure-)?authjs\.session-token(?:\.\d+)?$/.test(c.name)
+    );
+  if (isProtected || hasSession) {
     return authGate(req as any, event as any);
   }
 
-  // Public paths: auth untouched → no auth cookie set → CDN-cacheable.
+  // Anonymous public paths: auth untouched → no auth cookie set → CDN-cacheable.
   return NextResponse.next();
 }
 

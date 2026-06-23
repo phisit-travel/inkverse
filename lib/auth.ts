@@ -9,7 +9,7 @@ import { OAuth2Client } from "google-auth-library";
 import { authConfig } from "./auth.config";
 import { rateLimit } from "@/lib/rate-limit";
 import { headers } from "next/headers";
-import { createUserSession, sessionValid, touchSession } from "@/lib/deviceSessions";
+import { createUserSession, sessionValid, touchSession, sessionPinVerified } from "@/lib/deviceSessions";
 import { verifyTotp, verifyBackupCode } from "@/lib/twoFactor";
 
 // Pull device info from the sign-in request (for the device/session list).
@@ -115,6 +115,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // Google (adapter) path doesn't, so create one here (no req headers).
         token.sid = (user as { sid?: string }).sid;
         if (!token.sid && user.id) token.sid = await createUserSession(user.id, await headerInfo());
+        // A fresh login starts pin-pending if the account has a login PIN set
+        // (the new session row isn't pin-verified yet). Users without a PIN are
+        // never gated.
+        const pn = await prisma.user.findUnique({ where: { id: user.id }, select: { pinHash: true } });
+        token.pinPending = !!pn?.pinHash;
       }
       // Refresh role + username from the DB at most once a minute (not on every
       // request) so an approved writer becomes TRANSLATOR within ~60s without a
@@ -132,6 +137,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           // Throttled to ~60s so it isn't a DB hit on every request.
           if (token.sid && !(await sessionValid(token.sid as string))) {
             return {};
+          }
+          // Clear the PIN gate once this session has verified its PIN (the
+          // /auth/pin page calls update() → trigger "update" → re-check here).
+          if (token.pinPending && token.sid && (await sessionPinVerified(token.sid as string))) {
+            token.pinPending = false;
           }
           const u = await prisma.user.findUnique({
             where: { id: token.id as string },
@@ -158,6 +168,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         (session.user as { id?: string }).id = token.id as string;
         (session.user as { username?: string }).username = token.username as string;
         (session.user as { sid?: string }).sid = token.sid as string | undefined;
+        (session.user as { pinPending?: boolean }).pinPending = token.pinPending === true;
       }
       // "Remember me" unticked → expire the session 1 day after login instead of
       // the default 30 days. We shorten session.expires so the client treats the

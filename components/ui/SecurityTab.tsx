@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Check, AlertCircle, Eye, EyeOff, ShieldCheck, ShieldOff } from "lucide-react";
+import { Loader2, Check, AlertCircle, Eye, EyeOff, ShieldCheck, ShieldOff, KeyRound } from "lucide-react";
 
 const field =
   "w-full bg-[var(--bg-card)] border border-[var(--border)] px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--text-primary)]/50 transition-colors";
@@ -444,16 +444,270 @@ function TwoFactorSection({ twoFactorEnabled }: { twoFactorEnabled: boolean }) {
   );
 }
 
+// ── Login PIN section ─────────────────────────────────────────────────────────
+
+const PIN_RE = /^\d{6}$/;
+
+function PinSection({ pinSet, hasPassword }: { pinSet: boolean; hasPassword: boolean }) {
+  const [enabled, setEnabled] = useState(pinSet);
+  const [open, setOpen] = useState(false); // set/change form expanded
+  const [pin, setPin] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [currentPin, setCurrentPin] = useState(""); // when changing
+  const [currentPassword, setCurrentPassword] = useState(""); // first PIN on a password acct
+  const [removing, setRemoving] = useState(false); // remove form expanded
+  const [removePin, setRemovePin] = useState("");
+  const [removePassword, setRemovePassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [isError, setIsError] = useState(false);
+
+  function show(text: string, error = false) {
+    setMsg(text);
+    setIsError(error);
+  }
+  function reset() {
+    setPin(""); setConfirm(""); setCurrentPin(""); setCurrentPassword("");
+    setRemovePin(""); setRemovePassword("");
+  }
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    show("");
+    if (!PIN_RE.test(pin)) return show("PIN ต้องเป็นตัวเลข 6 หลัก", true);
+    if (pin !== confirm) return show("PIN ทั้งสองช่องไม่ตรงกัน", true);
+    setLoading(true);
+    try {
+      const body: Record<string, string> = { pin };
+      if (enabled) body.currentPin = currentPin;
+      else if (hasPassword) body.currentPassword = currentPassword;
+      const res = await fetch("/api/account/pin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setEnabled(true);
+        setOpen(false);
+        reset();
+        show("ตั้ง PIN สำเร็จ");
+      } else {
+        show((d as { error?: { message?: string } }).error?.message ?? "ตั้ง PIN ไม่สำเร็จ", true);
+      }
+    } catch {
+      show("เครือข่ายขัดข้อง กรุณาลองใหม่", true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function remove(e: React.FormEvent) {
+    e.preventDefault();
+    show("");
+    setLoading(true);
+    try {
+      const body: Record<string, string> = {};
+      if (removePin) body.currentPin = removePin;
+      if (removePassword) body.currentPassword = removePassword;
+      const res = await fetch("/api/account/pin", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setEnabled(false);
+        setRemoving(false);
+        reset();
+        show("ปิด PIN สำเร็จ");
+      } else {
+        show((d as { error?: { message?: string } }).error?.message ?? "ปิด PIN ไม่สำเร็จ", true);
+      }
+    } catch {
+      show("เครือข่ายขัดข้อง กรุณาลองใหม่", true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const pinInput = (value: string, setter: (v: string) => void, ph = "••••••") => (
+    <input
+      type="password"
+      inputMode="numeric"
+      autoComplete="off"
+      className={field}
+      value={value}
+      onChange={(e) => setter(e.target.value.replace(/\D/g, "").slice(0, 6))}
+      placeholder={ph}
+      maxLength={6}
+    />
+  );
+
+  return (
+    <div className="border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="eyebrow mb-2">PIN เข้าสู่ระบบ</p>
+          <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+            ตั้ง PIN 6 หลักเป็นด่านยืนยันตัวตนทุกครั้งที่เข้าสู่ระบบ (รวมถึงการเข้าสู่ระบบด้วย Google)
+            ระบบจะถามทุกครั้งที่ล็อกอินจากอุปกรณ์หรือเซสชันใหม่
+          </p>
+        </div>
+        <KeyRound className={`w-6 h-6 shrink-0 mt-1 ${enabled ? "text-[var(--text-primary)]" : "text-[var(--text-muted)]"}`} />
+      </div>
+
+      <div className="flex items-center gap-2">
+        <span
+          className={`text-[10px] uppercase tracking-widest px-2 py-1 border ${
+            enabled
+              ? "border-[var(--text-primary)] text-[var(--text-primary)]"
+              : "border-[var(--border)] text-[var(--text-muted)]"
+          }`}
+        >
+          {enabled ? "เปิดใช้งานอยู่" : "ปิดอยู่"}
+        </span>
+      </div>
+
+      {msg && (
+        <div className="flex items-start gap-2 border px-3 py-2.5 text-sm border-[var(--border)] text-[var(--text-primary)]">
+          {isError ? (
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          ) : (
+            <Check className="w-4 h-4 shrink-0 mt-0.5" />
+          )}
+          {msg}
+        </div>
+      )}
+
+      {/* Set / change form */}
+      {!open && !removing && (
+        <div className="flex flex-col sm:flex-row gap-2">
+          <button
+            type="button"
+            onClick={() => { setOpen(true); show(""); }}
+            className="flex-1 bal-btn py-2.5 text-sm"
+          >
+            {enabled ? "เปลี่ยน PIN" : "ตั้ง PIN"}
+          </button>
+          {enabled && (
+            <button
+              type="button"
+              onClick={() => { setRemoving(true); show(""); }}
+              className="flex-1 border border-[var(--border)] py-2.5 text-xs uppercase tracking-widest text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors"
+            >
+              ปิด PIN
+            </button>
+          )}
+        </div>
+      )}
+
+      {open && (
+        <form onSubmit={save} className="space-y-3">
+          {enabled && (
+            <div>
+              <label className={label}>PIN ปัจจุบัน</label>
+              {pinInput(currentPin, setCurrentPin)}
+            </div>
+          )}
+          {!enabled && hasPassword && (
+            <div>
+              <label className={label}>ยืนยันด้วยรหัสผ่าน</label>
+              <input
+                type="password"
+                className={field}
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                autoComplete="current-password"
+                required
+              />
+            </div>
+          )}
+          <div>
+            <label className={label}>{enabled ? "PIN ใหม่ (6 หลัก)" : "PIN (6 หลัก)"}</label>
+            {pinInput(pin, setPin)}
+          </div>
+          <div>
+            <label className={label}>ยืนยัน PIN อีกครั้ง</label>
+            {pinInput(confirm, setConfirm)}
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => { setOpen(false); reset(); show(""); }}
+              className="flex-1 border border-[var(--border)] py-2.5 text-xs uppercase tracking-widest text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors"
+            >
+              ยกเลิก
+            </button>
+            <button
+              type="submit"
+              disabled={loading || pin.length !== 6 || confirm.length !== 6}
+              className="flex-1 bal-btn py-2.5 text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              บันทึก
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Remove form */}
+      {removing && (
+        <form onSubmit={remove} className="space-y-3">
+          <div>
+            <label className={label}>ยืนยัน PIN ปัจจุบัน{hasPassword ? " (หรือรหัสผ่าน)" : ""}</label>
+            {pinInput(removePin, setRemovePin)}
+          </div>
+          {hasPassword && (
+            <div>
+              <label className={label}>หรือรหัสผ่าน</label>
+              <input
+                type="password"
+                className={field}
+                value={removePassword}
+                onChange={(e) => setRemovePassword(e.target.value)}
+                autoComplete="current-password"
+              />
+            </div>
+          )}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => { setRemoving(false); reset(); show(""); }}
+              className="flex-1 border border-[var(--border)] py-2.5 text-xs uppercase tracking-widest text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors"
+            >
+              ยกเลิก
+            </button>
+            <button
+              type="submit"
+              disabled={loading || (removePin.length !== 6 && !removePassword)}
+              className="flex-1 border border-[var(--border)] py-2.5 text-xs uppercase tracking-widest text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin inline mr-1.5" /> : null}
+              ปิด PIN
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+}
+
 // ── Export ───────────────────────────────────────────────────────────────────
 
 export default function SecurityTab({
   twoFactorEnabled,
+  hasPassword,
+  pinSet,
 }: {
   twoFactorEnabled: boolean;
+  hasPassword: boolean;
+  pinSet: boolean;
 }) {
   return (
     <div className="space-y-5">
-      <PasswordSection />
+      <PinSection pinSet={pinSet} hasPassword={hasPassword} />
+      {hasPassword && <PasswordSection />}
       <TwoFactorSection twoFactorEnabled={twoFactorEnabled} />
     </div>
   );

@@ -29,10 +29,16 @@ export default async function SettingsPage() {
       coverUrl: true,
       twoFactorEnabled: true,
       verifiedAt: true,
+      passwordHash: true,
+      pinHash: true,
     },
   });
 
   if (!user) redirect("/auth/signin");
+
+  // Don't leak the hashes to the client — collapse to booleans.
+  const { passwordHash, pinHash, ...rest } = user;
+  const userView = { ...rest, hasPassword: !!passwordHash, pinSet: !!pinHash };
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-6">
@@ -52,7 +58,7 @@ export default async function SettingsPage() {
       </div>
 
       {/* Tabbed settings */}
-      <SettingsTabs user={user} />
+      <SettingsTabs user={userView} />
 
       {/* Footer quick links */}
       <div className="pt-4 border-t border-[var(--border)] flex flex-wrap items-center justify-between gap-3">

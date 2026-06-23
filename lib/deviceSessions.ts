@@ -103,3 +103,24 @@ export async function revokeOthers(userId: string, keepSid: string): Promise<num
   });
   return res.count;
 }
+
+/** Mark this session as having passed the PIN gate (called after a verified PIN). */
+export async function markPinVerified(sid: string): Promise<void> {
+  if (!sid) return;
+  try {
+    await prisma.userSession.update({ where: { id: sid }, data: { pinVerifiedAt: new Date() } });
+  } catch {
+    /* session revoked between checks — ignore */
+  }
+}
+
+/** True if this session already cleared the PIN gate. Server-checked source of
+ *  truth for flipping the JWT's pinPending → false (client can't fake it). */
+export async function sessionPinVerified(sid: string): Promise<boolean> {
+  if (!sid) return false;
+  const row = await prisma.userSession.findUnique({
+    where: { id: sid },
+    select: { pinVerifiedAt: true },
+  });
+  return !!row?.pinVerifiedAt;
+}
