@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Users, BookOpen, MessageSquare, TrendingUp, Wallet, ShoppingBag, Coins, Eye, UserCheck, FileText } from "lucide-react";
 import Link from "next/link";
 import RecalculateButton from "./RecalculateButton";
+import TestPushButton from "./TestPushButton";
 import ToolkitBannerDownloads from "@/components/ui/ToolkitBannerDownloads";
 
 export const metadata = { title: "แผงผู้ดูแลระบบ" };
@@ -221,6 +222,7 @@ export default async function AdminPage() {
           )}
         </Link>
         <RecalculateButton />
+        <TestPushButton />
       </div>
 
       {/* Recent manga table */}
