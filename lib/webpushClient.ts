@@ -22,26 +22,31 @@ export function pushSupported(): boolean {
 
 export type PushStatus = "on" | "denied" | "unsupported" | "error";
 
-/** Ensure this browser is subscribed for the current user. Idempotent: a no-op
- *  ("on") if already subscribed. Returns the resulting state. */
+/** Ensure this browser is subscribed for the current user. Idempotent.
+ *
+ *  CRITICAL ordering for iOS: requestPermission()/subscribe() must run inside
+ *  the user gesture, BEFORE any unrelated await (a network fetch consumes the
+ *  transient activation → iOS silently refuses). So callers must invoke this at
+ *  the very top of the click handler, and we touch permission/subscribe first —
+ *  no fetch beforehand. We ALSO re-save every time (idempotent upsert) to heal a
+ *  server row that was pruned after a failed send while the browser still holds
+ *  the subscription. */
 export async function ensureWebPushSubscribed(): Promise<PushStatus> {
   if (!pushSupported()) return "unsupported";
-  if (Notification.permission === "denied") return "denied";
+  // Permission first, still inside the gesture.
+  let perm = Notification.permission;
+  if (perm === "default") perm = await Notification.requestPermission();
+  if (perm !== "granted") return perm === "denied" ? "denied" : "error";
   try {
-    const existing = await navigator.serviceWorker
-      .getRegistration("/push-sw.js")
-      .then((r) => r?.pushManager.getSubscription());
-    if (existing) return "on";
-
-    const perm = await Notification.requestPermission();
-    if (perm !== "granted") return perm === "denied" ? "denied" : "error";
-
     const reg = await navigator.serviceWorker.register("/push-sw.js");
     await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlB64ToUint8Array(VAPID!) as BufferSource,
-    });
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlB64ToUint8Array(VAPID!) as BufferSource,
+      });
+    }
     const res = await fetch("/api/push/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
