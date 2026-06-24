@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getRanking } from "@/lib/ranking";
 import { getRankBadges } from "@/lib/ranks";
 import { liveChapterWhere, listedMangaWhere } from "@/lib/chapters";
+import { isAppRequest, hideAdultWhen } from "@/lib/appContext";
 import MangaCard from "@/components/ui/MangaCard";
 import FeaturedTitles, { type FeaturedItem } from "@/components/ui/FeaturedTitles";
 import UpdateRow from "@/components/ui/UpdateRow";
@@ -31,12 +32,16 @@ export const revalidate = 300; // 5 minutes
 // home. Cache the heavy global queries at the data layer instead, so repeated
 // requests skip the ~10 DB round-trips. (UpdateRow accepts Date|string, so the
 // JSON (de)serialisation in the cache is safe.)
-const getData = unstable_cache(async () => {
+// `hideAdult` = true for the native app (Play Store compliance), false on the
+// web (18+ shows with a badge + age gate). Cached separately per variant.
+function getData(hideAdult: boolean) {
+  const adult = hideAdultWhen(hideAdult);
+  return unstable_cache(async () => {
   const [mangas, genres, latestChapters, weeklyRank, monthlyRank, allRank, topNovels] =
     await Promise.all([
       prisma.manga.findMany({
         take: 12,
-        where: { ...listedMangaWhere(), contentRating: { not: "ADULT" }, type: { not: "NOVEL" } },
+        where: { ...listedMangaWhere(), ...adult, type: { not: "NOVEL" } },
         orderBy: { totalViews: "desc" },
         include: {
           genres: { include: { genre: true } },
@@ -53,17 +58,17 @@ const getData = unstable_cache(async () => {
         // Keep admin-uploaded (non-original) works out of the Latest Updates feed
         // — it's reserved for real creators' releases. NOT(...) still includes
         // works with no translator.
-        where: { manga: { ...listedMangaWhere(), contentRating: { not: "ADULT" }, NOT: { translator: { user: { role: "ADMIN" } } } }, ...liveChapterWhere() },
+        where: { manga: { ...listedMangaWhere(), ...adult, NOT: { translator: { user: { role: "ADMIN" } } } }, ...liveChapterWhere() },
         include: {
-          manga: { select: { title: true, slug: true, coverUrl: true, type: true } },
+          manga: { select: { title: true, slug: true, coverUrl: true, type: true, contentRating: true } },
         },
       }),
-      getRanking("WEEK", 10),
-      getRanking("MONTH", 10),
-      getRanking("ALL", 10),
+      getRanking("WEEK", 10, hideAdult),
+      getRanking("MONTH", 10, hideAdult),
+      getRanking("ALL", 10, hideAdult),
       prisma.manga.findMany({
         take: 6,
-        where: { ...listedMangaWhere(), contentRating: { not: "ADULT" }, type: "NOVEL" },
+        where: { ...listedMangaWhere(), ...adult, type: "NOVEL" },
         orderBy: { totalViews: "desc" },
         include: {
           genres: { include: { genre: true } },
@@ -74,7 +79,7 @@ const getData = unstable_cache(async () => {
   // Top translators ranked by total views across their works.
   const agg = await prisma.manga.groupBy({
     by: ["translatorId"],
-    where: { ...listedMangaWhere(), translatorId: { not: null }, contentRating: { not: "ADULT" } },
+    where: { ...listedMangaWhere(), translatorId: { not: null }, ...adult },
     _sum: { totalViews: true },
     _count: { _all: true },
     orderBy: { _sum: { totalViews: "desc" } },
@@ -112,15 +117,19 @@ const getData = unstable_cache(async () => {
     totalViews: m.totalViews,
     latestChapter: m.latestChapterNum ?? undefined,
     avgRating: m.avgRating,
+    contentRating: m.contentRating,
     genreNames: m.genres.map((g) => g.genre.name),
   }));
 
   return { mangas, genres, latestChapters, weeklyRank, monthlyRank, allRank, translatorRanking, novels };
-}, ["home-data"], { revalidate: 300, tags: ["home-feed"] });
+  }, ["home-data", hideAdult ? "sfw" : "all"], { revalidate: 300, tags: ["home-feed"] })();
+}
 
 export default async function HomePage() {
+  // App hides 18+ (Play Store); web shows it (badge + age gate).
+  const hideAdult = await isAppRequest();
   const { mangas, genres, latestChapters, weeklyRank, monthlyRank, allRank, translatorRanking, novels } =
-    await getData();
+    await getData(hideAdult);
 
   const withRating = mangas.map((m) => ({
     ...m,
@@ -245,6 +254,7 @@ export default async function HomePage() {
                   publishedAt={ch.publishedAt}
                   isPremium={ch.isPremium}
                   type={ch.manga.type}
+                  contentRating={ch.manga.contentRating}
                 />
               ))}
             </div>
@@ -280,6 +290,7 @@ export default async function HomePage() {
                     views={manga.totalViews}
                     status={manga.status}
                     type={manga.type}
+                    contentRating={manga.contentRating}
                   />
                 </div>
               ))}
@@ -334,6 +345,7 @@ export default async function HomePage() {
                 views={n.totalViews}
                 status={n.status}
                 type={n.type}
+                contentRating={n.contentRating}
               />
             ))}
           </div>

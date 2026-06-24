@@ -13,6 +13,7 @@ interface UpdateRowProps {
   publishedAt: Date | string;
   isPremium?: boolean;
   type?: string;
+  contentRating?: string | null;
 }
 
 export default function UpdateRow({
@@ -24,6 +25,7 @@ export default function UpdateRow({
   publishedAt,
   isPremium,
   type,
+  contentRating,
 }: UpdateRowProps) {
   const timeAgo = formatDistanceToNow(new Date(publishedAt), {
     addSuffix: true,
@@ -66,6 +68,11 @@ export default function UpdateRow({
               {type}
             </span>
           ) : null}
+          {contentRating === "ADULT" && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--text-primary)] text-[var(--bg-primary)] flex-shrink-0 font-bold">
+              18+
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2 mt-0.5">
           <span

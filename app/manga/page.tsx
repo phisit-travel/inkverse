@@ -4,6 +4,7 @@ import MangaCard from "@/components/ui/MangaCard";
 import Pagination from "@/components/ui/Pagination";
 import { Suspense } from "react";
 import { listedMangaWhere } from "@/lib/chapters";
+import { isAppRequest, hideAdultWhen } from "@/lib/appContext";
 import type { Metadata } from "next";
 
 const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inksverse.com";
@@ -34,7 +35,9 @@ async function MangaGrid({ searchParams }: { searchParams: SearchParams }) {
   const take = 24;
   const skip = (page - 1) * take;
 
-  const where: Record<string, unknown> = { ...listedMangaWhere() };
+  // Web shows 18+ (badge + age gate); the app hides it (Play Store).
+  const hideAdult = await isAppRequest();
+  const where: Record<string, unknown> = { ...listedMangaWhere(), ...hideAdultWhen(hideAdult) };
   if (searchParams.status) where.status = searchParams.status;
   if (searchParams.type) where.type = searchParams.type;
   if (searchParams.tag) where.tags = { has: searchParams.tag };
@@ -54,7 +57,7 @@ async function MangaGrid({ searchParams }: { searchParams: SearchParams }) {
         prisma.manga.findMany({ where, orderBy, take, skip }),
         prisma.manga.count({ where }),
       ]),
-    ["manga-list", searchParams.status || "", searchParams.type || "", searchParams.tag || "", searchParams.sort || "", String(page)],
+    ["manga-list", hideAdult ? "sfw" : "all", searchParams.status || "", searchParams.type || "", searchParams.tag || "", searchParams.sort || "", String(page)],
     { revalidate: 300, tags: ["manga-list"] }
   )();
 
@@ -79,6 +82,7 @@ async function MangaGrid({ searchParams }: { searchParams: SearchParams }) {
                 views={manga.totalViews}
                 status={manga.status}
                 type={manga.type}
+                contentRating={manga.contentRating}
                 // First 4 items = first 2 rows on mobile (2-col grid) — above fold.
                 priority={i < 4}
               />

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { listedMangaWhere } from "@/lib/chapters";
+import { isAppRequest, hideAdultWhen } from "@/lib/appContext";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
@@ -11,9 +12,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ data: [] });
   }
 
+  // Web search returns 18+ (badge shown); the app hides it (Play Store).
   const mangas = await prisma.manga.findMany({
     where: {
       ...listedMangaWhere(),
+      ...hideAdultWhen(await isAppRequest()),
       OR: [
         { title: { contains: q } },
         { description: { contains: q } },

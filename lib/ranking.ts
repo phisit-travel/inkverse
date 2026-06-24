@@ -3,11 +3,15 @@ import { listedMangaWhere } from "@/lib/chapters";
 
 type StatPeriod = "WEEK" | "MONTH" | "ALL";
 
-export async function getRanking(period: StatPeriod, limit = 10) {
+export async function getRanking(period: StatPeriod, limit = 10, hideAdult = false) {
   return prisma.weeklyStats.findMany({
     // Guard at read-time too: a work unpublished since the last recalc must drop
     // out of the ranking panel immediately, not wait for the next recalc.
-    where: { period, manga: { ...listedMangaWhere() } },
+    // hideAdult drops 18+ works from the panel in the app (Play Store).
+    where: {
+      period,
+      manga: { ...listedMangaWhere(), ...(hideAdult ? { contentRating: { not: "ADULT" as const } } : {}) },
+    },
     orderBy: { rank: "asc" },
     take: limit,
     include: {

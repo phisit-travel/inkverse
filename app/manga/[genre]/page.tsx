@@ -3,6 +3,7 @@ import MangaCard from "@/components/ui/MangaCard";
 import Pagination from "@/components/ui/Pagination";
 import { notFound } from "next/navigation";
 import { listedMangaWhere } from "@/lib/chapters";
+import { isAppRequest, hideAdultWhen } from "@/lib/appContext";
 import type { Metadata } from "next";
 import { unstable_cache } from "next/cache";
 
@@ -47,10 +48,12 @@ export default async function GenrePage({ params, searchParams }: Props) {
   const genreRecord = await getGenre(genre);
   if (!genreRecord) notFound();
 
+  // Web shows 18+ (badge + age gate); the app hides it (Play Store).
+  const hideAdult = await isAppRequest();
   const where = {
     ...listedMangaWhere(),
+    ...hideAdultWhen(hideAdult),
     genres: { some: { genreId: genreRecord.id } },
-    contentRating: { not: "ADULT" as const },
   };
   const [mangas, total] = await unstable_cache(
     () =>
@@ -58,7 +61,7 @@ export default async function GenrePage({ params, searchParams }: Props) {
         prisma.manga.findMany({ where, orderBy: { totalViews: "desc" }, take, skip: (page - 1) * take }),
         prisma.manga.count({ where }),
       ]),
-    ["genre-manga-list", genre, String(page)],
+    ["genre-manga-list", hideAdult ? "sfw" : "all", genre, String(page)],
     { revalidate: 300, tags: ["manga-list"] }
   )();
   const totalPages = Math.ceil(total / take);
@@ -89,6 +92,7 @@ export default async function GenrePage({ params, searchParams }: Props) {
                 views={manga.totalViews}
                 status={manga.status}
                 type={manga.type}
+                contentRating={manga.contentRating}
               />
             </div>
           );

@@ -4,6 +4,7 @@ import MangaCard from "@/components/ui/MangaCard";
 import DiscoverFilters from "@/components/ui/DiscoverFilters";
 import { Search, ShieldAlert } from "lucide-react";
 import { listedMangaWhere } from "@/lib/chapters";
+import { isAppRequest } from "@/lib/appContext";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -38,10 +39,11 @@ export default async function DiscoverPage({
   const take = 24;
   const skip = (pageNum - 1) * take;
 
-  // Check adult consent
+  // Check adult consent. The app never shows 18+ (Play Store), regardless of the
+  // toggle/consent cookie — web only.
   const cookieStore = await cookies();
   const hasConsent = cookieStore.get("adult_consent")?.value === "1";
-  const showAdult = adult === "1" && hasConsent;
+  const showAdult = adult === "1" && hasConsent && !(await isAppRequest());
 
   // The genre list (for the filter UI) is independent of the results — start it
   // now and await it alongside the manga query instead of serially before it.
