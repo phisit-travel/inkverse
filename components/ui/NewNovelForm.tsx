@@ -5,6 +5,13 @@ import { useRouter } from "next/navigation";
 import { PenTool, Loader2, ArrowRight } from "lucide-react";
 import TagInput from "@/components/ui/TagInput";
 import { slugify } from "@/lib/slug";
+import Adult18ConfirmModal from "@/components/ui/Adult18ConfirmModal";
+
+const RATINGS = [
+  { v: "EVERYONE", l: "ทุกวัย" },
+  { v: "TEEN", l: "13+" },
+  { v: "ADULT", l: "18+" },
+];
 
 export default function NewNovelForm({ genres = [] }: { genres?: { id: string; name: string }[] }) {
   const router = useRouter();
@@ -14,14 +21,27 @@ export default function NewNovelForm({ genres = [] }: { genres?: { id: string; n
   const [tags, setTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [contentRating, setContentRating] = useState("TEEN");
+  const [showAdult, setShowAdult] = useState(false);
   const toggleGenre = (id: string) =>
     setGenreIds((g) => (g.includes(id) ? g.filter((x) => x !== id) : [...g, id]));
 
-  async function create() {
+  // Choosing 18+ shows a confirmation (where it shows / is hidden + why) before
+  // creating; the modal's own "ยกเลิก" backs out without creating the novel.
+  function create() {
     if (!title.trim()) {
       setError("กรุณาใส่ชื่อเรื่อง");
       return;
     }
+    setError("");
+    if (contentRating === "ADULT") {
+      setShowAdult(true);
+      return;
+    }
+    void doCreate();
+  }
+
+  async function doCreate() {
     setLoading(true);
     setError("");
     // Send a clean slug; the API appends -2, -3, … only if it's already taken.
@@ -36,7 +56,7 @@ export default function NewNovelForm({ genres = [] }: { genres?: { id: string; n
           description: desc.trim() || title.trim(),
           type: "NOVEL",
           originCountry: "TH",
-          contentRating: "TEEN",
+          contentRating,
           genreIds,
           tags,
         }),
@@ -105,13 +125,59 @@ export default function NewNovelForm({ genres = [] }: { genres?: { id: string; n
           <TagInput value={tags} onChange={setTags} />
         </div>
 
+        {/* Content rating */}
+        <div>
+          <span className="block text-xs text-[var(--text-secondary)] uppercase tracking-wide mb-1.5">เรตเนื้อหา</span>
+          <div className="flex gap-2">
+            {RATINGS.map((r) => (
+              <button
+                key={r.v}
+                type="button"
+                onClick={() => setContentRating(r.v)}
+                className={`flex-1 py-2 rounded-xl text-sm border transition-colors ${
+                  contentRating === r.v
+                    ? "bg-[var(--text-primary)] text-[var(--bg-primary)] border-[var(--text-primary)] font-semibold"
+                    : "border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                }`}
+              >
+                {r.l}
+              </button>
+            ))}
+          </div>
+          {contentRating === "ADULT" && (
+            <p className="text-[11px] text-[var(--text-muted)] mt-1.5 leading-relaxed">
+              เนื้อหา 18+ แสดงบนเว็บ (ติดป้าย + ยืนยันอายุ) และซ่อนในแอป — กดสร้างแล้วจะมีหน้ายืนยันอีกครั้ง
+            </p>
+          )}
+        </div>
+
         {error && <p className="text-sm text-[var(--text-primary)]">{error}</p>}
 
-        <button onClick={create} disabled={loading} className="w-full py-3 bal-btn font-semibold flex items-center justify-center gap-2 disabled:opacity-60">
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
-          สร้างเรื่อง + เริ่มเขียนตอนแรก
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => router.push("/dashboard")}
+            disabled={loading}
+            className="px-5 py-3 rounded-xl border border-[var(--border)] text-sm text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50"
+          >
+            ยกเลิก
+          </button>
+          <button onClick={create} disabled={loading} className="flex-1 py-3 bal-btn font-semibold flex items-center justify-center gap-2 disabled:opacity-60">
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+            สร้างเรื่อง + เริ่มเขียนตอนแรก
+          </button>
+        </div>
       </div>
+
+      <Adult18ConfirmModal
+        open={showAdult}
+        loading={loading}
+        onCancel={() => setShowAdult(false)}
+        onConfirm={() => {
+          setShowAdult(false);
+          void doCreate();
+        }}
+      />
     </div>
   );
 }
