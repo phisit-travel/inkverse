@@ -390,14 +390,16 @@ export default async function MangaProfilePage({ params }: Props) {
                   อ่านตอนล่าสุด
                 </Link>
               )}
-              {session?.user && (
+              {/* Bookmark = follow + notify (one tap). Anonymous gets a sign-in
+                  nudge that doubles as a signup driver. */}
+              {session?.user ? (
                 <BookmarkButton
                   mangaId={manga.id}
                   initialBookmarked={isBookmarked}
                 />
+              ) : (
+                <WebPushBell loggedIn={false} />
               )}
-              {/* Web Push opt-in (self-hides in-app / unsupported / no VAPID). */}
-              <WebPushBell loggedIn={!!session?.user} />
               {/* App-only: renders nothing on the web (returns null) */}
               <DownloadMangaButton
                 mangaSlug={manga.slug}

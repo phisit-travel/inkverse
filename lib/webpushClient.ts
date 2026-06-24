@@ -1,0 +1,67 @@
+// Client-side Web Push helpers, shared by the bookmark button + the standalone
+// bell. Subscribing means: register the push-only SW, get permission, create a
+// PushManager subscription, and save it server-side (/api/push/subscribe).
+
+const VAPID = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+
+function urlB64ToUint8Array(base64: string): Uint8Array {
+  const padding = "=".repeat((4 - (base64.length % 4)) % 4);
+  const b64 = (base64 + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = atob(b64);
+  const out = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+
+/** True if this environment can do Web Push (has a key, not the in-app WebView). */
+export function pushSupported(): boolean {
+  if (!VAPID || typeof window === "undefined") return false;
+  if ((window as unknown as { Capacitor?: unknown }).Capacitor) return false; // app uses FCM
+  return "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+}
+
+export type PushStatus = "on" | "denied" | "unsupported" | "error";
+
+/** Ensure this browser is subscribed for the current user. Idempotent: a no-op
+ *  ("on") if already subscribed. Returns the resulting state. */
+export async function ensureWebPushSubscribed(): Promise<PushStatus> {
+  if (!pushSupported()) return "unsupported";
+  if (Notification.permission === "denied") return "denied";
+  try {
+    const existing = await navigator.serviceWorker
+      .getRegistration("/push-sw.js")
+      .then((r) => r?.pushManager.getSubscription());
+    if (existing) return "on";
+
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") return perm === "denied" ? "denied" : "error";
+
+    const reg = await navigator.serviceWorker.register("/push-sw.js");
+    await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlB64ToUint8Array(VAPID!) as BufferSource,
+    });
+    const res = await fetch("/api/push/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(sub.toJSON()),
+    });
+    return res.ok ? "on" : "error";
+  } catch {
+    return "error";
+  }
+}
+
+/** True if this browser already has an active push subscription. */
+export async function isWebPushSubscribed(): Promise<boolean> {
+  if (!pushSupported()) return false;
+  try {
+    const sub = await navigator.serviceWorker
+      .getRegistration("/push-sw.js")
+      .then((r) => r?.pushManager.getSubscription());
+    return !!sub;
+  } catch {
+    return false;
+  }
+}

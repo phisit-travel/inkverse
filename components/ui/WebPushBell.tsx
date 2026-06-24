@@ -113,7 +113,7 @@ export default function WebPushBell({ loggedIn }: { loggedIn: boolean }) {
         href="/auth/signin"
         className={clsx(base, "bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)] hover:border-white/30")}
       >
-        <Bell className="w-4 h-4" /> เข้าสู่ระบบเพื่อรับแจ้งเตือนตอนใหม่
+        <Bell className="w-4 h-4" /> เข้าสู่ระบบเพื่อบุ๊กมาร์ก + รับแจ้งเตือน
       </Link>
     );
   }
