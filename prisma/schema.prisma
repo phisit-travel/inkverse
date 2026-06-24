@@ -51,6 +51,7 @@ model User {
   following               Follow[]          @relation("Following")
   followers               Follow[]          @relation("Followers")
   pushTokens              PushToken[]
+  pushSubscriptions       PushSubscription[]
   emailVerificationTokens EmailVerificationToken[]
   serviceOrders           ServiceOrder[]
   userSessions            UserSession[]
@@ -104,6 +105,21 @@ model PushToken {
   userId    String
   token     String   @unique
   platform  String   @default("android")
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Web Push (VAPID) subscriptions — one per browser/device that opted in on the
+// website. Endpoint is the unique push-service URL; p256dh/auth are the client
+// keys web-push encrypts the payload with. Used for new-chapter notifications.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 

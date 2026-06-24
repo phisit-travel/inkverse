@@ -9,6 +9,7 @@ import { cookies } from "next/headers";
 import { decodeSlug } from "@/lib/slug";
 import StarRating from "@/components/ui/StarRating";
 import BookmarkButton from "@/components/ui/BookmarkButton";
+import WebPushBell from "@/components/ui/WebPushBell";
 import DownloadMangaButton from "@/components/ui/DownloadMangaButton";
 import ShareButtons from "@/components/ui/ShareButtons";
 import ChapterRow from "@/components/ui/ChapterRow";
@@ -395,6 +396,8 @@ export default async function MangaProfilePage({ params }: Props) {
                   initialBookmarked={isBookmarked}
                 />
               )}
+              {/* Web Push opt-in (self-hides in-app / unsupported / no VAPID). */}
+              <WebPushBell loggedIn={!!session?.user} />
               {/* App-only: renders nothing on the web (returns null) */}
               <DownloadMangaButton
                 mangaSlug={manga.slug}

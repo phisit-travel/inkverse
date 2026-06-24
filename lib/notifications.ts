@@ -68,6 +68,14 @@ export async function notifyNewChapter(opts: {
     } catch {
       /* push is optional */
     }
+
+    // Web Push to browsers (lazy import; no-op if VAPID keys aren't set).
+    try {
+      const { sendWebPushToUsers } = await import("./webpush");
+      await sendWebPushToUsers(userIds, "มีตอนใหม่!", body, link);
+    } catch {
+      /* push is optional */
+    }
   } catch {
     // non-critical
   }
