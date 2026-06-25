@@ -16,6 +16,7 @@ interface MangaData {
   coverUrl: string | null;
   tags: string[];
   published?: boolean;
+  bookPrice?: number | null;
 }
 
 const STATUS = [
@@ -81,6 +82,9 @@ export default function MangaSettings({
   const [cover, setCover] = useState(manga.coverUrl);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [genreIds, setGenreIds] = useState<string[]>(initialGenreIds);
+  const [bookPriceInput, setBookPriceInput] = useState(
+    manga.bookPrice != null ? String(manga.bookPrice) : ""
+  );
   const [published, setPublished] = useState(manga.published ?? true);
   const [togglingPublish, setTogglingPublish] = useState(false);
   const [showAdultConfirm, setShowAdultConfirm] = useState(false);
@@ -166,11 +170,12 @@ export default function MangaSettings({
 
   async function doSave() {
     setSaving(true); setError(""); setSaved(false);
+    const bookPrice = bookPriceInput.trim() === "" ? null : Number(bookPriceInput);
     try {
       const res = await fetch(`/api/manga/${slug}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, genreIds }),
+        body: JSON.stringify({ ...form, genreIds, bookPrice }),
       });
       if (!res.ok) { setError("บันทึกไม่สำเร็จ"); return; }
       setSaved(true);
@@ -288,6 +293,23 @@ export default function MangaSettings({
           <div>
             <label className="block text-xs text-[var(--text-secondary)] mb-1.5">แท็ก (พิมพ์เองได้ — คนอ่านค้นตามแท็ก)</label>
             <TagInput value={form.tags} onChange={(t) => { setForm((f) => ({ ...f, tags: t })); setSaved(false); }} />
+          </div>
+
+          {/* Book price */}
+          <div>
+            <label className="block text-xs text-[var(--text-secondary)] mb-1">ราคาขายทั้งเล่ม (เหรียญ)</label>
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={bookPriceInput}
+              onChange={(e) => { setBookPriceInput(e.target.value); setSaved(false); }}
+              placeholder="ว่างไว้ = ไม่เปิดขายทั้งเล่ม"
+              className={sel}
+            />
+            <p className="text-xs text-[var(--text-muted)] mt-1">
+              ว่างไว้ = ไม่เปิดขายทั้งเล่ม · ตั้งให้ถูกกว่าผลรวมรายตอนเพื่อจูงใจ
+            </p>
           </div>
 
           {error && <p className="text-sm text-[var(--text-primary)]">{error}</p>}

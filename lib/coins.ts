@@ -278,6 +278,124 @@ export async function unlockChaptersBulk(
   };
 }
 
+// ── Buy the whole book (bundle) ──────────────────────────────────────────────
+export type BuyBookResult =
+  | { success: true; unlockedCount: number; coinsSpent: number; coinsLeft: number; alreadyOwned?: boolean }
+  | { success: false; error: "NOT_FOUND" | "NOT_FOR_SALE" | "NOTHING_TO_UNLOCK" | "INSUFFICIENT_COINS" };
+
+/**
+ * Buy a whole work in ONE purchase: unlock every currently-locked premium chapter
+ * at the creator's bundle price (Manga.bookPrice). Money-safe — mirrors
+ * unlockChaptersBulk: price is derived SERVER-SIDE from bookPrice (client sends
+ * only mangaId), the coin decrement is atomic + conditional (no negative balance
+ * / double-spend), it's idempotent (already owns the book ⇒ no charge), and a
+ * mid-flight race rolls back + retries once. Creator earns the usual 80%.
+ *
+ * "Whole book" = all chapters that exist NOW. New chapters added later are not
+ * included (they'd be unlocked/bought separately) — the UI labels this.
+ */
+export async function buyBook(
+  userId: string,
+  mangaId: string,
+  _retry = false
+): Promise<BuyBookResult> {
+  const manga = await prisma.manga.findUnique({
+    where: { id: mangaId },
+    select: { id: true, bookPrice: true, published: true, translatorId: true },
+  });
+  if (!manga || !manga.published) return { success: false, error: "NOT_FOUND" };
+  if (manga.bookPrice == null || manga.bookPrice <= 0)
+    return { success: false, error: "NOT_FOR_SALE" };
+
+  // Currently-locked premium chapters: live (not draft / past publishAt) AND still
+  // paid (no freeAt, or freeAt in the future). Free + early-access-elapsed chapters
+  // are already readable, so they're never part of the charge. (Two OR groups go
+  // under AND so they don't collide on the same `OR` key.)
+  const now = new Date();
+  const chapters = await prisma.chapter.findMany({
+    where: {
+      mangaId,
+      isPremium: true,
+      status: { not: "DRAFT" },
+      AND: [
+        { OR: [{ publishAt: null }, { publishAt: { lte: now } }] },
+        { OR: [{ freeAt: null }, { freeAt: { gt: now } }] },
+      ],
+    },
+    select: { id: true },
+  });
+  const lockedIds = chapters.map((c) => c.id);
+  if (lockedIds.length === 0) return { success: false, error: "NOTHING_TO_UNLOCK" };
+
+  const owned = await prisma.unlockedChapter.findMany({
+    where: { userId, chapterId: { in: lockedIds } },
+    select: { chapterId: true },
+  });
+  const ownedSet = new Set(owned.map((o) => o.chapterId));
+  const toUnlock = lockedIds.filter((id) => !ownedSet.has(id));
+
+  // Idempotent: already owns every (current) chapter → don't charge again.
+  if (toUnlock.length === 0) {
+    return { success: true, unlockedCount: 0, coinsSpent: 0, alreadyOwned: true, coinsLeft: await getUserCoins(userId) };
+  }
+
+  const buyer = await prisma.user.findUnique({ where: { id: userId }, select: { vipExpiresAt: true } });
+  const vipRate = isVipActive(buyer?.vipExpiresAt) ? VIP_UNLOCK_DISCOUNT : 0;
+  // Bundle price is the fixed bookPrice (NOT a per-chapter sum); VIP discount
+  // applies on top, same as unlocks, keeping the platform margin safe.
+  const price = Math.round(manga.bookPrice * (1 - vipRate));
+
+  const result = await prisma.$transaction(async (tx) => {
+    const dec = await tx.user.updateMany({
+      where: { id: userId, coins: { gte: price } },
+      data: { coins: { decrement: price } },
+    });
+    if (dec.count === 0) return null; // insufficient / lost the balance race
+    const ins = await tx.unlockedChapter.createMany({
+      // Per-chapter coinSpent 0: this is a single bundle sale; the real charge is
+      // on the SPEND transaction + the single TranslatorEarning below.
+      data: toUnlock.map((id) => ({ userId, chapterId: id, coinSpent: 0 })),
+      skipDuplicates: true,
+    });
+    // Someone unlocked some of these mid-flight → we'd charge full price for fewer
+    // chapters. Roll back and retry once with a fresh ownership filter.
+    if (ins.count < toUnlock.length) throw new Error("BOOK_RACE");
+    await tx.coinTransaction.create({
+      data: {
+        userId,
+        amount: -price,
+        type: "SPEND",
+        description: vipRate > 0
+          ? `ซื้อทั้งเล่ม (${toUnlock.length} ตอน · VIP ลด 10%)`
+          : `ซื้อทั้งเล่ม (${toUnlock.length} ตอน)`,
+        refId: `book:${mangaId}`,
+      },
+    });
+    if (manga.translatorId) {
+      await tx.translatorEarning.create({
+        data: {
+          translatorId: manga.translatorId,
+          chapterId: null,
+          mangaId,
+          userId,
+          coinsSpent: price,
+          amount: parseFloat((price * TRANSLATOR_SHARE).toFixed(2)),
+        },
+      });
+    }
+    return tx.user.findUnique({ where: { id: userId }, select: { coins: true } });
+  }).catch((err: unknown) => {
+    if (err instanceof Error && err.message === "BOOK_RACE") return "RACE" as const;
+    throw err;
+  });
+
+  if (result === "RACE") {
+    return _retry ? { success: false, error: "NOTHING_TO_UNLOCK" } : buyBook(userId, mangaId, true);
+  }
+  if (!result) return { success: false, error: "INSUFFICIENT_COINS" };
+  return { success: true, unlockedCount: toUnlock.length, coinsSpent: price, coinsLeft: result.coins };
+}
+
 // ── Tipping a translator ─────────────────────────────────────────────────────
 export const TIP_TRANSLATOR_SHARE = 0.90; // tips are a gift → translator keeps 90%
 

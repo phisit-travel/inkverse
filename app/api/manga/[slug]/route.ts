@@ -83,6 +83,12 @@ export async function PATCH(
   // เรื่อง is hidden everywhere public (owner/admin still manage + preview it).
   if (typeof body.published === "boolean") data.published = body.published;
 
+  // Whole-book bundle price (coins). null clears it (no book sale); a positive
+  // integer enables it. The "cheaper than per-chapter" check is a UI hint only.
+  if (body.bookPrice === null) data.bookPrice = null;
+  else if (typeof body.bookPrice === "number" && Number.isInteger(body.bookPrice) && body.bookPrice > 0)
+    data.bookPrice = body.bookPrice;
+
   // Optional: replace the genre set
   if (Array.isArray(body.genreIds)) {
     const ids: string[] = (body.genreIds as unknown[]).filter((x): x is string => typeof x === "string");

@@ -302,6 +302,7 @@ model Manga {
   bookmarkCount    Int      @default(0)
   latestChapterNum Float?
   contentRating String      @default("EVERYONE") // EVERYONE | TEEN | ADULT
+  bookPrice     Int?        // coins to buy the whole work in one purchase (bundle); null = not sold as a book
   // Story-level visibility. false = the whole เรื่อง is hidden from all reader-
   // facing surfaces (home/listing/search/sitemap/story page/reader) while staying
   // fully manageable in the owner's dashboard. Default true so every existing work

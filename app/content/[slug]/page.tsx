@@ -34,6 +34,7 @@ import {
 import type { Metadata } from "next";
 import { MangaJsonLd, BreadcrumbJsonLd } from "@/components/seo/JsonLd";
 import BulkUnlock from "@/components/ui/BulkUnlock";
+import BuyBook from "@/components/ui/BuyBook";
 import TipButton from "@/components/ui/TipButton";
 
 const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inksverse.com";
@@ -597,6 +598,23 @@ export default async function MangaProfilePage({ params }: Props) {
                 </div>
               </div>
             )}
+
+            {(() => {
+              // bookPrice will be present once the backend schema migration runs.
+              // Cast to include it so the component can compile before the DB column exists.
+              const bookPrice = (manga as typeof manga & { bookPrice?: number | null }).bookPrice;
+              return bookPrice && lockedPremium.length > 0 && !isOwner ? (
+                <div className="mb-3">
+                  <BuyBook
+                    mangaId={manga.id}
+                    bookPrice={bookPrice}
+                    userCoins={userCoins}
+                    isLoggedIn={!!userId}
+                    separateTotal={lockedPremium.reduce((s, c) => s + c.coinCost, 0)}
+                  />
+                </div>
+              ) : null;
+            })()}
 
             {lockedPremium.length > 0 && (
               <div className="mb-4">
