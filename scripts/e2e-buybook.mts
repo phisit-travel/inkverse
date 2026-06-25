@@ -34,7 +34,7 @@ const manga = await prisma.manga.create({
   data: { title: "หนังสือทดสอบ", slug: SLUG, description: "x", type: "NOVEL", originCountry: "TH", status: "ONGOING", contentRating: "TEEN", published: true, bookPrice: 100, translatorId: tId },
 });
 // 3 premium chapters, 50 coins each → 150 if bought separately, book = 100.
-const chaps = [];
+const chaps: { id: string }[] = [];
 for (let n = 1; n <= 3; n++) {
   chaps.push(await prisma.chapter.create({ data: { mangaId: manga.id, chapterNum: n, title: `ตอน ${n}`, isPremium: true, coinCost: 50, status: "PUBLISHED", publishedAt: new Date() }, select: { id: true } }));
 }
