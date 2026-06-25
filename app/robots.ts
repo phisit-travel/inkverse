@@ -17,6 +17,8 @@ export default function robots(): MetadataRoute.Robots {
       },
     ],
     sitemap: `${BASE_URL}/sitemap.xml`,
-    host: BASE_URL,
+    // No `host:` — non-standard (Yandex) directive Google ignores; emitting it
+    // only risks a Search Console parser warning. Canonical host is handled by
+    // the www→apex redirect in proxy.ts + per-page canonical tags.
   };
 }
