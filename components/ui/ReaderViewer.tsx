@@ -244,6 +244,20 @@ export default function ReaderViewer({
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Quick "next chapter" jump on the top bar too (bottom bar already has
+                one) — saves scrolling to the end of long chapters to advance.
+                Hidden in the offline reader (onBack), which has no /content route. */}
+            {!onBack && nextChapter != null && (
+              <Link
+                href={`/content/${mangaSlug}/${nextChapter}`}
+                aria-label="ตอนถัดไป"
+                title="ตอนถัดไป"
+                className="flex items-center gap-1 pl-2.5 pr-2 py-1.5 rounded-lg bg-[var(--accent)] text-xs text-[var(--text-primary)] hover:opacity-90 transition-all"
+              >
+                <span className="hidden sm:inline">ตอนถัดไป</span>
+                <ChevronRight className="w-4 h-4 shrink-0" />
+              </Link>
+            )}
             {chapterId && (
               <DownloadChapterButton
                 kind="manga"
