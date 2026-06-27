@@ -306,6 +306,42 @@ export default async function HomePage() {
               </Link>
             </div>
           </section>
+
+          {/* Novels — inside the SAME 3/4 content column as the manga grid above
+              so the 4-col covers line up on the same vertical grid and render the
+              same size. Own section so a novel isn't mistaken for a comic. */}
+          {novels.length > 0 && (
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-[0.18em] uppercase flex items-center gap-3">
+                  <span className="w-6 h-px bg-[var(--text-primary)]" />
+                  นิยายน่าอ่าน
+                </h2>
+                <Link
+                  href="/manga?type=NOVEL"
+                  className="text-[11px] uppercase tracking-[0.2em] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1 transition-colors"
+                >
+                  ดูทั้งหมด <ChevronRight className="w-4 h-4" />
+                </Link>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {novels.slice(0, 8).map((n) => (
+                  <MangaCard
+                    key={n.slug}
+                    slug={n.slug}
+                    title={n.title}
+                    coverUrl={n.coverUrl}
+                    latestChapter={n.latestChapter}
+                    rating={n.avgRating}
+                    views={n.totalViews}
+                    status={n.status}
+                    type={n.type}
+                    contentRating={n.contentRating}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
         </div>
 
         {/* Sidebar Ranking */}
@@ -319,43 +355,6 @@ export default async function HomePage() {
           </div>
         </div>
       </div>
-
-      {/* Novels — kept in their own section so readers never mistake a novel for a comic */}
-      {novels.length > 0 && (
-        <section className="mt-14">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-[0.15em] uppercase flex items-center gap-2">
-              นิยายน่าอ่าน
-            </h2>
-            <Link
-              href="/manga?type=NOVEL"
-              className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1 transition-colors"
-            >
-              ดูนิยายทั้งหมด <ChevronRight className="w-4 h-4" />
-            </Link>
-          </div>
-          {/* The "ยอดนิยม" manga grid sits in a 3/4 column (ranking sidebar beside
-              it on xl), so its 4-col cards are smaller. This novels section is
-              full-width, so at xl we go to 5 cols to keep the covers the SAME
-              size as the manga cards (md/lg already match — no sidebar there). */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
-            {novels.slice(0, 8).map((n) => (
-              <MangaCard
-                key={n.slug}
-                slug={n.slug}
-                title={n.title}
-                coverUrl={n.coverUrl}
-                latestChapter={n.latestChapter}
-                rating={n.avgRating}
-                views={n.totalViews}
-                status={n.status}
-                type={n.type}
-                contentRating={n.contentRating}
-              />
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 }
