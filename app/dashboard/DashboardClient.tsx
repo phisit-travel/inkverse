@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   Eye, BookOpen, Bookmark, Coins, Users, TrendingUp,
   Star, Crown, Lock, MessageSquare, ChevronRight, BarChart2,
-  Calendar, ArrowUpRight, Settings,
+  Calendar, ArrowUpRight, Settings, Gift,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -198,6 +198,27 @@ export default function DashboardClient({
         </div>
         <span className="shrink-0 text-xs font-semibold uppercase tracking-widest text-[var(--text-primary)] inline-flex items-center gap-1">
           ถอนเงิน <ChevronRight className="w-4 h-4" />
+        </span>
+      </Link>
+
+      {/* Creator service nudge — writers live in the dashboard, so surface the
+          free proofreading wedge HERE (it was only on the reader-facing home).
+          The free 2,500 words is the trust wedge: try the quality before paying. */}
+      <Link
+        href="/services"
+        className="group flex items-center gap-4 border border-[var(--text-primary)] bg-[var(--bg-surface)] px-5 py-4 hover:bg-[var(--text-primary)]/5 transition-colors"
+      >
+        <Gift className="w-7 h-7 shrink-0 text-[var(--text-primary)]" />
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-[var(--text-primary)]">
+            งานเขียนสะอาดขึ้น — ฟรี 2,500 คำแรก
+          </p>
+          <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
+            พิสูจน์อักษร &amp; เกลาภาษา โดยทีมบรรณาธิการ INKVERSE · ลองคุณภาพก่อนตัดสินใจจ่าย
+          </p>
+        </div>
+        <span className="hidden sm:inline-flex shrink-0 items-center gap-1 border border-[var(--text-primary)] px-4 py-2 text-xs font-semibold uppercase tracking-widest text-[var(--text-primary)] group-hover:bg-[var(--text-primary)] group-hover:text-[var(--bg-primary)] transition-colors">
+          ส่งงานฟรี <ChevronRight className="w-4 h-4" />
         </span>
       </Link>
 

@@ -7,6 +7,7 @@ import { renderNovel, novelStats } from "@/lib/markdown";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import CommentSection from "@/components/ui/CommentSection";
 import PremiumGate from "@/components/ui/PremiumGate";
+import ChapterEndCTA from "@/components/ui/ChapterEndCTA";
 import { getUserCoins, hasUnlockedChapter } from "@/lib/coins";
 import { signedImagePath } from "@/lib/imageToken";
 import { evaluateAchievements } from "@/lib/achievements";
@@ -209,6 +210,10 @@ export default async function ReaderPage({ params }: Props) {
       <ScrollToTop />
 
       <div className="max-w-4xl mx-auto px-4 pb-16">
+        {/* End-of-chapter capture — turn borrowed traffic into owned audience
+            (free signup / Web Push). Dismissible; renders nothing once subscribed. */}
+        <ChapterEndCTA loggedIn={!!userId} />
+
         {/* Comments stream in separately so they never delay the reader. */}
         <Suspense fallback={<CommentsSkeleton />}>
           <ChapterComments
