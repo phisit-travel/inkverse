@@ -67,7 +67,8 @@ function getData(hideAdult: boolean) {
       getRanking("MONTH", 10, hideAdult),
       getRanking("ALL", 10, hideAdult),
       prisma.manga.findMany({
-        take: 6,
+        // 8 = 2 rows of 4 in the "นิยายน่าอ่าน" grid (+ enough for 4 featured).
+        take: 8,
         where: { ...listedMangaWhere(), ...adult, type: "NOVEL" },
         orderBy: { totalViews: "desc" },
         include: {
@@ -142,7 +143,7 @@ export default async function HomePage() {
   // cover art) so the showcase promotes creators across content types.
   const featManga: FeaturedItem[] = withRating
     .filter((m) => m.coverUrl)
-    .slice(0, 5)
+    .slice(0, 4)
     .map((m) => ({
       slug: m.slug,
       title: m.title,
@@ -156,7 +157,7 @@ export default async function HomePage() {
     }));
   const featNovels: FeaturedItem[] = novels
     .filter((n) => n.coverUrl)
-    .slice(0, 3)
+    .slice(0, 4)
     .map((n) => ({
       slug: n.slug,
       title: n.title,
@@ -333,8 +334,8 @@ export default async function HomePage() {
               ดูนิยายทั้งหมด <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-            {novels.map((n) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {novels.slice(0, 8).map((n) => (
               <MangaCard
                 key={n.slug}
                 slug={n.slug}
