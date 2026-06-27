@@ -9,9 +9,9 @@ import type { Metadata } from "next";
 const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inksverse.com";
 
 export const metadata: Metadata = {
-  title: "ลงงานกับ INKVERSE — ได้ 80% + เครื่องมือครบ | สมัครนักแปล/นักเขียน",
+  title: "ลงงานกับ INKVERSE — เราปั้นผลงานคุณให้ดัง + รับ 80% | นักวาด/นักเขียน/นักแปล",
   description:
-    "ลงมังงะแปลหรือเขียนนิยายบน INKVERSE รับส่วนแบ่ง 80% (สูงสุดในไทย) เครื่องมือเขียนระดับโปร ถอนเงินเข้าบัญชี และเราช่วยโปรโมตให้",
+    "ยังไม่มีคนอ่าน? เราโปรโมตให้ — คลิปของ INKVERSE ทำยอดได้ถึง 164,000 วิวต่อคลิป เอาผลงานการ์ตูน/เว็บตูน/นิยายมาลง รับส่วนแบ่ง 80% เครื่องมือครบ ถอนเงินจริง ไม่มีโฆษณาพนัน",
   alternates: { canonical: `${BASE_URL}/creators` },
 };
 
@@ -29,10 +29,7 @@ const BENEFITS = [
 ];
 
 export default async function CreatorsPage() {
-  const [mangaCount, chapterCount] = await Promise.all([
-    prisma.manga.count(),
-    prisma.chapter.count(),
-  ]);
+  const mangaCount = await prisma.manga.count();
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
@@ -40,14 +37,15 @@ export default async function CreatorsPage() {
       <div className="text-center mb-14">
         <p className="eyebrow text-[var(--text-secondary)]">FOR CREATORS</p>
         <h1 className="font-bebas text-5xl sm:text-7xl text-[var(--text-primary)] tracking-wider leading-[0.95]">
-          ลงงานกับ INKVERSE
+          เราปั้นผลงานคุณให้ดัง
         </h1>
         <p className="text-[var(--text-secondary)] mt-4 max-w-xl mx-auto">
-          แปลมังงะหรือเขียนนิยาย — รับ <span className="text-[var(--text-primary)] font-semibold">80%</span> เครื่องมือครบ ถอนเงินจริง และเราช่วยโปรโมตให้
+          ยังไม่มีคนอ่าน? <span className="text-[var(--text-primary)] font-semibold">เราโปรโมตให้</span> —
+          ลงการ์ตูน เว็บตูน หรือนิยาย รับ <span className="text-[var(--text-primary)] font-semibold">80%</span> ไม่มีค่าใช้จ่ายล่วงหน้า
         </p>
         <div className="flex flex-wrap justify-center gap-3 mt-7">
           <Link href="/apply?as=writer" className="inline-flex items-center gap-2 px-6 py-3 bal-btn text-sm font-semibold uppercase tracking-widest">
-            สมัครนักเขียน <ArrowRight className="w-4 h-4" />
+            ลงผลงานของคุณ <ArrowRight className="w-4 h-4" />
           </Link>
           <Link href="/apply?as=translator" className="inline-flex items-center gap-2 px-6 py-3 border border-[var(--border)] text-[var(--text-primary)] text-sm font-semibold uppercase tracking-widest hover:bg-[var(--bg-card)] transition-colors">
             สมัครนักแปล <ArrowRight className="w-4 h-4" />
@@ -55,8 +53,19 @@ export default async function CreatorsPage() {
         </div>
       </div>
 
-      {/* Big 80% */}
-      <div className="border-y border-[var(--border)] grid grid-cols-2 sm:grid-cols-3 divide-x divide-[var(--border)] mb-14">
+      {/* Marketing proof — the differentiator: we MANUFACTURE reach (a clip hit
+          164K), so unproven creators get an audience without paying or being
+          already-famous. This is what neither pirate-ad sites nor the
+          cash-advance novel sites offer. */}
+      <div className="border-y border-[var(--border)] grid grid-cols-2 sm:grid-cols-4 divide-x divide-[var(--border)] mb-8">
+        <div className="py-8 text-center">
+          <p className="font-bebas text-5xl sm:text-6xl text-[var(--text-primary)] tracking-wide leading-none">164K</p>
+          <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--text-secondary)] mt-2">วิว / คลิปเดียว</p>
+        </div>
+        <div className="py-8 text-center">
+          <p className="font-bebas text-5xl sm:text-6xl text-[var(--text-primary)] tracking-wide leading-none">17K</p>
+          <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--text-secondary)] mt-2">ไลก์ / คลิปเดียว</p>
+        </div>
         <div className="py-8 text-center">
           <p className="font-bebas text-5xl sm:text-6xl text-[var(--text-primary)] tracking-wide leading-none">80%</p>
           <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--text-secondary)] mt-2">ส่วนแบ่งให้คุณ</p>
@@ -65,10 +74,19 @@ export default async function CreatorsPage() {
           <p className="font-bebas text-5xl sm:text-6xl text-[var(--text-primary)] tracking-wide leading-none">{mangaCount}+</p>
           <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--text-secondary)] mt-2">เรื่องบนเว็บ</p>
         </div>
-        <div className="py-8 text-center col-span-2 sm:col-span-1 border-t sm:border-t-0 border-[var(--border)]">
-          <p className="font-bebas text-5xl sm:text-6xl text-[var(--text-primary)] tracking-wide leading-none">{(chapterCount / 1000).toFixed(0)}k+</p>
-          <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--text-secondary)] mt-2">ตอนพร้อมอ่าน</p>
-        </div>
+      </div>
+
+      {/* Positioning callout vs the competition */}
+      <div className="border border-[var(--text-primary)] bg-[var(--bg-surface)] px-6 py-7 mb-14 text-center max-w-3xl mx-auto">
+        <Megaphone className="w-8 h-8 mx-auto text-[var(--text-primary)] mb-3" />
+        <p className="font-bebas text-2xl sm:text-3xl tracking-wider text-[var(--text-primary)] leading-tight">
+          เว็บอื่นจ่ายตามวิวที่คุณ&ldquo;เคย&rdquo;ทำได้ — เราต่างกัน
+        </p>
+        <p className="text-sm text-[var(--text-secondary)] mt-3 leading-relaxed">
+          คุณยังไม่มีวิว? <span className="text-[var(--text-primary)] font-semibold">เราสร้างให้</span> —
+          ทีมเราทำคลิปโปรโมตงานคุณ + ดัน push ตรงถึงผู้อ่าน บนแพลตฟอร์มที่
+          <span className="text-[var(--text-primary)] font-semibold"> สะอาด ไม่มีโฆษณาพนัน</span> มากวนผลงานคุณ
+        </p>
       </div>
 
       {/* Benefits */}
