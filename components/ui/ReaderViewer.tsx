@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { ChevronLeft, ChevronRight, Settings, AlignJustify, BookOpen } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Settings, AlignJustify, BookOpen } from "lucide-react";
 import clsx from "clsx";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { isLikelyAutomated } from "@/lib/botCheck";
 import DownloadChapterButton from "./DownloadChapterButton";
 
@@ -28,7 +29,15 @@ interface ReaderViewerProps {
   // When set, the top-bar back control calls this instead of linking out
   // (used by the offline library reader, which has no server route to go to).
   onBack?: () => void;
+  // 1-based page to resume at (persisted reading position). Defaults to 1.
+  initialPage?: number;
+  // Full ordered chapter list for the in-reader "jump to chapter" dropdown.
+  chapters?: { num: number; title: string | null }[];
 }
+
+const clampN = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+const touchDist = (a: React.Touch, b: React.Touch) =>
+  Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
 
 // Renders a manga page onto a <canvas> instead of an <img>. The signed image is
 // fetched as a blob, decoded into an off-DOM Image, painted to the canvas, then
@@ -42,6 +51,7 @@ function MangaCanvas({
   h,
   full,
   priority,
+  registerRef,
 }: {
   source: string;
   alt: string;
@@ -49,8 +59,10 @@ function MangaCanvas({
   h: number;
   full: boolean;
   priority?: boolean;
+  // Lets the parent track the wrapper element (webtoon resume + scroll progress).
+  registerRef?: (el: HTMLDivElement | null) => void;
 }) {
-  const wrapRef = useRef<HTMLDivElement>(null);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawn = useRef(false);
   const [ready, setReady] = useState(false);
@@ -135,7 +147,10 @@ function MangaCanvas({
 
   return (
     <div
-      ref={wrapRef}
+      ref={(el) => {
+        wrapRef.current = el;
+        registerRef?.(el);
+      }}
       // Webtoon pages stack vertically; `aspect-ratio` yields fractional heights
       // that WebKit/iOS rounds inconsistently, leaving a hairline gap between
       // pages. Overlap each page 1px (-mb-px) so the seam disappears. Desktop
@@ -166,52 +181,275 @@ export default function ReaderViewer({
   mangaTitle,
   coverUrl,
   onBack,
+  initialPage,
+  chapters,
 }: ReaderViewerProps) {
+  const router = useRouter();
   const [mode, setMode] = useState<"webtoon" | "page">("webtoon");
-  const [currentPage, setCurrentPage] = useState(0);
+  const [currentPage, setCurrentPage] = useState(() =>
+    clampN((initialPage ?? 1) - 1, 0, Math.max(0, pages.length - 1))
+  );
   const [brightness, setBrightness] = useState(100);
   const [showSettings, setShowSettings] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const touchStartX = useRef<number | null>(null);
-  const touchStartY = useRef<number | null>(null);
+  const [showChapters, setShowChapters] = useState(false);
+  const [direction, setDirection] = useState<"ltr" | "rtl">("ltr");
+  // Pinch-zoom state (page mode only).
+  const [scale, setScale] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+
+  // Webtoon page wrappers — for resume-scroll + in-view progress tracking.
+  const pageEls = useRef<(HTMLDivElement | null)[]>([]);
+  const zoomElRef = useRef<HTMLDivElement | null>(null);
+  const didResume = useRef(false);
+
+  // Gesture refs (page mode).
+  const tStart = useRef<{ x: number; y: number; t: number } | null>(null);
+  const moved = useRef(false);
+  const pinch = useRef<{ dist: number; base: number } | null>(null);
+  const panStart = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
+  const lastTap = useRef(0);
+
+  // Reading-progress persistence refs.
+  const pendingPage = useRef(initialPage ?? 1);
+  const lastSent = useRef(initialPage ?? 1);
+  const debTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const goTo = useCallback(
     (idx: number) => {
-      const clamped = Math.max(0, Math.min(pages.length - 1, idx));
+      const clamped = clampN(idx, 0, pages.length - 1);
       setCurrentPage(clamped);
       onPageChange?.(clamped + 1);
     },
     [pages.length, onPageChange]
   );
+  const flip = useCallback((d: number) => goTo(currentPage + d), [goTo, currentPage]);
 
+  // ── Persisted reading direction (page mode) ──────────────────────────────
+  useEffect(() => {
+    try {
+      const d = localStorage.getItem("ivReaderDir");
+      if (d === "rtl" || d === "ltr") setDirection(d);
+    } catch {}
+  }, []);
+  const changeDir = (d: "ltr" | "rtl") => {
+    setDirection(d);
+    try {
+      localStorage.setItem("ivReaderDir", d);
+    } catch {}
+  };
+
+  // Reset zoom whenever the page or mode changes.
+  useEffect(() => {
+    setScale(1);
+    setPan({ x: 0, y: 0 });
+  }, [currentPage, mode]);
+
+  // ── Resume scroll position (webtoon) ─────────────────────────────────────
+  useEffect(() => {
+    if (didResume.current) return;
+    if (mode === "webtoon" && (initialPage ?? 1) > 1) {
+      didResume.current = true;
+      const el = pageEls.current[(initialPage ?? 1) - 1];
+      if (el) requestAnimationFrame(() => el.scrollIntoView({ block: "start" }));
+    }
+  }, [mode, initialPage]);
+
+  // ── Reading-progress reporting (debounced) ───────────────────────────────
+  const report = useCallback(
+    (page: number) => {
+      if (!chapterId || onBack) return;
+      pendingPage.current = page;
+      if (debTimer.current) clearTimeout(debTimer.current);
+      debTimer.current = setTimeout(() => {
+        const p = pendingPage.current;
+        if (p && p !== lastSent.current) {
+          lastSent.current = p;
+          fetch("/api/reading-progress", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ chapterId, page: p }),
+            keepalive: true,
+          }).catch(() => {});
+        }
+      }, 1500);
+    },
+    [chapterId, onBack]
+  );
+
+  // Flush the latest page on tab-hide / unmount so a quick exit still saves.
+  useEffect(() => {
+    const flush = () => {
+      const p = pendingPage.current;
+      if (!chapterId || onBack || !p || p === lastSent.current) return;
+      lastSent.current = p;
+      const body = JSON.stringify({ chapterId, page: p });
+      try {
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon("/api/reading-progress", new Blob([body], { type: "application/json" }));
+        } else {
+          fetch("/api/reading-progress", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body,
+            keepalive: true,
+          }).catch(() => {});
+        }
+      } catch {}
+    };
+    const onVis = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      if (debTimer.current) clearTimeout(debTimer.current);
+      flush();
+    };
+  }, [chapterId, onBack]);
+
+  // Page mode: report whenever the current page changes.
+  useEffect(() => {
+    if (mode === "page") report(currentPage + 1);
+  }, [currentPage, mode, report]);
+
+  // Webtoon mode: report the top-most page currently in view (throttled to rAF).
+  useEffect(() => {
+    if (mode !== "webtoon" || !chapterId || onBack) return;
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const els = pageEls.current;
+        let top = 1;
+        for (let i = 0; i < els.length; i++) {
+          const el = els[i];
+          if (el && el.getBoundingClientRect().top <= 120) top = i + 1;
+          else break;
+        }
+        report(top);
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [mode, chapterId, onBack, report]);
+
+  // ── Keyboard nav (page mode), horizontal keys respect reading direction ──
   useEffect(() => {
     if (mode !== "page") return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight" || e.key === "ArrowDown") goTo(currentPage + 1);
-      if (e.key === "ArrowLeft" || e.key === "ArrowUp") goTo(currentPage - 1);
+      if (e.key === "ArrowDown") goTo(currentPage + 1);
+      else if (e.key === "ArrowUp") goTo(currentPage - 1);
+      else if (e.key === "ArrowRight") goTo(currentPage + (direction === "rtl" ? -1 : 1));
+      else if (e.key === "ArrowLeft") goTo(currentPage + (direction === "rtl" ? 1 : -1));
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [mode, currentPage, goTo]);
+  }, [mode, currentPage, goTo, direction]);
 
-  function handleTouchStart(e: React.TouchEvent) {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
+  // ── Touch gestures (page mode): pinch-zoom + pan + tap-zones + swipe ──────
+  function onTouchStart(e: React.TouchEvent) {
+    if (mode !== "page") return;
+    if (e.touches.length === 2) {
+      pinch.current = { dist: touchDist(e.touches[0], e.touches[1]), base: scale };
+      tStart.current = null;
+      return;
+    }
+    const t = e.touches[0];
+    tStart.current = { x: t.clientX, y: t.clientY, t: Date.now() };
+    moved.current = false;
+    if (scale > 1) panStart.current = { x: t.clientX, y: t.clientY, px: pan.x, py: pan.y };
   }
 
-  function handleTouchEnd(e: React.TouchEvent) {
-    if (mode !== "page" || touchStartX.current === null || touchStartY.current === null) return;
-    const dx = e.changedTouches[0].clientX - touchStartX.current;
-    const dy = e.changedTouches[0].clientY - touchStartY.current;
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
-      if (dx < 0) goTo(currentPage + 1);
-      else goTo(currentPage - 1);
+  function onTouchMove(e: React.TouchEvent) {
+    if (mode !== "page") return;
+    if (e.touches.length === 2 && pinch.current) {
+      const s = clampN((pinch.current.base * touchDist(e.touches[0], e.touches[1])) / pinch.current.dist, 1, 3);
+      setScale(s);
+      moved.current = true;
+      return;
     }
-    touchStartX.current = null;
-    touchStartY.current = null;
+    if (e.touches.length === 1 && scale > 1 && panStart.current) {
+      const t = e.touches[0];
+      const elW = zoomElRef.current?.offsetWidth ?? window.innerWidth;
+      const elH = zoomElRef.current?.offsetHeight ?? window.innerHeight;
+      const bx = (elW * (scale - 1)) / 2;
+      const by = (elH * (scale - 1)) / 2;
+      setPan({
+        x: clampN(panStart.current.px + (t.clientX - panStart.current.x), -bx, bx),
+        y: clampN(panStart.current.py + (t.clientY - panStart.current.y), -by, by),
+      });
+      moved.current = true;
+      return;
+    }
+    if (e.touches.length === 1 && tStart.current) {
+      const t = e.touches[0];
+      if (Math.abs(t.clientX - tStart.current.x) > 10 || Math.abs(t.clientY - tStart.current.y) > 10)
+        moved.current = true;
+    }
+  }
+
+  function onTouchEnd(e: React.TouchEvent) {
+    if (mode !== "page") return;
+    // A pinch just ended — snap back to 1x if barely zoomed.
+    if (pinch.current) {
+      pinch.current = null;
+      if (scale < 1.05) {
+        setScale(1);
+        setPan({ x: 0, y: 0 });
+      }
+      return;
+    }
+    const st = tStart.current;
+    tStart.current = null;
+    if (!st) return;
+    const ct = e.changedTouches[0];
+    const dx = ct.clientX - st.x;
+    const dy = ct.clientY - st.y;
+    const dt = Date.now() - st.t;
+
+    // While zoomed: a drag pans (already applied); a double-tap resets zoom.
+    if (scale > 1) {
+      if (!moved.current) {
+        const now = Date.now();
+        if (now - lastTap.current < 300) {
+          setScale(1);
+          setPan({ x: 0, y: 0 });
+          lastTap.current = 0;
+        } else {
+          lastTap.current = now;
+        }
+      }
+      return;
+    }
+
+    // Tap (no significant move) → left/right third navigates (center reserved).
+    if (!moved.current && dt < 500) {
+      const w = window.innerWidth;
+      if (ct.clientX < w / 3) flip(direction === "rtl" ? 1 : -1);
+      else if (ct.clientX > (2 * w) / 3) flip(direction === "rtl" ? -1 : 1);
+      return;
+    }
+    // Horizontal swipe → flip (mirrored for RTL).
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+      const dir = dx < 0 ? 1 : -1; // physical swipe-left = forward in LTR
+      flip(direction === "rtl" ? -dir : dir);
+    }
   }
 
   const progress = pages.length > 0 ? ((currentPage + 1) / pages.length) * 100 : 0;
+  const showChapterMenu = !onBack && !!chapters && chapters.length > 0;
+  const leftAction = direction === "rtl" ? 1 : -1;
+  const rightAction = direction === "rtl" ? -1 : 1;
+  const pageLabel = (
+    <>
+      ตอนที่ {chapterNum}
+      {mode === "page" && ` — ${currentPage + 1}/${pages.length}`}
+    </>
+  );
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)]">
@@ -236,11 +474,47 @@ export default function ReaderViewer({
             </Link>
           )}
 
+          {/* Chapter label — a jump-to-chapter dropdown when a list is provided. */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-[var(--text-secondary)]">
-              ตอนที่ {chapterNum}
-              {mode === "page" && ` — ${currentPage + 1}/${pages.length}`}
-            </span>
+            {showChapterMenu ? (
+              <div className="relative">
+                <button
+                  onClick={() => setShowChapters((v) => !v)}
+                  aria-label="เลือกตอน"
+                  className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex items-center gap-1"
+                >
+                  {pageLabel}
+                  <ChevronDown className="w-3.5 h-3.5 shrink-0" />
+                </button>
+                {showChapters && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowChapters(false)} />
+                    <div className="absolute left-1/2 -translate-x-1/2 top-9 z-50 w-60 max-h-80 overflow-y-auto bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl py-1 shadow-xl">
+                      {chapters!.map((c) => (
+                        <button
+                          key={c.num}
+                          onClick={() => {
+                            setShowChapters(false);
+                            router.push(`/content/${mangaSlug}/${c.num}`);
+                          }}
+                          className={clsx(
+                            "w-full text-left px-3 py-2 text-xs transition-colors hover:bg-white/10",
+                            c.num === chapterNum
+                              ? "text-[var(--text-primary)] font-semibold bg-white/5"
+                              : "text-[var(--text-secondary)]"
+                          )}
+                        >
+                          ตอน {c.num}
+                          {c.title ? ` · ${c.title}` : ""}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <span className="text-sm text-[var(--text-secondary)]">{pageLabel}</span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -339,13 +613,35 @@ export default function ReaderViewer({
                 ))}
               </div>
             </div>
+            {/* Reading direction — only affects the paged (หน้า) mode. */}
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] block mb-1">ทิศทางอ่าน (โหมดหน้า)</label>
+              <div className="flex gap-2">
+                {([
+                  { v: "ltr", label: "ซ้าย→ขวา" },
+                  { v: "rtl", label: "ขวา→ซ้าย" },
+                ] as const).map((d) => (
+                  <button
+                    key={d.v}
+                    onClick={() => changeDir(d.v)}
+                    className={clsx(
+                      "flex-1 py-1.5 rounded-lg text-xs font-medium transition-all",
+                      direction === d.v
+                        ? "bal-btn"
+                        : "bg-white/10 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    )}
+                  >
+                    {d.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}
 
       {/* Content */}
       <div
-        ref={containerRef}
         style={{ filter: `brightness(${brightness}%)` }}
         className="max-w-4xl mx-auto select-none"
         onContextMenu={(e) => e.preventDefault()}
@@ -363,14 +659,19 @@ export default function ReaderViewer({
                 // Paint the first screenful immediately so the chapter opens
                 // without a skeleton flash at the top.
                 priority={i < 2}
+                registerRef={(el) => {
+                  pageEls.current[i] = el;
+                }}
               />
             ))}
           </div>
         ) : (
           <div
-            className="relative min-h-screen flex items-center justify-center p-4"
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
+            className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden"
+            style={{ touchAction: "none" }}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
           >
             {/* Render a small window around the current page and keep neighbours
                 mounted+decoded (priority) so flipping is instant. Only the
@@ -382,30 +683,52 @@ export default function ReaderViewer({
                   key={pages[i].pageNum}
                   className={i === currentPage ? "w-full flex items-center justify-center" : "hidden"}
                 >
-                  <MangaCanvas
-                    source={pages[i].src}
-                    alt={`Page ${i + 1}`}
-                    w={pages[i].width || 800}
-                    h={pages[i].height || 1200}
-                    full={false}
-                    priority
-                  />
+                  {i === currentPage ? (
+                    <div
+                      ref={zoomElRef}
+                      className="w-full flex items-center justify-center"
+                      style={{
+                        transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
+                        transformOrigin: "center center",
+                        transition: scale === 1 ? "transform 0.18s ease-out" : "none",
+                      }}
+                    >
+                      <MangaCanvas
+                        source={pages[i].src}
+                        alt={`Page ${i + 1}`}
+                        w={pages[i].width || 800}
+                        h={pages[i].height || 1200}
+                        full={false}
+                        priority
+                      />
+                    </div>
+                  ) : (
+                    <MangaCanvas
+                      source={pages[i].src}
+                      alt={`Page ${i + 1}`}
+                      w={pages[i].width || 800}
+                      h={pages[i].height || 1200}
+                      full={false}
+                      priority
+                    />
+                  )}
                 </div>
               ))}
 
-            {/* Nav buttons */}
+            {/* Nav buttons — actions/disabled mirror the reading direction (in RTL
+                the left chevron advances, since "next" sits to the left). */}
             <button
-              onClick={() => goTo(currentPage - 1)}
-              disabled={currentPage === 0}
-              aria-label="หน้าก่อนหน้า"
+              onClick={() => goTo(currentPage + leftAction)}
+              disabled={currentPage + leftAction < 0 || currentPage + leftAction >= pages.length}
+              aria-label={direction === "rtl" ? "หน้าถัดไป" : "หน้าก่อนหน้า"}
               className="absolute left-2 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/60 text-[var(--text-primary)] disabled:opacity-20 hover:bg-black/80 transition-all"
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
             <button
-              onClick={() => goTo(currentPage + 1)}
-              disabled={currentPage === pages.length - 1}
-              aria-label="หน้าถัดไป"
+              onClick={() => goTo(currentPage + rightAction)}
+              disabled={currentPage + rightAction < 0 || currentPage + rightAction >= pages.length}
+              aria-label={direction === "rtl" ? "หน้าก่อนหน้า" : "หน้าถัดไป"}
               className="absolute right-2 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/60 text-[var(--text-primary)] disabled:opacity-20 hover:bg-black/80 transition-all"
             >
               <ChevronRight className="w-6 h-6" />

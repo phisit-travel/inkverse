@@ -73,9 +73,10 @@ export default async function ReaderPage({ params }: Props) {
   // owner/admin (live preview) — mirrors the per-chapter draft gate below.
   if (!manga.published && !isOwnerPreview) notFound();
 
-  // The chapter body and the adjacent-chapter (prev/next) lookups both depend
-  // only on manga.id + chapterNum, not on each other → fetch all three at once.
-  const [chapterData, [prevChapter, nextChapter]] = await Promise.all([
+  // The chapter body, the adjacent-chapter (prev/next) lookups, and the full
+  // ordered chapter list (for the in-reader jump dropdown) all depend only on
+  // manga.id (+ chapterNum), not on each other → fetch them all at once.
+  const [chapterData, [prevChapter, nextChapter], chapterList] = await Promise.all([
     prisma.chapter.findUnique({
       where: { mangaId_chapterNum: { mangaId: manga.id, chapterNum } },
       include: { pages: { orderBy: { pageNum: "asc" } } },
@@ -92,6 +93,11 @@ export default async function ReaderPage({ params }: Props) {
         select: { chapterNum: true },
       }),
     ]),
+    prisma.chapter.findMany({
+      where: { mangaId: manga.id, ...liveChapterWhere() },
+      orderBy: { chapterNum: "asc" },
+      select: { chapterNum: true, title: true },
+    }),
   ]);
   if (!chapterData) notFound();
 
@@ -154,6 +160,18 @@ export default async function ReaderPage({ params }: Props) {
 
   const isNovel = manga.type === "NOVEL";
 
+  // Resume page for the manga reader: the user's last persisted page on this
+  // chapter (1 if none / anonymous). Cheap single-row lookup, manga-only.
+  const savedLastPage =
+    !isNovel && userId
+      ? (
+          await prisma.readHistory.findUnique({
+            where: { userId_chapterId: { userId, chapterId: chapterData.id } },
+            select: { lastPage: true },
+          })
+        )?.lastPage ?? 1
+      : 1;
+
   return (
     <div>
       {isNovel ? (
@@ -183,7 +201,10 @@ export default async function ReaderPage({ params }: Props) {
           mangaTitle={manga.title}
           coverUrl={manga.coverUrl ?? undefined}
           prevChapter={prevChapter?.chapterNum ?? null}
-          nextChapter={nextChapter?.chapterNum ?? null}        />
+          nextChapter={nextChapter?.chapterNum ?? null}
+          initialPage={savedLastPage}
+          chapters={chapterList.map((c) => ({ num: c.chapterNum, title: c.title }))}
+        />
       )}
       <ScrollToTop />
 
