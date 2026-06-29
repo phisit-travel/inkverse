@@ -30,10 +30,19 @@ export function LangProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
+      // A ?lang=en (or ?lang=th) query param wins and is remembered — so a link
+      // like inksverse.com/?lang=en opens straight in English (handy for sharing
+      // with non-Thai visitors). Otherwise fall back to the saved preference.
+      const q = new URLSearchParams(window.location.search).get("lang");
+      if (q === "en" || q === "th") {
+        setLangState(q);
+        localStorage.setItem("lang", q);
+        return;
+      }
       const stored = localStorage.getItem("lang") as Lang | null;
       if (stored === "en" || stored === "th") setLangState(stored);
     } catch {
-      // localStorage unavailable (private browsing / SSR guard)
+      // localStorage / URL unavailable (private browsing / SSR guard)
     }
   }, []);
 
