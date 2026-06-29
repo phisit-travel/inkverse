@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { Eye } from "lucide-react";
 import RankChip from "./RankChip";
 import type { RankBadge } from "@/lib/ranks";
+import { useLang } from "./LangProvider";
+import { dict } from "@/lib/i18n";
 
 export interface TranslatorRankEntry {
   penName: string;
@@ -15,44 +19,47 @@ export interface TranslatorRankEntry {
 const MEDAL = ["text-[var(--text-primary)]", "text-gray-300", "text-[var(--text-primary)]"];
 
 export default function TranslatorRanking({ entries }: { entries: TranslatorRankEntry[] }) {
+  const lang = useLang();
+  const t = (k: keyof typeof dict.th) => dict[lang][k];
+
   if (entries.length === 0) return null;
 
   return (
     <section className="mb-10">
       <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-wider mb-4 flex items-center gap-2">
         <span className="w-1 h-6 bg-[var(--accent)] rounded-full" />
-        อันดับครีเอเตอร์
+        {t("creatorRanking")}
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {entries.map((t, i) => (
+        {entries.map((tr, i) => (
           <Link
-            key={t.username}
-            href={`/profile/${t.username}`}
+            key={tr.username}
+            href={`/profile/${tr.username}`}
             className="bal-invert flex items-center gap-3 bg-[var(--bg-surface)] border border-[var(--border)] p-3"
           >
             <span className={`font-bebas text-2xl w-7 text-center shrink-0 ${MEDAL[i] ?? "text-[var(--text-secondary)]"}`}>
               {i + 1}
             </span>
             <div className="relative w-11 h-11 rounded-full overflow-hidden bg-[var(--bg-card)] shrink-0">
-              {t.avatarUrl ? (
+              {tr.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={t.avatarUrl} alt="" className="w-full h-full object-cover" />
+                <img src={tr.avatarUrl} alt="" className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-sm font-bold text-white bg-[var(--accent)]">
-                  {t.penName[0]?.toUpperCase()}
+                  {tr.penName[0]?.toUpperCase()}
                 </div>
               )}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 min-w-0">
-                <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{t.penName}</p>
-                {t.rankBadge && <RankChip badge={t.rankBadge} className="shrink-0" />}
+                <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{tr.penName}</p>
+                {tr.rankBadge && <RankChip badge={tr.rankBadge} className="shrink-0" />}
               </div>
               <p className="text-xs text-[var(--text-secondary)] flex items-center gap-2 mt-0.5">
                 <span className="inline-flex items-center gap-1">
-                  <Eye className="w-3 h-3" />{t.views.toLocaleString()}
+                  <Eye className="w-3 h-3" />{tr.views.toLocaleString()}
                 </span>
-                <span>· {t.works} ผลงาน</span>
+                <span>· {tr.works} {t("worksUnit")}</span>
               </p>
             </div>
           </Link>

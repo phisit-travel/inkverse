@@ -20,7 +20,7 @@ export const revalidate = 3600;
 
 const SEED_SUFFIX = "@seed.inkverse.local";
 
-export default async function LeaderboardPage() {
+async function getLeaderboard() {
   // Top readers by chapters read (real accounts only).
   const grouped = await prisma.readHistory.groupBy({
     by: ["userId"],
@@ -39,7 +39,7 @@ export default async function LeaderboardPage() {
   ]);
   const userMap = new Map(users.map((u) => [u.id, u]));
 
-  const entries = grouped
+  return grouped
     .map((g) => {
       const u = userMap.get(g.userId);
       if (!u) return null;
@@ -47,6 +47,17 @@ export default async function LeaderboardPage() {
     })
     .filter((e): e is NonNullable<typeof e> => e !== null)
     .slice(0, 50);
+}
+
+export default async function LeaderboardPage() {
+  // Degrade gracefully if the DB is unavailable (e.g. Neon free-tier compute
+  // quota) so the build prerender and the live page never hard-crash.
+  let entries: Awaited<ReturnType<typeof getLeaderboard>> = [];
+  try {
+    entries = await getLeaderboard();
+  } catch (err) {
+    console.error("leaderboard fetch failed", err);
+  }
 
   const medal = (i: number) =>
     i === 0 ? "text-[var(--text-primary)]" : i === 1 ? "text-[var(--text-primary)]/70" : "text-[var(--text-primary)]/45";

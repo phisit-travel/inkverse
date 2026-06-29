@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Search, Loader2 } from "lucide-react";
+import { useLang } from "./LangProvider";
+import { dict } from "@/lib/i18n";
 
 interface Result {
   id: string;
@@ -30,6 +32,8 @@ export default function SearchBox({
   const [active, setActive] = useState(-1);
   const boxRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const lang = useLang();
+  const t = (k: keyof typeof dict.th) => dict[lang][k];
 
   useEffect(() => { if (autoFocus) inputRef.current?.focus(); }, [autoFocus]);
 
@@ -38,7 +42,7 @@ export default function SearchBox({
     const term = q.trim();
     if (term.length < 1) { setResults([]); setOpen(false); setLoading(false); return; }
     setLoading(true);
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(term)}&limit=6`, { cache: "no-store" });
         const data = await res.json();
@@ -51,7 +55,7 @@ export default function SearchBox({
         setLoading(false);
       }
     }, 250);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [q]);
 
   // Close on outside click
@@ -95,7 +99,7 @@ export default function SearchBox({
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={onKeyDown}
             onFocus={() => { if (results.length) setOpen(true); }}
-            placeholder="ค้นหามังงะ..."
+            placeholder={t("searchPlaceholder")}
             className="w-full md:w-48 md:focus:w-64 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl pl-9 pr-8 py-2 text-sm text-[var(--text-primary)] placeholder-gray-500 focus:outline-none focus:border-[var(--text-primary)]/50 transition-all"
           />
           {loading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-secondary)] animate-spin" />}
@@ -105,7 +109,9 @@ export default function SearchBox({
       {open && (
         <div className="absolute left-0 right-0 mt-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)]  overflow-hidden z-50 max-h-[70vh] overflow-y-auto">
           {results.length === 0 ? (
-            <p className="px-4 py-3 text-sm text-[var(--text-secondary)] text-center">ไม่พบเรื่องที่ตรงกับ &ldquo;{q.trim()}&rdquo;</p>
+            <p className="px-4 py-3 text-sm text-[var(--text-secondary)] text-center">
+              {t("searchNoResults")} &ldquo;{q.trim()}&rdquo;
+            </p>
           ) : (
             <>
               {results.map((r, i) => (
@@ -124,7 +130,7 @@ export default function SearchBox({
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-[var(--text-primary)] truncate">{r.title}</p>
                     <p className="text-xs text-[var(--text-secondary)]">
-                      {r.type}{r.latestChapter != null ? ` · ตอนล่าสุด ${r.latestChapter}` : ""}
+                      {r.type}{r.latestChapter != null ? ` · ${t("searchLatestChapter")} ${r.latestChapter}` : ""}
                     </p>
                   </div>
                 </button>
@@ -133,7 +139,7 @@ export default function SearchBox({
                 onClick={() => go(`/discover?q=${encodeURIComponent(q.trim())}`)}
                 className="w-full text-center px-3 py-2.5 text-xs font-medium text-[var(--text-primary)] border-t border-[var(--border)] hover:bg-[var(--bg-card)] transition-colors"
               >
-                ดูผลการค้นหาทั้งหมด &ldquo;{q.trim()}&rdquo;
+                {t("searchViewAll")} &ldquo;{q.trim()}&rdquo;
               </button>
             </>
           )}

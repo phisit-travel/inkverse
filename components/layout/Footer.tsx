@@ -1,29 +1,45 @@
+"use client";
+
 import Link from "next/link";
 import Logo from "@/components/ui/Logo";
 import { Github, Twitter, Facebook } from "@/components/ui/SocialIcons";
-
-const links = {
-  เนื้อหา: [
-    { href: "/manga", label: "เรื่องทั้งหมด" },
-    { href: "/discover", label: "ค้นหา" },
-    { href: "/manga/action", label: "Action" },
-    { href: "/download", label: "แอป Android" },
-  ],
-  บัญชี: [
-    { href: "/auth/signin", label: "เข้าสู่ระบบ" },
-    { href: "/auth/signup", label: "สมัครสมาชิก" },
-    { href: "/creators", label: "ลงงานกับเรา (รับ 80%)" },
-    { href: "/services", label: "รับพิสูจน์อักษร/จัดหน้า" },
-  ],
-  ข้อมูล: [
-    { href: "/about", label: "เกี่ยวกับเรา" },
-    { href: "/terms", label: "ข้อกำหนด" },
-    { href: "/privacy", label: "นโยบายความเป็นส่วนตัว" },
-    { href: "/dmca", label: "DMCA" },
-  ],
-};
+import { useLang } from "@/components/ui/LangProvider";
+import { dict } from "@/lib/i18n";
 
 export default function Footer() {
+  const lang = useLang();
+  const t = (k: keyof typeof dict.th) => dict[lang][k];
+
+  const sections = [
+    {
+      label: t("footerSectionContent"),
+      items: [
+        { href: "/manga", label: t("footerAllTitles") },
+        { href: "/discover", label: t("footerSearch") },
+        { href: "/manga/action", label: "Action" },
+        { href: "/download", label: t("footerAndroidApp") },
+      ],
+    },
+    {
+      label: t("footerSectionAccount"),
+      items: [
+        { href: "/auth/signin", label: t("footerSignIn") },
+        { href: "/auth/signup", label: t("footerSignUp") },
+        { href: "/creators", label: t("footerJoinCreators") },
+        { href: "/services", label: t("footerServices") },
+      ],
+    },
+    {
+      label: t("footerSectionInfo"),
+      items: [
+        { href: "/about", label: t("footerAbout") },
+        { href: "/terms", label: t("footerTerms") },
+        { href: "/privacy", label: t("footerPrivacy") },
+        { href: "/dmca", label: "DMCA" },
+      ],
+    },
+  ];
+
   return (
     <footer className="bg-[var(--bg-primary)] border-t border-[var(--border)] mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
@@ -32,8 +48,7 @@ export default function Footer() {
           <div className="col-span-2 md:col-span-1">
             <Logo size="md" />
             <p className="text-sm text-[var(--text-secondary)] mt-3 leading-relaxed">
-              แพลตฟอร์มอ่านการ์ตูนออนไลน์ มังงะ มันฮวา มานฮวา
-              ที่ใหญ่ที่สุดในไทย
+              {t("footerTagline")}
             </p>
             <div className="flex items-center gap-3 mt-4">
               {[
@@ -54,10 +69,10 @@ export default function Footer() {
           </div>
 
           {/* Links */}
-          {Object.entries(links).map(([category, items]) => (
-            <div key={category}>
+          {sections.map(({ label, items }) => (
+            <div key={label}>
               <h4 className="text-sm font-semibold text-[var(--text-primary)] mb-3">
-                {category}
+                {label}
               </h4>
               <ul className="space-y-2">
                 {items.map((item) => (

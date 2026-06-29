@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, ChevronLeft, ChevronRight, Star, Eye, BookOpen } from "lucide-react";
+import { useLang } from "./LangProvider";
+import { dict } from "@/lib/i18n";
 
 export type FeaturedItem = {
   slug: string;
@@ -25,6 +27,8 @@ const INTERVAL = 5500;
 export default function FeaturedTitles({ items }: { items: FeaturedItem[] }) {
   const [i, setI] = useState(0);
   const paused = useRef(false);
+  const lang = useLang();
+  const t = (k: keyof typeof dict.th) => dict[lang][k];
 
   useEffect(() => {
     if (items.length <= 1) return;
@@ -41,7 +45,7 @@ export default function FeaturedTitles({ items }: { items: FeaturedItem[] }) {
     <section className="mb-12">
       <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-[0.18em] uppercase flex items-center gap-3 mb-4">
         <span className="w-6 h-px bg-[var(--text-primary)]" />
-        เรื่องเด่น
+        {t("featuredTitle")}
       </h2>
 
       <div
@@ -74,7 +78,7 @@ export default function FeaturedTitles({ items }: { items: FeaturedItem[] }) {
               {/* text */}
               <div className={`flex-1 min-w-0 max-w-lg ${idx === i ? "iv-rise" : ""}`}>
                 <p className="eyebrow mb-3">
-                  {it.type === "NOVEL" ? "นิยาย" : it.genres?.[0] ?? "แนะนำ"}
+                  {it.type === "NOVEL" ? t("labelNovel") : it.genres?.[0] ?? t("labelRecommended")}
                 </p>
                 <h3 className="font-bebas text-3xl sm:text-4xl lg:text-5xl text-[var(--text-primary)] tracking-[0.04em] leading-[0.95] uppercase line-clamp-2 mb-3">
                   {it.title}
@@ -100,7 +104,7 @@ export default function FeaturedTitles({ items }: { items: FeaturedItem[] }) {
                   {it.latestChapter !== undefined ? (
                     <span className="flex items-center gap-1">
                       <BookOpen className="w-4 h-4" />
-                      {it.latestChapter} ตอน
+                      {it.latestChapter} {t("chaptersUnit")}
                     </span>
                   ) : null}
                 </div>
@@ -108,7 +112,7 @@ export default function FeaturedTitles({ items }: { items: FeaturedItem[] }) {
                   href={`/content/${it.slug}`}
                   className="inline-flex items-center gap-2 px-7 py-3 bal-btn font-semibold text-xs uppercase tracking-[0.2em] hover:opacity-90"
                 >
-                  อ่านเลย
+                  {t("readNow")}
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
@@ -140,14 +144,14 @@ export default function FeaturedTitles({ items }: { items: FeaturedItem[] }) {
           <>
             {/* arrows */}
             <button
-              aria-label="ก่อนหน้า"
+              aria-label={t("prevSlide")}
               onClick={() => go(i - 1)}
               className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 hidden sm:flex items-center justify-center border border-[var(--border)] bg-[var(--bg-primary)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-primary)]/50 transition-colors z-10"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
-              aria-label="ถัดไป"
+              aria-label={t("nextSlide")}
               onClick={() => go(i + 1)}
               className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 hidden sm:flex items-center justify-center border border-[var(--border)] bg-[var(--bg-primary)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-primary)]/50 transition-colors z-10"
             >
@@ -159,7 +163,7 @@ export default function FeaturedTitles({ items }: { items: FeaturedItem[] }) {
               {items.map((_, idx) => (
                 <button
                   key={idx}
-                  aria-label={`สไลด์ ${idx + 1}`}
+                  aria-label={`${t("slideLabel")} ${idx + 1}`}
                   onClick={() => go(idx)}
                   className={`h-1 transition-all ${
                     idx === i ? "w-8 bg-[var(--text-primary)]" : "w-4 bg-[var(--text-primary)]/30 hover:bg-[var(--text-primary)]/60"

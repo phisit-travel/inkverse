@@ -5,6 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { TrendingUp, Flame, Clock } from "lucide-react";
 import clsx from "clsx";
+import { useLang } from "./LangProvider";
+import { dict } from "@/lib/i18n";
 
 interface RankItem {
   rank: number;
@@ -24,18 +26,21 @@ interface RankingPanelProps {
   allTimeData?: RankItem[];
 }
 
-const tabs = [
-  { key: "WEEK", label: "สัปดาห์", icon: Flame },
-  { key: "MONTH", label: "เดือน", icon: TrendingUp },
-  { key: "ALL", label: "ทั้งหมด", icon: Clock },
-] as const;
-
 export default function RankingPanel({
   weeklyData = [],
   monthlyData = [],
   allTimeData = [],
 }: RankingPanelProps) {
   const [activeTab, setActiveTab] = useState<"WEEK" | "MONTH" | "ALL">("WEEK");
+  const lang = useLang();
+  const t = (k: keyof typeof dict.th) => dict[lang][k];
+
+  // Build tabs inside render so they pick up the current lang.
+  const tabs = [
+    { key: "WEEK" as const, label: t("tabWeek"), icon: Flame },
+    { key: "MONTH" as const, label: t("tabMonth"), icon: TrendingUp },
+    { key: "ALL" as const, label: t("tabAll"), icon: Clock },
+  ];
 
   const data =
     activeTab === "WEEK"
@@ -49,7 +54,7 @@ export default function RankingPanel({
       <div className="p-4 border-b border-[var(--border)]">
         <h3 className="font-bebas text-xl text-[var(--text-primary)] tracking-wider flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-[var(--text-primary)]" />
-          อันดับ
+          {t("rankingsTitle")}
         </h3>
         <div className="flex gap-1 mt-3">
           {tabs.map(({ key, label, icon: Icon }) => (
@@ -73,7 +78,7 @@ export default function RankingPanel({
       <div className="divide-y divide-white/5">
         {data.length === 0 ? (
           <div className="p-8 text-center text-[var(--text-secondary)] text-sm">
-            ยังไม่มีข้อมูล
+            {t("noData")}
           </div>
         ) : (
           data.slice(0, 10).map((item, i) => (

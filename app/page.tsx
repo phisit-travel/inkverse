@@ -16,6 +16,7 @@ import Link from "next/link";
 import { ChevronRight, SpellCheck } from "lucide-react";
 import { unstable_cache } from "next/cache";
 import type { Metadata } from "next";
+import T from "@/components/ui/T";
 
 const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inksverse.com";
 
@@ -126,11 +127,26 @@ function getData(hideAdult: boolean) {
   }, ["home-data", hideAdult ? "sfw" : "all"], { revalidate: 300, tags: ["home-feed"] })();
 }
 
+type HomeData = Awaited<ReturnType<typeof getData>>;
+const EMPTY_HOME: HomeData = {
+  mangas: [], genres: [], latestChapters: [],
+  weeklyRank: [], monthlyRank: [], allRank: [],
+  translatorRanking: [], novels: [],
+} as HomeData;
+
 export default async function HomePage() {
   // App hides 18+ (Play Store); web shows it (badge + age gate).
   const hideAdult = await isAppRequest();
-  const { mangas, genres, latestChapters, weeklyRank, monthlyRank, allRank, translatorRanking, novels } =
-    await getData(hideAdult);
+  // Degrade gracefully if the DB is unavailable (e.g. Neon free-tier compute
+  // quota) — render an empty home (HTTP 200) instead of a hard 500/NET-001.
+  let data: HomeData;
+  try {
+    data = await getData(hideAdult);
+  } catch (err) {
+    console.error("home data fetch failed", err);
+    data = EMPTY_HOME;
+  }
+  const { mangas, genres, latestChapters, weeklyRank, monthlyRank, allRank, translatorRanking, novels } = data;
 
   const withRating = mangas.map((m) => ({
     ...m,
@@ -188,7 +204,7 @@ export default async function HomePage() {
         <Suspense fallback={<div className="h-9" />}>
           <GenreFilterBar
             genres={[
-              { label: "ทั้งหมด", value: "all" },
+              { label: "all", value: "all" },
               ...genres.map((g) => ({ label: g.name, value: g.slug })),
             ]}
           />
@@ -207,17 +223,17 @@ export default async function HomePage() {
           <div className="flex items-start gap-4">
             <SpellCheck className="w-8 h-8 shrink-0 text-[var(--text-primary)]" />
             <div>
-              <p className="eyebrow mb-2">บริการโดย INKVERSE · สำหรับนักเขียน &amp; นักแปล</p>
+              <p className="eyebrow mb-2"><T k="serviceBadge" /></p>
               <h2 className="font-bebas text-2xl sm:text-3xl tracking-wider leading-none text-[var(--text-primary)]">
-                พิสูจน์อักษร &amp; จัดเรียงหน้า นิยายไทย
+                <T k="serviceTitle" />
               </h2>
               <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                งานเขียนสะอาด อ่านลื่น เป็นมืออาชีพ — ลูกค้าใหม่ฟรี 2,500 คำแรก
+                <T k="serviceDesc" />
               </p>
             </div>
           </div>
           <span className="inline-flex shrink-0 items-center gap-2 self-start border border-[var(--text-primary)] px-5 py-3 text-xs font-semibold uppercase tracking-widest text-[var(--text-primary)] transition-colors group-hover:bg-[var(--text-primary)] group-hover:text-[var(--bg-primary)] sm:self-auto">
-            ดูบริการ &amp; ขอราคาฟรี <ChevronRight className="w-4 h-4" />
+            <T k="serviceBtn" /> <ChevronRight className="w-4 h-4" />
           </span>
         </div>
       </Link>
@@ -234,13 +250,13 @@ export default async function HomePage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-[0.18em] uppercase flex items-center gap-3">
                 <span className="w-6 h-px bg-[var(--text-primary)]" />
-                อัปเดตล่าสุด
+                <T k="latestUpdates" />
               </h2>
               <Link
                 href="/manga"
                 className="text-[11px] uppercase tracking-[0.2em] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1 transition-colors"
               >
-                ดูทั้งหมด <ChevronRight className="w-4 h-4" />
+                <T k="viewAll" /> <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
@@ -267,13 +283,13 @@ export default async function HomePage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-[0.18em] uppercase flex items-center gap-3">
                 <span className="w-6 h-px bg-[var(--text-primary)]" />
-                ยอดนิยมสัปดาห์นี้
+                <T k="weeklyTop" />
               </h2>
               <Link
                 href="/manga"
                 className="text-[11px] uppercase tracking-[0.2em] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1 transition-colors"
               >
-                ดูทั้งหมด <ChevronRight className="w-4 h-4" />
+                <T k="viewAll" /> <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -302,7 +318,7 @@ export default async function HomePage() {
                 href="/manga"
                 className="inline-flex items-center gap-2 px-6 py-3 border border-[var(--border)] text-[var(--text-primary)] text-sm font-semibold uppercase tracking-widest hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] hover:border-[var(--text-primary)] transition-colors"
               >
-                ดูมังงะทั้งหมด <ChevronRight className="w-4 h-4" />
+                <T k="browseAll" /> <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
           </section>
@@ -315,13 +331,13 @@ export default async function HomePage() {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-bebas text-2xl text-[var(--text-primary)] tracking-[0.18em] uppercase flex items-center gap-3">
                   <span className="w-6 h-px bg-[var(--text-primary)]" />
-                  นิยายน่าอ่าน
+                  <T k="featuredNovels" />
                 </h2>
                 <Link
                   href="/manga?type=NOVEL"
                   className="text-[11px] uppercase tracking-[0.2em] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1 transition-colors"
                 >
-                  ดูทั้งหมด <ChevronRight className="w-4 h-4" />
+                  <T k="viewAll" /> <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">

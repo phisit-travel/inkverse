@@ -15,6 +15,7 @@ import WelcomePopup from "@/components/ui/WelcomePopup";
 import NativeShell from "@/components/ui/NativeShell";
 import UpdateChecker from "@/components/ui/UpdateChecker";
 import CookieConsent from "@/components/ui/CookieConsent";
+import { LangProvider } from "@/components/ui/LangProvider";
 
 const BASE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://inksverse.com";
 
@@ -137,22 +138,24 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col bg-[var(--bg-primary)] text-[var(--text-primary)] font-[family-name:var(--font-noto)]">
-        <WebsiteJsonLd />
-        <Navbar />
-        <AppInstallBanner />
-        <main className="flex-1">
-          <ReadingProgressProvider>{children}</ReadingProgressProvider>
-        </main>
-        <Footer />
-        <HelpChatbotLazy />
-        <NativeShell />
-        <ServiceWorkerRegister />
-        <UpdateChecker />
-        <CookieConsent />
-        <TrafficBeacon />
-        <AchievementToaster />
-        <PushRegister />
-        <WelcomePopup />
+        <LangProvider>
+          <WebsiteJsonLd />
+          <Navbar />
+          <AppInstallBanner />
+          <main className="flex-1">
+            <ReadingProgressProvider>{children}</ReadingProgressProvider>
+          </main>
+          <Footer />
+          <HelpChatbotLazy />
+          <NativeShell />
+          <ServiceWorkerRegister />
+          <UpdateChecker />
+          <CookieConsent />
+          <TrafficBeacon />
+          <AchievementToaster />
+          <PushRegister />
+          <WelcomePopup />
+        </LangProvider>
       </body>
     </html>
   );

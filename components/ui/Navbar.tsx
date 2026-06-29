@@ -7,8 +7,11 @@ import Logo from "./Logo";
 import CoinBadge from "./CoinBadge";
 import NotificationBell from "./NotificationBell";
 import ThemeToggle from "./ThemeToggle";
+import LangToggle from "./LangToggle";
 import SearchBox from "./SearchBox";
 import UserMenu from "./UserMenu";
+import { useLang } from "./LangProvider";
+import { dict } from "@/lib/i18n";
 import type { RankBadge } from "@/lib/ranks";
 import clsx from "clsx";
 
@@ -26,22 +29,6 @@ interface MeState {
   coins: number;
   rankBadge: RankBadge | null;
 }
-
-const typeLinks = [
-  { href: "/manga", label: "เรื่องทั้งหมด" },
-  { href: "/manga?type=MANGA", label: "MANGA" },
-  { href: "/manga?type=MANHWA", label: "MANHWA" },
-  { href: "/manga?type=MANHUA", label: "MANHUA" },
-  { href: "/manga?type=NOVEL", label: "NOVEL" },
-];
-
-const applyLinks = [
-  { href: "/apply?as=translator", label: "สมัครนักแปล" },
-  { href: "/apply?as=writer", label: "สมัครนักเขียน" },
-];
-
-// Creator dropdown leads with the how-to guide, then the apply links.
-const creatorMenu = [{ href: "/creator-101", label: "สอนสร้างเนื้อหา" }, ...applyLinks];
 
 // Hover dropdown used in the desktop nav to keep the bar uncluttered.
 function NavDropdown({
@@ -113,6 +100,9 @@ export default function Navbar() {
   // Me state — null user = logged out (default, matches SSR render so no hydration mismatch)
   const [me, setMe] = useState<MeState>({ user: null, coins: 0, rankBadge: null });
 
+  const lang = useLang();
+  const t = (k: keyof typeof dict.th) => dict[lang][k];
+
   useEffect(() => {
     let alive = true;
     fetch("/api/me")
@@ -131,11 +121,26 @@ export default function Navbar() {
   const mobileSubCls =
     "block pl-6 pr-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 rounded-lg transition-colors";
 
+  // Build nav link arrays inside the component so they pick up the current lang.
+  const typeLinks = [
+    { href: "/manga", label: t("navTypeAll") },
+    { href: "/manga?type=MANGA", label: "MANGA" },
+    { href: "/manga?type=MANHWA", label: "MANHWA" },
+    { href: "/manga?type=MANHUA", label: "MANHUA" },
+    { href: "/manga?type=NOVEL", label: "NOVEL" },
+  ];
+
+  const creatorMenu = [
+    { href: "/creator-101", label: t("navCreatorGuide") },
+    { href: "/apply?as=translator", label: t("navApplyTranslator") },
+    { href: "/apply?as=writer", label: t("navApplyWriter") },
+  ];
+
   return (
     <nav className="sticky top-0 z-50 bg-[var(--bg-primary)]/95 backdrop-blur-md border-b border-[var(--border)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4">
         {/* Logo — icon-only on small screens so the bar never overflows
-            (logged-in nav: logo+theme+search+coins+bell+avatar+menu is wide). */}
+            (logged-in nav: logo+theme+lang+search+coins+bell+avatar+menu is wide). */}
         <div className="sm:hidden shrink-0">
           <Logo variant="icon" size="md" />
         </div>
@@ -145,8 +150,8 @@ export default function Navbar() {
 
         {/* Desktop nav — two dropdowns keep the bar clean */}
         <div className="hidden lg:flex items-center gap-8">
-          <NavDropdown label="เรื่องทั้งหมด" items={typeLinks} />
-          <NavDropdown label="ครีเอเตอร์" items={creatorMenu} />
+          <NavDropdown label={t("navAllContent")} items={typeLinks} />
+          <NavDropdown label={t("navCreator")} items={creatorMenu} />
         </div>
 
         {/* Search + actions */}
@@ -157,15 +162,16 @@ export default function Navbar() {
             className="download-cta hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[var(--text-primary)]/30 text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)] hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] transition-colors"
           >
             <Download className="w-4 h-4" />
-            โหลดแอป
+            {t("navDownloadApp")}
           </Link>
           <ThemeToggle />
+          <LangToggle />
           {/* Desktop search with live suggestions */}
           <SearchBox className="hidden md:block" />
 
           {/* Mobile search toggle */}
           <button
-            aria-label="ค้นหา"
+            aria-label={t("navSearchLabel")}
             className="md:hidden p-2 rounded-lg hover:bg-white/10 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
             onClick={() => setSearchOpen(!searchOpen)}
           >
@@ -184,13 +190,13 @@ export default function Navbar() {
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl bal-btn text-sm font-medium hover:opacity-90 transition-colors"
             >
               <LogIn className="w-4 h-4" />
-              เข้าสู่ระบบ
+              {t("navSignIn")}
             </Link>
           )}
 
           {/* Mobile menu */}
           <button
-            aria-label={menuOpen ? "ปิดเมนู" : "เปิดเมนู"}
+            aria-label={menuOpen ? t("navCloseMenu") : t("navOpenMenu")}
             className="lg:hidden p-2 rounded-lg hover:bg-white/10 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
             onClick={() => setMenuOpen(!menuOpen)}
           >
@@ -217,7 +223,7 @@ export default function Navbar() {
               className="download-cta flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm bal-btn font-semibold mb-2"
             >
               <Download className="w-4 h-4" />
-              โหลดแอป Android
+              {t("navDownloadAndroid")}
             </Link>
             {/* Offline library — only shows inside the app (.app-only); a full-nav
                 anchor so it still opens when offline (served from the SW page cache). */}
@@ -226,7 +232,7 @@ export default function Navbar() {
               className="app-only items-center gap-2 px-3 py-2.5 mb-1 rounded-lg text-sm text-[var(--text-primary)] hover:bg-white/5 transition-colors font-medium"
             >
               <WifiOff className="w-4 h-4" />
-              คลังออฟไลน์
+              {t("navOfflineLibrary")}
             </a>
 
             {/* Account quick-links (logged-in) — settings was previously only in
@@ -238,19 +244,19 @@ export default function Navbar() {
                   onClick={closeMenu}
                   className="flex items-center gap-2 px-3 py-2.5 mb-1 rounded-lg text-sm text-[var(--text-primary)] hover:bg-white/5 transition-colors font-medium"
                 >
-                  <User className="w-4 h-4" /> โปรไฟล์ของฉัน
+                  <User className="w-4 h-4" /> {t("navMyProfile")}
                 </Link>
                 <Link
                   href="/settings"
                   onClick={closeMenu}
                   className="flex items-center gap-2 px-3 py-2.5 mb-1 rounded-lg text-sm text-[var(--text-primary)] hover:bg-white/5 transition-colors font-medium"
                 >
-                  <Settings className="w-4 h-4" /> ตั้งค่าบัญชี
+                  <Settings className="w-4 h-4" /> {t("navMySettings")}
                 </Link>
               </>
             )}
 
-            <MobileSection label="เรื่องทั้งหมด" open={navSection === "browse"} onToggle={() => toggleNav("browse")}>
+            <MobileSection label={t("navAllContent")} open={navSection === "browse"} onToggle={() => toggleNav("browse")}>
               {typeLinks.map((link) => (
                 <Link key={link.href} href={link.href} onClick={closeMenu} className={mobileSubCls}>
                   {link.label}
@@ -258,7 +264,7 @@ export default function Navbar() {
               ))}
             </MobileSection>
 
-            <MobileSection label="ครีเอเตอร์" open={navSection === "creator"} onToggle={() => toggleNav("creator")}>
+            <MobileSection label={t("navCreator")} open={navSection === "creator"} onToggle={() => toggleNav("creator")}>
               {creatorMenu.map((link) => (
                 <Link key={link.href} href={link.href} onClick={closeMenu} className={mobileSubCls}>
                   {link.label}
@@ -267,12 +273,12 @@ export default function Navbar() {
             </MobileSection>
 
             {isStaff && (
-              <MobileSection label="บัญชีของฉัน" open={navSection === "account"} onToggle={() => toggleNav("account")}>
-                <Link href="/dashboard" onClick={closeMenu} className={mobileSubCls}>แดชบอร์ด</Link>
-                <Link href="/dashboard/new-novel" onClick={closeMenu} className={mobileSubCls}>เขียนนิยาย</Link>
-                <Link href="/upload" onClick={closeMenu} className={mobileSubCls}>อัปโหลดมังงะ</Link>
+              <MobileSection label={t("navMyAccount")} open={navSection === "account"} onToggle={() => toggleNav("account")}>
+                <Link href="/dashboard" onClick={closeMenu} className={mobileSubCls}>{t("navDashboard")}</Link>
+                <Link href="/dashboard/new-novel" onClick={closeMenu} className={mobileSubCls}>{t("navWriteNovel")}</Link>
+                <Link href="/upload" onClick={closeMenu} className={mobileSubCls}>{t("navUploadManga")}</Link>
                 {user?.role === "ADMIN" && (
-                  <Link href="/admin" onClick={closeMenu} className={mobileSubCls}>แอดมิน</Link>
+                  <Link href="/admin" onClick={closeMenu} className={mobileSubCls}>{t("navAdmin")}</Link>
                 )}
               </MobileSection>
             )}

@@ -3,60 +3,11 @@
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { ArrowRight, ChevronLeft, ChevronRight, Coins, PenLine, Smartphone, Sparkles, Languages } from "lucide-react";
+import { useLang } from "./LangProvider";
+import { promoSlidesDict, platformLabelsDict } from "@/lib/i18n";
 
-type Slide = {
-  tag: string;
-  title: string;
-  sub: string;
-  cta: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
-  platforms?: boolean; // render iOS + Android buttons instead of a single CTA
-};
-
-const SLIDES: Slide[] = [
-  {
-    tag: "อ่านออฟไลน์ได้แล้ววันนี้",
-    title: "โหลดเก็บไว้อ่านออฟไลน์",
-    sub: "ดาวน์โหลดตอนเก็บไว้อ่านตอนเน็ตไม่มี — ทั้ง iPhone และ Android ฟรี!",
-    cta: "โหลดแอป",
-    href: "/download",
-    icon: Smartphone,
-    platforms: true,
-  },
-  {
-    tag: "โปรโมชั่น",
-    title: "เติมเหรียญ รับโบนัสทุกแพ็กเกจ",
-    sub: "เลือกแพ็กเกจที่ใช่ รับเหรียญโบนัสเพิ่มทันที — ปลดล็อกตอนพรีเมียม + สนับสนุนนักเขียน/นักแปลที่คุณรักโดยตรง",
-    cta: "เติมเหรียญ",
-    href: "/topup",
-    icon: Coins,
-  },
-  {
-    tag: "ใหม่! สำหรับนักเขียน",
-    title: "เครื่องมือเขียนระดับโปร",
-    sub: "WYSIWYG · ประวัติเวอร์ชัน · Story Bible · สถิติรายเรื่อง · ส่งออก .epub — ชุดเครื่องมือนักเขียนที่ครบกว่าทุกที่ เขียนลื่น เก็บงานปลอดภัย เริ่มฟรีวันนี้",
-    cta: "ดูเครื่องมือทั้งหมด",
-    href: "/creator-101",
-    icon: Sparkles,
-  },
-  {
-    tag: "ใหม่! สำหรับนักแปล",
-    title: "เครื่องมือนักแปลระดับโปร",
-    sub: "ตัดภาพ manhwa อัตโนมัติ · คลังคำแปล/ชื่อ · พรีวิวก่อนเผยแพร่ · อัปหลายตอนรวด — ชุดเครื่องมือนักแปลที่ทัดเทียมนักเขียน อัปไว แปลเนียน เริ่มฟรีวันนี้",
-    cta: "สมัครนักแปลเลย",
-    href: "/apply?as=translator",
-    icon: Languages,
-  },
-  {
-    tag: "ครีเอเตอร์",
-    title: "เปิดรับนักเขียน & นักแปล รุ่นแรก",
-    sub: "อนุมัติไว ลงผลงานได้เลย รับส่วนแบ่งรายได้ 80% — รู้ผลเร็ว เริ่มสร้างรายได้จากงานเขียนของคุณ",
-    cta: "สมัครเลย",
-    href: "/creator-101",
-    icon: PenLine,
-  },
-];
+// One icon per slide — icons are language-agnostic, text comes from the dict.
+const SLIDE_ICONS = [Smartphone, Coins, Sparkles, Languages, PenLine] as const;
 
 function AppleLogo({ className }: { className?: string }) {
   return (
@@ -75,6 +26,8 @@ function AndroidLogo({ className }: { className?: string }) {
 }
 
 function PlatformButtons() {
+  const lang = useLang();
+  const labels = platformLabelsDict[lang];
   const btn =
     "flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[var(--text-primary)] text-[var(--bg-primary)] hover:opacity-90 transition-opacity";
   return (
@@ -83,14 +36,14 @@ function PlatformButtons() {
         <AppleLogo className="w-5 h-5 shrink-0" />
         <span className="flex flex-col text-left leading-tight">
           <span className="text-[8px] uppercase tracking-wider opacity-70">iPhone</span>
-          <span className="text-xs font-semibold whitespace-nowrap">เพิ่มลงโฮม</span>
+          <span className="text-xs font-semibold whitespace-nowrap">{labels.iphone}</span>
         </span>
       </Link>
       <Link href="/download" className={btn}>
         <AndroidLogo className="w-5 h-5 shrink-0" />
         <span className="flex flex-col text-left leading-tight">
           <span className="text-[8px] uppercase tracking-wider opacity-70">Android</span>
-          <span className="text-xs font-semibold whitespace-nowrap">โหลด APK</span>
+          <span className="text-xs font-semibold whitespace-nowrap">{labels.android}</span>
         </span>
       </Link>
     </div>
@@ -102,15 +55,17 @@ const INTERVAL = 5500;
 export default function PromoCarousel() {
   const [i, setI] = useState(0);
   const paused = useRef(false);
+  const lang = useLang();
+  const slides = promoSlidesDict[lang];
 
   useEffect(() => {
     const id = setInterval(() => {
-      if (!paused.current) setI((p) => (p + 1) % SLIDES.length);
+      if (!paused.current) setI((p) => (p + 1) % slides.length);
     }, INTERVAL);
     return () => clearInterval(id);
-  }, []);
+  }, [slides.length]);
 
-  const go = (n: number) => setI((n + SLIDES.length) % SLIDES.length);
+  const go = (n: number) => setI((n + slides.length) % slides.length);
 
   return (
     <section
@@ -123,68 +78,71 @@ export default function PromoCarousel() {
       <div className="absolute inset-4 sm:inset-6 border border-[var(--text-primary)]/15 pointer-events-none" />
 
       {/* slides (fade) */}
-      {SLIDES.map((s, idx) => (
-        <div
-          key={idx}
-          className={`absolute inset-0 transition-opacity duration-700 ${idx === i ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-        >
-          <div className="relative h-full flex items-center px-8 sm:px-12 lg:px-16">
-            {/* big faded illustration — bleeds in from the right (mobile too) */}
-            <s.icon
-              className="absolute right-[-2.5rem] sm:right-2 top-1/2 -translate-y-1/2 w-56 h-56 sm:w-72 sm:h-72 lg:w-80 lg:h-80 text-[var(--text-primary)] opacity-[0.07] pointer-events-none"
-              strokeWidth={1}
-            />
+      {slides.map((s, idx) => {
+        const SlideIcon = SLIDE_ICONS[idx] ?? Sparkles;
+        return (
+          <div
+            key={idx}
+            className={`absolute inset-0 transition-opacity duration-700 ${idx === i ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+          >
+            <div className="relative h-full flex items-center px-8 sm:px-12 lg:px-16">
+              {/* big faded illustration — bleeds in from the right (mobile too) */}
+              <SlideIcon
+                className="absolute right-[-2.5rem] sm:right-2 top-1/2 -translate-y-1/2 w-56 h-56 sm:w-72 sm:h-72 lg:w-80 lg:h-80 text-[var(--text-primary)] opacity-[0.07] pointer-events-none"
+                strokeWidth={1}
+              />
 
-            {/* framed focal icon on the right (desktop) — animated */}
-            <div className="hidden md:flex absolute right-10 lg:right-20 top-1/2 -translate-y-1/2">
-              <div className="relative w-40 h-40 lg:w-52 lg:h-52 flex items-center justify-center">
-                <div className="absolute inset-0 rounded-full border border-dashed border-[var(--text-primary)]/25 iv-ring-spin" />
-                <div className="absolute inset-5 rounded-full border border-[var(--text-primary)]/10 iv-ring-spin-rev" />
-                <s.icon className="w-20 h-20 lg:w-28 lg:h-28 text-[var(--text-primary)] iv-float" strokeWidth={1} />
+              {/* framed focal icon on the right (desktop) — animated */}
+              <div className="hidden md:flex absolute right-10 lg:right-20 top-1/2 -translate-y-1/2">
+                <div className="relative w-40 h-40 lg:w-52 lg:h-52 flex items-center justify-center">
+                  <div className="absolute inset-0 rounded-full border border-dashed border-[var(--text-primary)]/25 iv-ring-spin" />
+                  <div className="absolute inset-5 rounded-full border border-[var(--text-primary)]/10 iv-ring-spin-rev" />
+                  <SlideIcon className="w-20 h-20 lg:w-28 lg:h-28 text-[var(--text-primary)] iv-float" strokeWidth={1} />
+                </div>
+              </div>
+
+              {/* text — rises in each time its slide becomes active */}
+              <div className={`relative z-10 max-w-md lg:max-w-lg ${idx === i ? "iv-rise" : ""}`}>
+                <p className="eyebrow mb-4">{s.tag}</p>
+                <h2
+                  className={`font-bebas text-[var(--text-primary)] tracking-[0.04em] leading-[0.95] mb-3 uppercase ${
+                    s.platforms
+                      ? "text-3xl sm:text-4xl lg:text-5xl"
+                      : "text-4xl sm:text-5xl lg:text-6xl"
+                  }`}
+                >
+                  {s.title}
+                </h2>
+                <p className="text-sm sm:text-base text-[var(--text-secondary)] mb-5 leading-relaxed">
+                  {s.sub}
+                </p>
+                {s.platforms ? (
+                  <PlatformButtons />
+                ) : (
+                  <Link
+                    href={s.href}
+                    className="inline-flex items-center gap-2 px-7 py-3 bal-btn font-semibold text-xs uppercase tracking-[0.2em] hover:opacity-90"
+                  >
+                    {s.cta}
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                )}
               </div>
             </div>
-
-            {/* text — rises in each time its slide becomes active */}
-            <div className={`relative z-10 max-w-md lg:max-w-lg ${idx === i ? "iv-rise" : ""}`}>
-              <p className="eyebrow mb-4">{s.tag}</p>
-              <h2
-                className={`font-bebas text-[var(--text-primary)] tracking-[0.04em] leading-[0.95] mb-3 uppercase ${
-                  s.platforms
-                    ? "text-3xl sm:text-4xl lg:text-5xl"
-                    : "text-4xl sm:text-5xl lg:text-6xl"
-                }`}
-              >
-                {s.title}
-              </h2>
-              <p className="text-sm sm:text-base text-[var(--text-secondary)] mb-5 leading-relaxed">
-                {s.sub}
-              </p>
-              {s.platforms ? (
-                <PlatformButtons />
-              ) : (
-                <Link
-                  href={s.href}
-                  className="inline-flex items-center gap-2 px-7 py-3 bal-btn font-semibold text-xs uppercase tracking-[0.2em] hover:opacity-90"
-                >
-                  {s.cta}
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              )}
-            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
 
       {/* arrows */}
       <button
-        aria-label="ก่อนหน้า"
+        aria-label="Previous"
         onClick={() => go(i - 1)}
         className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 hidden sm:flex items-center justify-center border border-[var(--border)] bg-[var(--bg-primary)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-primary)]/50 transition-colors z-10"
       >
         <ChevronLeft className="w-4 h-4" />
       </button>
       <button
-        aria-label="ถัดไป"
+        aria-label="Next"
         onClick={() => go(i + 1)}
         className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 hidden sm:flex items-center justify-center border border-[var(--border)] bg-[var(--bg-primary)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-primary)]/50 transition-colors z-10"
       >
@@ -193,10 +151,10 @@ export default function PromoCarousel() {
 
       {/* dots */}
       <div className="absolute bottom-6 left-8 sm:left-12 lg:left-16 flex items-center gap-2 z-10">
-        {SLIDES.map((_, idx) => (
+        {slides.map((_, idx) => (
           <button
             key={idx}
-            aria-label={`สไลด์ ${idx + 1}`}
+            aria-label={`Slide ${idx + 1}`}
             onClick={() => go(idx)}
             className={`h-1 transition-all ${idx === i ? "w-8 bg-[var(--text-primary)]" : "w-4 bg-[var(--text-primary)]/30 hover:bg-[var(--text-primary)]/60"}`}
           />
